@@ -1,0 +1,4015 @@
+#!/usr/bin/env python3
+# -*- coding: UTF-8 -*-
+
+import sys
+import os
+import locale
+import json
+import subprocess
+import atexit
+import shutil
+import requests
+import tarfile
+import io
+import threading
+import time
+import psutil
+import uuid
+from pathlib import Path
+
+# Translation System
+try:
+    locale.setlocale(locale.LC_ALL, '')
+    LANG, _ = locale.getlocale(locale.LC_CTYPE)
+except locale.Error:
+    LANG = 'en_US'
+
+if not LANG:
+    LANG = 'en_US'
+
+# Supported languages
+SUPPORTED_LANGUAGES = {
+    "English": "en_US",
+    "Português": "pt_BR",
+}
+
+__version__ = "0.1"
+__creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
+
+TRANSLATIONS = {
+    'en_US': {
+        "ABOUT_TEXT_HTML": f"""<b>Zordeer</b><br>
+        Version: {__version__}<br><br>
+        A launcher for games that run via Proton.<br>
+        License: <a href='https://www.gnu.org/licenses/gpl-3.0.html.en'>GPLv3</a><br>
+        Created by {__creator__}""",
+        "ABOUT_ZORDEER": "About Zordeer",
+        "ADD_FILES": "Add files",
+        "AFFECTED_INVOCATIONS": "Summons that will be affected:",
+        "API_FAIL": "API error:\n{e}",
+        "API_KEY_REQUIRED_SGDB": "Please enter your SteamGridDB API key.",
+        "API_KEY_SAVED": "API key saved",
+        "API_KEY_SAVE_ERROR": "Could not save key:\n{e}",
+        "API_KEY_SAVE_FIRST": "Save your API key first.",
+        "ANIMARIUM_PREFIX_PLACEHOLDER": "Leave empty = animarium_prefix",
+        "APP_NAME": "Zordeer",
+        "AUTOMATIC_RUN": "Automatic installation (If the installer supports it)",
+        "BROWSE_BUTTON": "Browse",
+        "CANCEL_BUTTON": "Cancel",
+        "CHANGES_SAVED": "Changes have been saved.",
+        "CLEAN_RUN": "Clean run (Prevents issues with certain installers)",
+        "CLEAR_LIST": "Clear list",
+        "CONFIRM": "Confirm",
+        "CONFIRM_AND_RUN": "Run all",
+        "CONFIRM_CLOSE_MESSAGE": "Do you want to end the current invocation and close Zordeer?",
+        "CONFIRM_REMOVE": "Remove '{name}'?",
+        "CREATE_INVOCATION": "Create invocation",
+        "CREATE_MULTIPLE_INVOCATIONS": "Create multiple invocations",
+        "DEBUG_REAL_INVOCATION_INITIATED": "[DEBUG] Invocation initiated as PID {pid}",
+        "DEBUG_TEMP_FILE_REMOVED": "[DEBUG] Temporary file removed: {path}",
+        "DEBUG_WINEPREFIX_USED": "[DEBUG] WINEPREFIX used: {wineprefix}",
+        "DELETE_PREFIX_CHECKBOX": "Delete the prefix folder",
+        "DELETE_PREFIX_ANYWAY": "Delete prefix folder anyway",
+        "DELETE_PREFIXES_ANYWAY": "Delete prefixes folders anyway",
+        "DELETE_INVOCATION_CONFIRM_MESSAGE": "Are you sure you want to remove the invocation '{name}'?",
+        "DELETE_INVOCATIONS_CONFIRM_MESSAGE": "Are you sure you want to remove the selected invocations?",
+        "DESELECT_ALL_IN_MULTIPLE_EDIT": "None",
+        "DONE": "Done",
+        "DO_NOT_CHANGE": "[Do not change]",
+        "DO_NOT_DELETE_PREFIX": "Keep prefix folder",
+        "DO_NOT_DELETE_PREFIXES": "Keep prefix folders",
+        "DUPLICATE_NAME_IN_LIST": "There is already another invocation in the list with the name: {name}",
+        "EDIT_MULTIPLE_INVOCATIONS": "Edit multiple invocations",
+        "ENTER_GAME_NAME": "Enter a game name.",
+        "ENVIRONMENT_VARS": "Variables:",
+        "ERROR": "Error",
+        "ERROR_LOADING_FILE": "Error loading file {file}: {error}",
+        "ERROR_REMOVING_FILE": "Error removing {file}: {error}",
+        "ERROR_RUNNER": "Could not find the runner at: {path}",
+        "ERROR_TRANSFERRING_URL": "Error transferring {url}: {error}",
+        "EXECUTABLE_FILE_FILTER": "Executables (*.exe *.msi *.sh *.bat);;All Files (*)",
+        "EXECUTABLE_PATH": "Executable:",
+        "EXECUTION_MODE": "Execution mode:",
+        "EXTRAS": "Extras",
+        "EXTRACTING": "Extracting: {name}",
+        "FAILED_UPDATE_JSON": "Could not update invocation information: {error}",
+        "FORCE_OPENGL": "Force OpenGL (If Vulkan is the default)",
+        "FPS_DXVK_HUD": "DXVK HUD (DirectX 9/10/11 via Vulkan)",
+        "FPS_GALLIUM_HUD": "Gallium HUD (If it runs via OpenGL)",
+        "FPS_MANGOHUD": "MangoHUD (DirectX 12 via Vulkan)",
+        "GAMEMODE": "Use Feral gamemode",
+        "HEROES_LOAD_ERROR": "[DEBUG] Failed to load heroes: {error}",
+        "HIDE_INVOCATION_IMAGES": "Hide images from the list",
+        "IMAGE_FILTER": "Image Files (*.jpg *.jpeg *.png *.webp);;All Files (*)",
+        "INVALID_PREFIX_ERROR": "Invalid prefix, check if the prefix folder exists.",
+        "INVOCATION": "Invocation",
+        "INVOCATION_ALREADY_ACTIVE": "End current invocation and start the selected one?",
+        "INVOCATION_ALREADY_EXISTS": "There is already an invocation with that name in the list. Choose another.",
+        "INVOCATION_ARGS": "Arguments:",
+        "INVOCATION_ART_PATH": "Art:",
+        "INVOCATION_INFO_ERROR": "Could not access executable or find information about this invocation.",
+        "INVOCATION_INFO_LOADED": "Invocation info loaded successfully for: {name}",
+        "INVOCATION_LANGUAGE": "Language (Locale):",
+        "INVOCATION_NAME": "Name:",
+        "INVOCATION_IN_MULTIPLE_CREATE_ALREADY_EXISTS": "The invocation '{name}' already exists, use another name.",
+        "INVOCATION_START_ERROR": "An error occurred while trying to start the invocation: {error}",
+        "INVOCATION_STARTED": "Zordeer - Invocation started: {invocation_name}",
+        "LANGUAGE": "Language:",
+        "LANGUAGE_SET_ERROR": "[Error] Failed to set LC_ALL: {error}",
+        "MANDATORY_FIELDS_ERROR": "Name, executable, and runner are mandatory.",
+        "MODIFY_INVOCATION": "Modify invocation",
+        "MULTIPLE_INVOCATION_EDITOR": "Multiple invocation editor",
+        "MULTIPLE_INVOCATION_CREATOR": "Creator of multiple invocations",
+        "MULTIPLE_INVOCATION_REMOVER": "Multiple invocation remover",
+        "NAME_INVALID": "The name is invalid, select another.",
+        "NAME_INVALID_IN_MULTIPLE": "The name '{name}' is invalid, select another.",
+        "NO_BUTTON": "No",
+        "NO_EXECUTABLE_SELECTED": "You have not selected executables",
+        "NO_FILES_EXTRACTED": "No files were extracted from the runner archive.",
+        "NO_HERO_IMAGES": "No hero images found.",
+        "NO_INVOCATION_SELECTED_ERROR": "No invocations found, add one to the list.",
+        "NO_INVOCATION_SELECTED_MULTIPLE": "No invocation selected",
+        "NO_INVOCATIONS_FOUND": "No invocations were found.",
+        "NO_PYQT6_FOUND_ERROR": "PyQt6 not found.",
+        "NO_RESULTS": "No results.",
+        "NO_RUNNER_SELECTED_ERROR": "Please select a runner to transfer.",
+        "NORMAL_RUN": "Normal run",
+        "OK_BUTTON": "OK",
+        "OPEN_EXEC_PATH": "Open executable folder",
+        "OPEN_PATH_ERROR": "Could not find this path on your device:<br>{path}",
+        "OPEN_PREFIX_PATH": "Open prefix folder",
+        "PLACEHOLDER_FOR_LANGUAGE": "- No language chosen -",
+        "PLACEHOLDER_FOR_RUNNER": "- Select a runner -",
+        "PREFIX_REMOTION_INFORMATION": "Prefix that would be deleted:",
+        "PREFIXES_REMOTION_INFORMATION": "Prefixes that would be deleted:",
+        "PREFIX_IN_USE_MESSAGE": "The prefix is ​​being used by other invocations.",
+        "PREFIXES_IN_USE_MESSAGE": "Prefixes are being used by other invocations.",
+        "PREFIX_PATH": "Prefix:",
+        "PROTON_GE_TITLE": "Recommended for general use",
+        "PROTON_SAREK_TITLE": "Recommended for older hardware",
+        "QT_STYLE": "QT style:",
+        "REMOVE": "Remove",
+        "REMOVE_MULTIPLE_INVOCATIONS": "Remove multiple invocations",
+        "REMOVE_SELECTED": "Remove selected",
+        "REMOVE_RUNNER_ERROR": "Unable to remove the selected runner.",
+        "RESET_BUTTON_MULTIPLE_EDIT": "Reset",
+        "RUN_IN_PREFIX": "Run in prefix",
+        "RUN_IN_PREFIX_DONE": "Run in prefix completed.",
+        "RUN_IN_PREFIX_INVOCATION_NAME": "Run in the prefix of: {invocation_name}",
+        "RUN_IN_PREFIX_TEMP_FILE_REMOVED": "[Run in prefix] Temporary invocation removed: {temp_file}",
+        "RUNNER_APPLIED_ALL": "Runner applied to all invocations on the list",
+        "RUNNER_APPLY_ALL_UPDATE_ERROR": "[RunnerApplyAll] Error updating {fname}: {e}",
+        "RUNNER_EXISTS_WARNING": "The runner '{name}' exists locally.<br>Do you want to transfer it again?",
+        "RUNNER_REMOVED_SUCCESS": "Runner '{name}' removed successfully!",
+        "RUNNER_VERSION": "Runner:",
+        "RUNNING_COMMAND": "Running command: {command}",
+        "RUNNING_IN_PREFIX": "Running in prefix ({name}): {exe}  silent={silent}",
+        "SAVE_BUTTON": "Save",
+        "SEARCH": "Search",
+        "SELECT": "Select",
+        "SELECT_ALL_IN_MULTIPLE_EDIT": "All",
+        "SELECT_AT_LEAST_ONE_IMAGE": "Select at least one image.",
+        "SELECT_EXECUTABLE": "Select executable",
+        "SELECTED_EXECUTABLES": "Selected executables:",
+        "SELECTED_INVOCATIONS": "Selected Invocations:",
+        "SELECT_INVOCATION_ART": "Select art",
+        "SELECT_PREFIX_TITLE": "Select prefix",
+        "SETTINGS_SAVED_RESTART": "Changes saved.<br>Restart Zordeer.",
+        "SGDB_API_KEY_LABEL": "SteamGridDB API Key:",
+        "SHOW_FPS_OPTION": "Show FPS with:",
+        "SPECIAL_THANKS": "Special thanks:",
+        "START_INVOCATION": "Start invocation",
+        "STARTING_INVOCATION": "Starting invocation: {name}",
+        "STOP_ACCESS_ERROR": "[Stop] Error accessing process: {error}",
+        "STOP_CURRENT": "Stop current",
+        "STOP_INVOCATION": "Stop invocation",
+        "STOP_INVOCATION_SUCCESS": "[Stop] Invocation terminated successfully.",
+        "STOP_KILL_ERROR": "[Stop] Error killing process {pid}: {error}",
+        "STOP_KILL_PROCESS": "[Stop] Killing process {pid} ({exe})",
+        "STOP_NO_INVOCATION_ACTIVE": "[Stop] No invocation active.",
+        "STOP_NO_PROCESS_FOUND": "[Stop] No invocation process found to terminate.",
+        "STOP_PROCESS_SUCCESS": "[Stop] Process {pid} terminated successfully.",
+        "SYMLINK_CREATED": "Symlink created: {symlink} -> {prefix}",
+        "SYMLINK_ERROR": "Error creating symlink for Proton: {error}",
+        "TEMP_FILES_REMOVED": "Temporary files removed: {count}",
+        "TRANSFER": "Transfer",
+        "TRANSFER_AND_INSTALL_SUCCESS": "Runner '{name}' transferred and extracted successfully!",
+        "TRANSFER_ERROR": "Transfer error",
+        "TRANSFER_FAILED": "Transfer failed: {error}",
+        "TRANSFER_HEROES": "Heroes",
+        "TRANSFER_HEROES_TITLE": "Heroes image transfer",
+        "TRANSFER_RUNNERS": "Runners",
+        "TRANSFER_SUMMARY": "Transferred to:\n{dir}",
+        "TRANSFERRED_RUNNERS": "Transferred",
+        "TRANSFERRED_RUNNERS_TITLE": "Runners available in Zordeer folder",
+        "TRANSFERRING_RUNNER": "Transferring: {name}",
+        "USE_ANIMARIUM_PREFIX": "Use animarium_prefix",
+        "USE_ANIMARIUM_PREFIX_FOR_ALL": "Use the animarium_prefix on all invocations",
+        "USE_MS_LANGUAGE_CODE": "Use Microsoft language code",
+        "USE_ON_ALL": "Use on all",
+        "USING_MS_LANGUAGE_CODE": "Using Microsoft language code: -language={code}",
+        "USING_PYQT6": "Using PyQt6",
+        "WINECFG_BUTTON": "Winecfg",
+        "YES_BUTTON": "Yes",
+        "ZORDEER_CLOSED": "Zordeer closed. Finalizing processes...",
+        "ZORDEER_SETTINGS": "Zordeer preferences",
+    },
+    'pt_BR': {
+        "ABOUT_TEXT_HTML": f"""<b>Zordeer</b><br>
+        Versão: {__version__}<br><br>
+        Um launcher para jogos que rodam via Proton.<br>
+        Licença: <a href='https://www.gnu.org/licenses/gpl-3.0.html'>GPLv3</a><br>
+        Criado por {__creator__}""",
+        "ABOUT_ZORDEER": "Sobre o Zordeer",
+        "ADD_FILES": "Adicionar arquivos",
+        "AFFECTED_INVOCATIONS": "Invocações que serão afetadas:",
+        "API_FAIL": "Erro de API:\n{e}",
+        "API_KEY_REQUIRED_SGDB": "Por favor, insira sua chave da API do SteamGridDB.",
+        "API_KEY_SAVED": "Chave de API salva",
+        "API_KEY_SAVE_ERROR": "Não foi possível salvar a chave:\n{e}",
+        "API_KEY_SAVE_FIRST": "Salve sua API KEY primeiro.",
+        "ANIMARIUM_PREFIX_PLACEHOLDER": "Deixar vazio = animarium_prefix",
+        "APP_NAME": "Zordeer",
+        "AUTOMATIC_RUN": "Instalação automática (Caso o instalador suporte)",
+        "BROWSE_BUTTON": "Procurar",
+        "CANCEL_BUTTON": "Cancelar",
+        "CHANGES_SAVED": "As alterações foram salvas.",
+        "CLEAN_RUN": "Execução limpa (Evita problemas com certos instaladores)",
+        "CLEAR_LIST": "Limpar lista",
+        "CONFIRM": "Confirmar",
+        "CONFIRM_AND_RUN": "Executar tudo",
+        "CONFIRM_CLOSE_MESSAGE": "Deseja encerrar a invocação atual e fechar o Zordeer?",
+        "CONFIRM_REMOVE": "Remover '{name}'?",
+        "CREATE_INVOCATION": "Criar invocação",
+        "CREATE_MULTIPLE_INVOCATIONS": "Criar várias invocações",
+        "DEBUG_REAL_INVOCATION_INITIATED": "[DEBUG] Invocação iniciada como PID {pid}",
+        "DEBUG_TEMP_FILE_REMOVED": "[DEBUG] Arquivo temporário removido: {path}",
+        "DEBUG_WINEPREFIX_USED": "[DEBUG] WINEPREFIX usado: {wineprefix}",
+        "DELETE_PREFIX_CHECKBOX": "Excluir a pasta prefixo",
+        "DELETE_PREFIX_ANYWAY": "Excluir pasta prefixo mesmo assim",
+        "DELETE_PREFIXES_ANYWAY": "Excluir pastas prefixo mesmo assim",
+        "DELETE_INVOCATION_CONFIRM_MESSAGE": "Tem certeza de que deseja remover a invocação '{name}'?",
+        "DELETE_INVOCATIONS_CONFIRM_MESSAGE": "Tem certeza de que deseja remover as invocações selecionadas?",
+        "DESELECT_ALL_IN_MULTIPLE_EDIT": "Nenhuma",
+        "DONE": "Concluído",
+        "DO_NOT_CHANGE": "[Não mudar]",
+        "DO_NOT_DELETE_PREFIX": "Manter pasta prefixo",
+        "DO_NOT_DELETE_PREFIXES": "Manter pastas prefixo",
+        "DUPLICATE_NAME_IN_LIST": "Já existe outra invocação na lista com o nome: {name}",
+        "EDIT_MULTIPLE_INVOCATIONS": "Editar várias invocações",
+        "ENTER_GAME_NAME": "Digite o nome de um jogo.",
+        "ENVIRONMENT_VARS": "Variáveis:",
+        "ERROR": "Erro",
+        "ERROR_LOADING_FILE": "Erro ao carregar arquivo {file}: {error}",
+        "ERROR_REMOVING_FILE": "Erro ao remover {file}: {error}",
+        "ERROR_RUNNER": "Não foi possível encontrar o runner em: {path}",
+        "ERROR_TRANSFERRING_URL": "Erro ao transferir {url}: {error}",
+        "EXECUTABLE_FILE_FILTER": "Executáveis (*.exe *.msi *.sh *.bat);;Todos os arquivos (*)",
+        "EXECUTABLE_PATH": "Executável:",
+        "EXECUTION_MODE": "Modo de execução:",
+        "EXTRAS": "Extras",
+        "EXTRACTING": "Extraindo: {name}",
+        "FAILED_UPDATE_JSON": "Não foi possível atualizar as informações da invocação: {error}",
+        "FORCE_OPENGL": "Forçar OpenGL (Se Vulkan for o padrão)",
+        "FPS_DXVK_HUD": "DXVK HUD (DirectX 9/10/11 via Vulkan)",
+        "FPS_GALLIUM_HUD": "Gallium HUD (Caso rode via OpenGL)",
+        "FPS_MANGOHUD": "MangoHUD (DirectX 12 via Vulkan)",
+        "GAMEMODE": "Usar Feral gamemode",
+        "HEROES_LOAD_ERROR": "[DEBUG] Falha ao carregar heroes: {error}",
+        "HIDE_INVOCATION_IMAGES": "Ocultar imagens da lista",
+        "IMAGE_FILTER": "Arquivos de imagem (*.jpg *.jpeg *.png *.webp);;Todos os arquivos (*)",
+        "INVALID_PREFIX_ERROR": "Prefixo inválido, verifique se a pasta do prefixo existe.",
+        "INVOCATION": "Invocação",
+        "INVOCATION_ALREADY_ACTIVE": "Encerrar invocação atual e iniciar a selecionada?",
+        "INVOCATION_ALREADY_EXISTS": "Já existe uma invocação com esse nome na lista. Escolha outro.",
+        "INVOCATION_ARGS": "Argumentos:",
+        "INVOCATION_ART_PATH": "Arte:",
+        "INVOCATION_INFO_ERROR": "Não foi possível acessar o executável ou encontrar informações sobre esta invocação.",
+        "INVOCATION_INFO_LOADED": "Informações da invocação carregadas com sucesso: {name}",
+        "INVOCATION_LANGUAGE": "Idioma (Localidade):",
+        "INVOCATION_NAME": "Nome:",
+        "INVOCATION_IN_MULTIPLE_CREATE_ALREADY_EXISTS": "A invocação '{name}' já existe, use outro nome.",
+        "INVOCATION_START_ERROR": "Ocorreu um erro ao tentar iniciar a invocação: {error}",
+        "INVOCATION_STARTED": "Zordeer - Invocação iniciada: {invocation_name}",
+        "LANGUAGE": "Idioma:",
+        "LANGUAGE_SET_ERROR": "[Erro] Falha ao definir LC_ALL: {error}",
+        "MANDATORY_FIELDS_ERROR": "Nome, executável e runner são obrigatórios.",
+        "MODIFY_INVOCATION": "Modificar invocação",
+        "MULTIPLE_INVOCATION_EDITOR": "Editor de multiplas invocações",
+        "MULTIPLE_INVOCATION_CREATOR": "Criador de múltiplas invocações",
+        "MULTIPLE_INVOCATION_REMOVER": "Removedor de múltiplas invocações",
+        "NAME_INVALID": "O nome é inválido, selecione outro.",
+        "NAME_INVALID_IN_MULTIPLE": "O nome '{name}' é inválido, selecione outro.",
+        "NO_BUTTON": "Não",
+        "NO_EXECUTABLE_SELECTED": "Você não selecionou executáveis",
+        "NO_FILES_EXTRACTED": "Nenhum arquivo foi extraído do pacote do runner.",
+        "NO_HERO_IMAGES": "Nenhuma imagem hero encontrada.",
+        "NO_INVOCATION_SELECTED_ERROR": "Nenhuma invocação encontrada, adicione uma à lista.",
+        "NO_INVOCATION_SELECTED_MULTIPLE": "Nenhuma invocação selecionada",
+        "NO_INVOCATIONS_FOUND": "Nenhuma invocação foi encontrada.",
+        "NO_PYQT6_FOUND_ERROR": "PyQt6 não encontrado.",
+        "NO_RESULTS": "Nenhum resultado.",
+        "NO_RUNNER_SELECTED_ERROR": "Por favor, selecione um runner para baixar.",
+        "NORMAL_RUN": "Execução normal",
+        "OK_BUTTON": "OK",
+        "OPEN_EXEC_PATH": "Abrir pasta do executável",
+        "OPEN_PATH_ERROR": "Não foi possível encontrar esse caminho no seu dispositivo:<br>{path}",
+        "OPEN_PREFIX_PATH": "Abrir pasta prefixo",
+        "PLACEHOLDER_FOR_LANGUAGE": "- Sem idioma escolhido -",
+        "PLACEHOLDER_FOR_RUNNER": "- Selecione um runner -",
+        "PREFIX_REMOTION_INFORMATION": "Prefixo que seria apagado:",
+        "PREFIXES_REMOTION_INFORMATION": "Prefixos que seriam apagados:",
+        "PREFIX_IN_USE_MESSAGE": "O prefixo está sendo usado por outras invocações.",
+        "PREFIXES_IN_USE_MESSAGE": "Os prefixos estão sendo usados por várias invocações.",
+        "PREFIX_PATH": "Prefixo:",
+        "PROTON_GE_TITLE": "Recomendado para uso geral",
+        "PROTON_SAREK_TITLE": "Recomendado para hardware antigo",
+        "QT_STYLE": "Estilo do QT:",
+        "REMOVE": "Remover",
+        "REMOVE_MULTIPLE_INVOCATIONS": "Remover várias invocações",
+        "REMOVE_SELECTED": "Remover selecionado",
+        "REMOVE_RUNNER_ERROR": "Não foi possível remover o runner selecionado.",
+        "RESET_BUTTON_MULTIPLE_EDIT": "Resetar",
+        "RUN_IN_PREFIX": "Executar no prefixo",
+        "RUN_IN_PREFIX_DONE": "Executar no prefixo foi concluído.",
+        "RUN_IN_PREFIX_INVOCATION_NAME": "Executar no prefixo da: {invocation_name}",
+        "RUN_IN_PREFIX_TEMP_FILE_REMOVED": "[Executar no prefixo] Invocação temporária removida: {temp_file}",
+        "RUNNER_APPLIED_ALL": "Runner aplicado a todas as invocações da lista",
+        "RUNNER_APPLY_ALL_UPDATE_ERROR": "[RunnerApplyAll] Erro ao atualizar {fname}: {e}",
+        "RUNNER_EXISTS_WARNING": "O runner '{name}' existe localmente.<br>Deseja transferir novamente?",
+        "RUNNER_REMOVED_SUCCESS": "Runner '{name}' foi removido com sucesso!",
+        "RUNNER_VERSION": "Runner:",
+        "RUNNING_COMMAND": "Executando comando: {command}",
+        "RUNNING_IN_PREFIX": "Executando no prefixo ({name}): {exe}  silent={silent}",
+        "SAVE_BUTTON": "Salvar",
+        "SEARCH": "Pesquisar",
+        "SELECT": "Selecionar",
+        "SELECT_ALL_IN_MULTIPLE_EDIT": "Todas",
+        "SELECT_AT_LEAST_ONE_IMAGE": "Selecione pelo menos uma imagem.",
+        "SELECT_EXECUTABLE": "Selecionar executável",
+        "SELECT_INVOCATION_ART": "Selecionar arte",
+        "SELECT_PREFIX_TITLE": "Selecionar prefixo",
+        "SELECTED_EXECUTABLES": "Executáveis selecionados:",
+        "SELECTED_INVOCATIONS": "Invocações selecionadas:",
+        "SETTINGS_SAVED_RESTART": "Alterações salvas.<br>Reinicie o Zordeer.",
+        "SGDB_API_KEY_LABEL": "Chave da API SteamGridDB:",
+        "SHOW_FPS_OPTION": "Exibir FPS com:",
+        "SPECIAL_THANKS": "Agradecimentos especiais:",
+        "START_INVOCATION": "Iniciar invocação",
+        "STARTING_INVOCATION": "Iniciando invocação: {name}",
+        "STOP_ACCESS_ERROR": "[Parar] Erro ao acessar processo: {error}",
+        "STOP_CURRENT": "Encerrar atual",
+        "STOP_INVOCATION": "Encerrar invocação",
+        "STOP_INVOCATION_SUCCESS": "[Parar] Invocação encerrada com sucesso.",
+        "STOP_KILL_ERROR": "[Parar] Erro ao encerrar processo {pid}: {error}",
+        "STOP_KILL_PROCESS": "[Parar] Encerrando processo {pid} ({exe})",
+        "STOP_NO_INVOCATION_ACTIVE": "[Parar] Nenhuma invocação ativa.",
+        "STOP_NO_PROCESS_FOUND": "[Parar] Nenhum processo de invocação encontrado para encerrar.",
+        "STOP_PROCESS_SUCCESS": "[Parar] Processo {pid} encerrado com sucesso.",
+        "SYMLINK_CREATED": "Link simbólico criado: {symlink} -> {prefix}",
+        "SYMLINK_ERROR": "Erro ao criar link simbólico para Proton: {error}",
+        "TEMP_FILES_REMOVED": "Arquivos temporários removidos: {count}",
+        "TRANSFER": "Transferir",
+        "TRANSFER_AND_INSTALL_SUCCESS": "Runner '{name}' transferido e extraído com sucesso!",
+        "TRANSFER_ERROR": "Erro na transferência",
+        "TRANSFER_FAILED": "Falha na transferência: {error}",
+        "TRANSFER_HEROES": "Heroes",
+        "TRANSFER_HEROES_TITLE": "Transferidor de imagens heroes",
+        "TRANSFER_RUNNERS": "Runners",
+        "TRANSFER_SUMMARY": "Transferido para:\n{dir}",
+        "TRANSFERRED_RUNNERS": "Transferidos",
+        "TRANSFERRED_RUNNERS_TITLE": "Runners da pasta do Zordeer",
+        "TRANSFERRING_RUNNER": "Transferindo: {name}",
+        "USE_ANIMARIUM_PREFIX": "Usar o animarium_prefix",
+        "USE_ANIMARIUM_PREFIX_FOR_ALL": "Usar o animarium_prefix em todas as invocações",
+        "USE_MS_LANGUAGE_CODE": "Usar código de idioma da Microsoft",
+        "USE_ON_ALL": "Usar em todas",
+        "USING_MS_LANGUAGE_CODE": "Usando código de idioma da Microsoft: -language={code}",
+        "USING_PYQT6": "Usando PyQt6",
+        "WINECFG_BUTTON": "Winecfg",
+        "YES_BUTTON": "Sim",
+        "ZORDEER_CLOSED": "Zordeer fechado. Finalizando processos...",
+        "ZORDEER_SETTINGS": "Preferências do Zordeer",
+    }
+}
+
+def tr(key, **kwargs):
+    translation_dict = TRANSLATIONS.get(LANG, TRANSLATIONS['en_US'])
+    translated_string = translation_dict.get(key, TRANSLATIONS['en_US'].get(key, key))
+    
+    try:
+        return translated_string.format(**kwargs)
+    except KeyError:
+        return translated_string
+
+# PyQt6 Imports
+try:
+    from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QListWidget, QPushButton, QMessageBox, QToolBar, QDialog, QGridLayout, QLabel, QLineEdit, QHBoxLayout, QFileDialog, QComboBox, QTextEdit, QCheckBox, QTabWidget, QProgressDialog, QListWidgetItem, QSizePolicy, QApplication, QStyleFactory, QProgressBar, QButtonGroup, QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QFormLayout, QLayout, QWidgetAction, QTreeWidget, QTreeWidgetItem)
+    from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QMetaEnum, QTimer, QEvent, QSettings
+    from PyQt6.QtGui import QAction, QIcon, QPixmap
+    print(tr('USING_PYQT6'))
+except ImportError:
+    print(tr('NO_PYQT6_FOUND_ERROR'))
+    sys.exit(1)
+
+# Zordeer settings (JSON)
+# $HOME/Zordeer/config/zordeer-settings.json
+CONFIG_DIR = Path.home() / "AppsFiles" / "Zordeer" / "config"
+SETTINGS_PATH = CONFIG_DIR / "zordeer-settings.json"
+
+def detect_default_settings() -> dict:
+    """Detects Qt style and provides default language only for first-time creation."""
+    available = QStyleFactory.keys()
+    if "Oxygen" in available:
+        style = "Oxygen"
+    elif "Breeze" in available:
+        style = "Breeze"
+    elif "Windows" in available:
+        style = "Windows"
+    else:
+        style = None
+
+    return {
+        "qt_style": style,
+        "language": LANG if LANG else "en_US",  # Only for first creation
+        "show_invocation_images": False,
+    }
+
+def load_settings() -> dict:
+    """Loads settings, recreates only qt_style if invalid."""
+    defaults = detect_default_settings()
+
+    try:
+        with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        # First creation: save qt_style + language
+        save_settings(defaults)
+        return defaults
+
+    # Check consistency of qt_style only
+    if data.get("qt_style") not in QStyleFactory.keys():
+        data["qt_style"] = defaults["qt_style"]
+        save_settings(data)
+
+    return data
+
+def save_settings(data: dict) -> None:
+    """Saves settings in JSON."""
+    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+# Transfer Worker Thread
+class TransferWorker(QThread):
+    progress = pyqtSignal(int)
+    message = pyqtSignal(str)
+    finished = pyqtSignal(str)
+    error = pyqtSignal(str)
+
+    def __init__(self, url, runner_name, runners_dir, parent=None):
+        super().__init__(parent)
+        self.url = url
+        self.runner_name = runner_name
+        self.runners_dir = Path(runners_dir)
+
+    def run(self):
+        try:
+            self.message.emit(tr('TRANSFERRING_RUNNER', name=Path(self.url).name))
+            response = requests.get(self.url, stream=True, timeout=30)
+            response.raise_for_status()
+
+            total_size = int(response.headers.get('content-length', 0))
+            bytes_transferred = 0
+
+            temp_file = io.BytesIO()
+            for chunk in response.iter_content(chunk_size=8192):
+                temp_file.write(chunk)
+                bytes_transferred += len(chunk)
+                if total_size > 0:
+                    self.progress.emit(min(int(bytes_transferred / total_size * 100), 100))
+
+            temp_file.seek(0)
+
+            self.message.emit(tr('EXTRACTING', name=Path(self.url).name))
+            runner_destination_path = self.runners_dir / self.runner_name
+            initial_files = set(self.runners_dir.iterdir())
+
+            # Open the tar
+            with tarfile.open(fileobj=temp_file, mode="r:*") as tf:
+                members = list(tf.getmembers())
+
+                # Automatically detect the root folder containing the Proton files
+                proton_root_dirs = set()
+                for m in members:
+                    if m.isdir() and any(mm.name.startswith(m.name.rstrip('/') + '/') for mm in members if mm.isfile()):
+                        proton_root_dirs.add(m.name.rstrip('/'))
+
+                # If not found, use all files
+                if not proton_root_dirs:
+                    selected_members = members
+                else:
+                    # Select all files within the first detected folder
+                    root = sorted(proton_root_dirs)[0]
+                    selected_members = [m for m in members if m.name.startswith(root + '/')]
+
+                # Python 3.14+: safer extraction
+                tf.extractall(path=self.runners_dir, members=selected_members, filter="data")
+
+            final_files = set(self.runners_dir.iterdir())
+            new_entries = list(final_files - initial_files)
+
+            if not new_entries:
+                self.error.emit(tr('NO_FILES_EXTRACTED'))
+                return
+
+            # Move the detected folder to the runner destination path
+            extracted_path = new_entries[0]
+            if extracted_path != runner_destination_path:
+                if runner_destination_path.exists():
+                    shutil.rmtree(runner_destination_path)
+                shutil.move(str(extracted_path), str(runner_destination_path))
+
+            self.finished.emit(tr('TRANSFER_AND_INSTALL_SUCCESS', name=self.runner_name))
+
+        except requests.exceptions.RequestException as e:
+            self.error.emit(tr('TRANSFER_FAILED', error=str(e)))
+        except tarfile.TarError as e:
+            self.error.emit(tr('TRANSFER_ERROR', error=str(e)))
+        except Exception as e:
+            self.error.emit(tr('TRANSFER_ERROR', error=str(e)))
+            
+class RunnerTransferDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(tr('TRANSFER_RUNNERS'))
+        self.resize(450, 420)
+        self.setMinimumSize(400, 200)
+        self.parent = parent
+
+        main_layout = QVBoxLayout(self)
+        self.tabs = QTabWidget()
+        main_layout.addWidget(self.tabs)
+        self.tabs.currentChanged.connect(self.update_window_title)
+
+        # Flags to track if each online tab was already loaded
+        self.loaded_tabs = {
+            "Proton-GE": False,
+            "Proton-Sarek": False
+        }
+
+        # Tab 1: Already transferred runners (now with radios)
+        local_tab = QWidget()
+        local_layout = QVBoxLayout(local_tab)
+
+        # Local tab structure (scroll + container + radio group)
+        self.local = self._make_local_radio_tab()
+        local_layout.addWidget(self.local["scroll"])
+
+        # Buttons: apply to all / remove selected
+        local_buttons = QHBoxLayout()
+        apply_button = QPushButton(tr('USE_ON_ALL'))
+        apply_button.clicked.connect(self.apply_runner_to_all_invocations_local)
+        remove_button = QPushButton(tr('REMOVE'))
+        remove_button.clicked.connect(self.remove_selected_runner)
+        local_buttons.addWidget(apply_button)
+        local_buttons.addWidget(remove_button)
+        local_layout.addLayout(local_buttons)
+
+        self.tabs.addTab(local_tab, tr("TRANSFERRED_RUNNERS"))
+
+        # Populate the list with local runners
+        self.load_local_runners()
+
+        # Online runners (com radios)
+        self.runner_tabs = {
+            "Proton-GE": self._make_radio_tab("https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases"),
+            "Proton-Sarek": self._make_radio_tab("https://api.github.com/repos/pythonlover02/Proton-Sarek/releases"),
+        }
+
+        for name, data in self.runner_tabs.items():
+            tab = QWidget()
+            tab_layout = QVBoxLayout(tab)
+
+            # Place the scroll with the radios
+            tab_layout.addWidget(data["scroll"])
+
+            transfer_button = QPushButton(tr('TRANSFER'))
+            transfer_button.clicked.connect(self.start_transfer)
+            tab_layout.addWidget(transfer_button)
+
+            self.tabs.addTab(tab, name)
+
+        # Connect tab change event
+        self.tabs.currentChanged.connect(self.on_tab_changed)
+
+        # Fixed progress bar at the bottom
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setMinimum(0)
+        self.progress_bar.setMaximum(100)
+        self.progress_bar.setValue(0)   # Already appears at 0%
+        main_layout.addWidget(self.progress_bar)
+
+    # Function to update the window title
+    def update_window_title(self, index):
+        tab_name = self.tabs.tabText(index)  # Name of selected tab
+        
+        # Dictionary with window titles by tab
+        window_titles = {
+            tr("TRANSFERRED_RUNNERS"): tr("TRANSFERRED_RUNNERS_TITLE"),  # Transferred runners tab
+            "Proton-GE": tr("PROTON_GE_TITLE"),
+            "Proton-Sarek": tr("PROTON_SAREK_TITLE")
+        }
+        
+        # Updates the window title; if not found, uses default
+        self.setWindowTitle(window_titles.get(tab_name, tr("TRANSFER_RUNNERS")))
+
+    # Load online releases
+    def load_releases(self, runner_type: str):
+        data = self.runner_tabs[runner_type]
+        url = data["url"]
+
+        try:
+            response = requests.get(url, timeout=(5, 30))
+            response.raise_for_status()
+            releases = response.json()
+
+            # Cleaning old radios
+            for btn in data["button_group"].buttons():
+                data["button_group"].removeButton(btn)
+                btn.deleteLater()
+
+            layout = data["layout"]
+            while layout.count():
+                it = layout.takeAt(0)
+                w = it.widget()
+                if w:
+                    w.deleteLater()
+
+            first_rb = None
+
+            for release in releases[:15]:
+                for asset in release.get('assets', []):
+                    if asset['name'].endswith(('.tar.gz', '.tar.xz')):
+                        display_name = asset['name']
+                        rb = QRadioButton(display_name)
+                        rb.setProperty("runner_data", {
+                            'tag_name': release['tag_name'],
+                            'url': asset['browser_download_url'],
+                            'display_name': display_name
+                        })
+                        data["button_group"].addButton(rb)
+                        layout.addWidget(rb)
+                        if first_rb is None:
+                            first_rb = rb
+
+            if first_rb:
+                first_rb.setChecked(True)
+
+        except requests.exceptions.RequestException as e:
+            QMessageBox.critical(self, tr('APP_NAME'), tr('TRANSFER_ERROR') + f"\n{e}")
+
+    def on_tab_changed(self, index):
+        tab_name = self.tabs.tabText(index)
+
+        if tab_name in self.runner_tabs and not self.loaded_tabs[tab_name]:
+            self.load_releases(tab_name)
+            self.loaded_tabs[tab_name] = True
+        elif tab_name == tr("TRANSFERRED_RUNNERS"):
+            self.load_local_runners()
+
+    # Local runners
+    def load_local_runners(self):
+        data = self.local
+        layout = data["layout"]
+        group = data["button_group"]
+
+        # Preserve current selection, if any
+        prev_selected = self.selected_local_runner_name()
+
+        # Cleaning old radios
+        for btn in group.buttons():
+            group.removeButton(btn)
+            btn.deleteLater()
+
+        while layout.count():
+            it = layout.takeAt(0)
+            w = it.widget()
+            if w:
+                w.deleteLater()
+
+        runners_dir = Path.home() / "AppsFiles" / "Zordeer" / "runners"
+        if not runners_dir.exists():
+            return
+
+        first_rb = None
+        to_select = None
+
+        for item in sorted(runners_dir.iterdir(), reverse=True):
+            if item.is_dir():
+                rb = QRadioButton(item.name)
+                group.addButton(rb)
+                layout.addWidget(rb)
+
+                if first_rb is None:
+                    first_rb = rb
+                if prev_selected and item.name == prev_selected:
+                    to_select = rb
+
+        layout.addStretch()
+
+        # Restore previous selection if possible; otherwise mark the first one
+        if to_select:
+            to_select.setChecked(True)
+        elif first_rb:
+            first_rb.setChecked(True)
+
+    def apply_runner_to_all_invocations_local(self):
+        runner_folder_name = self.selected_local_runner_name()
+        if not runner_folder_name:
+            QMessageBox.warning(self, tr('APP_NAME'), tr('NO_VERSION_SELECTED_ERROR'))
+            return
+
+        config_dir = Path(self.parent.zordeer_dir) / "config"
+        if not config_dir.exists():
+            QMessageBox.information(self, tr('APP_NAME'), tr('NO_INVOCATIONS_FOUND'))
+            return
+
+        count = 0
+        for fpath in config_dir.iterdir():
+            if fpath.name.startswith("invocation-info-") and fpath.suffix == ".json":
+                try:
+                    with fpath.open("r", encoding="utf-8") as f:
+                        data = json.load(f)
+                    data["runner"] = runner_folder_name
+                    with fpath.open("w", encoding="utf-8") as f:
+                        json.dump(data, f, indent=4, ensure_ascii=False)
+                    count += 1
+                except Exception as e:
+                    print(tr("RUNNER_APPLY_ALL_UPDATE_ERROR", fname=fpath.name, e=e))
+
+        QMessageBox.information(self, tr('APP_NAME'), tr('RUNNER_APPLIED_ALL', count=count))
+
+    def remove_selected_runner(self):
+        runner_name = self.selected_local_runner_name()
+        if not runner_name:
+            QMessageBox.warning(self, tr('APP_NAME'), tr('NO_VERSION_SELECTED_ERROR'))
+            return
+
+        runners_dir = Path.home() / "AppsFiles" / "Zordeer" / "runners"
+        runner_path = runners_dir / runner_name
+
+        reply = QMessageBox.question(
+            self, tr('APP_NAME'),
+            tr("CONFIRM_REMOVE", name=runner_name),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+        )
+        if reply == QMessageBox.StandardButton.Yes:
+            try:
+                shutil.rmtree(runner_path)
+                self.load_local_runners()
+
+                QMessageBox.information(
+                    self,
+                    tr('APP_NAME'),
+                    tr("RUNNER_REMOVED_SUCCESS", name=runner_name)
+                )
+
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    tr('APP_NAME'),
+                    tr("REMOVE_RUNNER_ERROR", error=e)
+                )
+
+    # Transfer runner
+    def start_transfer(self):
+        current_tab_name = self.tabs.tabText(self.tabs.currentIndex())
+        current_tab_data = self.runner_tabs[current_tab_name]
+
+        checked = current_tab_data["button_group"].checkedButton()
+        if not checked:
+            QMessageBox.warning(self, tr('APP_NAME'), tr('NO_VERSION_SELECTED_ERROR'))
+            return
+
+        item_data = checked.property("runner_data")
+        tag_name = item_data['tag_name']
+        url = item_data['url']
+
+        formatted_tag = tag_name.replace('GE-Proton-', '').replace('GE-Proton', '')
+
+        if current_tab_name == "Proton-GE":
+            runner_folder_name = f"Proton-GE-{formatted_tag}"
+        elif current_tab_name in ["Proton-Sarek"]:
+            file_name = Path(url).name
+            runner_folder_name = file_name.replace(".tar.gz", "").replace(".tar.xz", "")
+
+        runners_dir = Path.home() / "AppsFiles" / "Zordeer" / "runners"
+        runner_path = runners_dir / runner_folder_name
+
+        if runner_path.exists():
+            reply = QMessageBox.question(
+                self,
+                tr('APP_NAME'),
+                tr('RUNNER_EXISTS_WARNING', name=tag_name),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.No:
+                return
+
+            # Remove the folder before transferring again
+            try:
+                shutil.rmtree(runner_path)
+            except Exception as e:
+                QMessageBox.critical(self, tr('APP_NAME'), tr('REMOVE_RUNNER_ERROR', error=str(e)))
+                return
+
+        # Disable window during transfer
+        self.setEnabled(False)
+
+        # Reset the progress bar
+        self.progress_bar.setValue(0)
+
+        # Create and start the worker
+        self.worker = TransferWorker(url, runner_folder_name, runners_dir)
+
+        # Connect worker signals
+        self.worker.progress.connect(self.progress_bar.setValue)
+        self.worker.message.connect(lambda msg: print(msg))
+        self.worker.finished.connect(
+            lambda msg: [
+                self.progress_bar.setValue(100),
+                self.setEnabled(True),
+                QMessageBox.information(self, tr('APP_NAME'), msg),
+                self.progress_bar.setValue(0)
+            ]
+        )
+        self.worker.error.connect(
+            lambda msg: [
+                QMessageBox.critical(self, tr('APP_NAME'), msg),
+                self.setEnabled(True)
+            ]
+        )
+
+        self.worker.start()
+
+    def _make_radio_tab(self, url: str):
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setSpacing(4)
+
+        scroll.setWidget(container)
+
+        group = QButtonGroup(self)
+        group.setExclusive(True)
+
+        return {
+            "url": url,
+            "scroll": scroll,         # QScrollArea containing the radios
+            "container": container,   # QWidget inside scroll
+            "layout": layout,         # VBox where the radios go
+            "button_group": group,    # For single selection
+        }
+
+    def _make_local_radio_tab(self):
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setSpacing(4)
+
+        scroll.setWidget(container)
+
+        group = QButtonGroup(self)
+        group.setExclusive(True)
+
+        return {
+            "scroll": scroll,
+            "container": container,
+            "layout": layout,
+            "button_group": group,
+        }
+
+    def selected_local_runner_name(self):
+        btn = self.local["button_group"].checkedButton()
+        return btn.text() if btn else None
+
+class AddInvocationDialog(QDialog):
+    # Defining a custom signal that doesn't need arguments
+    invocation_saved = pyqtSignal()
+    
+    def __init__(self, parent=None, invocation_data=None):
+        super().__init__(parent)
+        self.DEFAULT_PREFIX_NAME = "animarium_prefix"
+        self.invocation_data = invocation_data
+        
+        if self.invocation_data:
+            self.setWindowTitle(tr('MODIFY_INVOCATION'))
+        else:
+            self.setWindowTitle(tr('CREATE_INVOCATION'))
+            
+        self.resize(600, 400)
+        
+        self.main_layout = QGridLayout(self)
+        
+        self.name_label = QLabel(tr('INVOCATION_NAME'))
+        self.name_input = QLineEdit()
+
+        # Only connect update_prefix_path if it is "Add Invocation"
+        if not self.invocation_data:  
+            self.name_input.textChanged.connect(self.update_prefix_path)
+
+        self.main_layout.addWidget(self.name_label, 0, 0)
+        self.main_layout.addWidget(self.name_input, 0, 1, 1, 2)
+
+        self.runner_label = QLabel(tr('RUNNER_VERSION'))
+        self.runner_input = QComboBox()
+        self.populate_runners()
+        self.main_layout.addWidget(self.runner_label, 1, 0)
+        self.main_layout.addWidget(self.runner_input, 1, 1, 1, 2)
+
+        self.exec_path_label = QLabel(tr('EXECUTABLE_PATH'))
+        self.exec_path_input = QLineEdit()
+        self.exec_button = QPushButton(tr('BROWSE_BUTTON'))
+        self.exec_button.clicked.connect(self.select_executable)
+        
+        self.main_layout.addWidget(self.exec_path_label, 2, 0)
+        self.main_layout.addWidget(self.exec_path_input, 2, 1)
+        self.main_layout.addWidget(self.exec_button, 2, 2)
+
+        self.prefix_path_label = QLabel(tr('PREFIX_PATH'))
+        self.prefix_path_input = QLineEdit()
+        self.prefix_path_input.setPlaceholderText(tr("ANIMARIUM_PREFIX_PLACEHOLDER"))
+        self.prefix_button = QPushButton(tr('BROWSE_BUTTON'))
+        self.prefix_button.clicked.connect(self.select_prefix)
+        
+        self.main_layout.addWidget(self.prefix_path_label, 3, 0)
+        self.main_layout.addWidget(self.prefix_path_input, 3, 1)
+        self.main_layout.addWidget(self.prefix_button, 3, 2)
+
+        self.invocation_art_label = QLabel(tr('INVOCATION_ART_PATH'))
+        self.invocation_art_input = QLineEdit()
+
+        self.invocation_art_button = QPushButton(tr('BROWSE_BUTTON'))
+        self.invocation_art_button.clicked.connect(self.select_invocation_art)
+
+        self.main_layout.addWidget(self.invocation_art_label, 4, 0)
+        self.main_layout.addWidget(self.invocation_art_input, 4, 1)
+        self.main_layout.addWidget(self.invocation_art_button, 4, 2)
+
+        self.language_label = QLabel(tr('INVOCATION_LANGUAGE'))
+        self.language_input = QComboBox()
+        self.language_input.addItems([
+            tr('PLACEHOLDER_FOR_LANGUAGE'),
+            'English (en_US.UTF-8)',
+            'Português Brasil (pt_BR.UTF-8)',
+            'Português Portugal (pt_PT.UTF-8)',
+            'Español España (es_ES.UTF-8)',
+            'Español México (es_MX.UTF-8)',
+            'Français (fr_FR.UTF-8)',
+            'Deutsch (de_DE.UTF-8)',
+            'Italiano (it_IT.UTF-8)',
+            'Русский (ru_RU.UTF-8)',
+            'Українська (uk_UA.UTF-8)',
+            'Polski (pl_PL.UTF-8)',
+            'Česky (cs_CZ.UTF-8)',
+            'Slovenčina (sk_SK.UTF-8)',
+            'Magyar (hu_HU.UTF-8)',
+            'Română (ro_RO.UTF-8)',
+            'Nederlands (nl_NL.UTF-8)',
+            'Svenska (sv_SE.UTF-8)',
+            'Norsk Bokmål (nb_NO.UTF-8)',
+            'Dansk (da_DK.UTF-8)',
+            'Suomi (fi_FI.UTF-8)',
+            'Ελληνικά (el_GR.UTF-8)',
+            'Български (bg_BG.UTF-8)',
+            '日本語 (ja_JP.UTF-8)',
+            '한국어 (ko_KR.UTF-8)',
+            '简体中文 (zh_CN.UTF-8)',
+            '繁體中文 (zh_TW.UTF-8)',
+            'العربية (ar_SA.UTF-8)',
+            'فارسی (fa_IR.UTF-8)',
+            'Türkçe (tr_TR.UTF-8)',
+            'हिन्दी (hi_IN.UTF-8)',
+            'ไทย (th_TH.UTF-8)',
+            'עברית (he_IL.UTF-8)',
+        ])
+        self.main_layout.addWidget(self.language_label, 5, 0)
+        self.main_layout.addWidget(self.language_input, 5, 1, 1, 2)
+
+        self.ms_language_code_checkbox = QCheckBox(tr("USE_MS_LANGUAGE_CODE"))
+        self.ms_language_code_checkbox.setChecked(False)
+        self.main_layout.addWidget(self.ms_language_code_checkbox, 6, 0, 1, 3)
+
+        self.force_opengl_layout = QHBoxLayout()
+        self.force_opengl_checkbox = QCheckBox(tr('FORCE_OPENGL'))
+        self.force_opengl_checkbox.setChecked(False)
+        self.main_layout.addWidget(self.force_opengl_checkbox, 7, 0, 1, 3)
+
+        self.gamemode_checkbox = QCheckBox(tr('GAMEMODE'))
+        self.gamemode_checkbox.setChecked(True)
+        self.main_layout.addWidget(self.gamemode_checkbox, 8, 0, 1, 3)
+        
+        self.fps_layout = QHBoxLayout()
+        self.show_fps_checkbox = QCheckBox(tr('SHOW_FPS_OPTION'))
+        self.show_fps_checkbox.setChecked(False)
+        self.fps_hud_combo = QComboBox()
+        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr('FPS_GALLIUM_HUD')), ("FPS_DXVK_HUD", tr('FPS_DXVK_HUD')), ("FPS_MANGOHUD", tr('FPS_MANGOHUD'))]
+        self.fps_hud_combo.clear()
+        for id, text in self.fps_hud_options:
+            self.fps_hud_combo.addItem(text, id)  # Text is displayed, id is stored
+        self.show_fps_checkbox.stateChanged.connect(self.update_fps_hud_state)
+        self.fps_layout.addWidget(self.show_fps_checkbox)
+        self.fps_layout.addWidget(self.fps_hud_combo)
+        self.fps_hud_combo.setEnabled(False)
+        self.main_layout.addLayout(self.fps_layout, 9, 0, 1, 3)
+
+        self.env_vars_label = QLabel(tr('ENVIRONMENT_VARS'))
+        self.env_vars_input = QLineEdit()
+        self.main_layout.addWidget(self.env_vars_label, 10, 0)
+        self.main_layout.addWidget(self.env_vars_input, 10, 1, 1, 2)
+
+        self.invocation_args_label = QLabel(tr('INVOCATION_ARGS'))
+        self.invocation_args_input = QLineEdit()
+        self.main_layout.addWidget(self.invocation_args_label, 11, 0)
+        self.main_layout.addWidget(self.invocation_args_input, 11, 1, 1, 2)
+
+        # Prevent the enter button from triggering buttons
+        self.name_input.installEventFilter(self)
+        self.exec_path_input.installEventFilter(self)
+        self.prefix_path_input.installEventFilter(self)
+        self.invocation_art_input.installEventFilter(self)
+        self.env_vars_input.installEventFilter(self)
+        self.invocation_args_input.installEventFilter(self)
+        
+        self.buttons_layout = QHBoxLayout()
+        
+        self.remove_invocation_button = QPushButton(tr('REMOVE'))
+        
+        self.save_button = QPushButton(tr('SAVE_BUTTON'))
+        self.save_button.clicked.connect(self.save_and_accept)
+        
+        # Add delete buttons only if the dialog is for editing
+        if self.invocation_data:
+            # Remove button
+            self.buttons_layout.addWidget(self.remove_invocation_button)
+            self.remove_invocation_button.clicked.connect(self.delete_invocation)
+            # Winecfg button
+            self.winecfg_button = QPushButton(tr('WINECFG_BUTTON'))
+            self.buttons_layout.addWidget(self.winecfg_button)
+            self.winecfg_button.clicked.connect(self.open_winecfg)
+
+        self.buttons_layout.addStretch()
+        self.buttons_layout.addWidget(self.save_button)
+        
+        self.main_layout.addLayout(self.buttons_layout, 13, 0, 1, 3)
+        
+        if self.invocation_data:
+            self.load_invocation_data()
+
+    def eventFilter(self, obj, event):
+        if event.type() == QEvent.Type.KeyPress:
+            if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+                return True  # Blocks the enter button
+        return super().eventFilter(obj, event)
+
+    def update_fps_hud_state(self, state):
+        self.fps_hud_combo.setEnabled(self.show_fps_checkbox.isChecked())
+
+    def load_invocation_data(self):
+        """Populates the form with invocation data for editing."""
+        self.name_input.setText(self.invocation_data.get('name', ''))
+        self.exec_path_input.setText(self.invocation_data.get('exec_path', ''))
+        self.prefix_path_input.setText(self.invocation_data.get('prefix_path', ''))
+        self.invocation_art_input.setText(self.invocation_data.get('art_path', ''))
+        
+        env_vars_text = self.invocation_data.get('env_vars', '').strip()
+        self.env_vars_input.setText(env_vars_text)
+
+        self.invocation_args_input.setText(self.invocation_data.get('invocation_args', ''))
+        
+        runner = self.invocation_data.get('runner', '')
+        index_runner = self.runner_input.findText(runner)
+        if index_runner != -1:
+            self.runner_input.setCurrentIndex(index_runner)
+        
+        # Fix: Search for the full language string
+        language = self.invocation_data.get('language', '')
+        index_lang = self.language_input.findText(language)
+        if index_lang != -1:
+            self.language_input.setCurrentIndex(index_lang)
+
+        use_ms_language_code = self.invocation_data.get("use_ms_language_code", False)
+        self.ms_language_code_checkbox.setChecked(use_ms_language_code)
+            
+        force_opengl = self.invocation_data.get('force_opengl', False)
+        self.force_opengl_checkbox.setChecked(force_opengl)
+        
+        use_gamemode = self.invocation_data.get('use_gamemode', True)
+        self.gamemode_checkbox.setChecked(use_gamemode)
+        
+        show_fps = self.invocation_data.get('show_fps', False)
+        self.show_fps_checkbox.setChecked(show_fps)
+        self.update_fps_hud_state(Qt.CheckState.Checked if show_fps else Qt.CheckState.Unchecked)
+        
+        fps_hud_type = self.invocation_data.get('fps_hud_type', '')
+        index_hud = self.fps_hud_combo.findData(fps_hud_type)  # Search by "id"
+        if index_hud != -1:
+            self.fps_hud_combo.setCurrentIndex(index_hud)
+
+    def update_prefix_path(self, name):
+        """Generates a default prefix path based on the invocation name."""
+        invocation_dir = name.replace(" ", "_").lower()
+        if invocation_dir:
+            default_path = Path.home() / "AppsFiles" / "Zordeer" / "invocations" / invocation_dir
+            self.prefix_path_input.setText(str(default_path))
+
+    def populate_runners(self):
+        """Populates the combo box with folders found in ~/AppsFiles/Zordeer/runners/"""
+        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
+        runners_path.mkdir(parents=True, exist_ok=True)
+
+        runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
+
+        self.runner_input.clear()
+        self.runner_input.addItems([tr('PLACEHOLDER_FOR_RUNNER')] + sorted(runners, reverse=True))
+
+    def select_executable(self):
+        # Paths in order of priority
+        drive_c = Path(self.prefix_path_input.text().strip()) / "drive_c"
+        prefix = Path(self.prefix_path_input.text().strip())
+        invocations = Path(self.parent().zordeer_dir) / "invocations"
+
+        # Choose the first one that exists
+        start_dir = drive_c if drive_c.exists() else prefix if prefix.exists() else invocations
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            tr("SELECT_EXECUTABLE"),
+            str(start_dir),
+            tr("EXECUTABLE_FILE_FILTER")
+        )
+
+        if file_path:
+            self.exec_path_input.setText(file_path)
+
+    def select_prefix(self):
+        invocations_dir = Path(self.parent().zordeer_dir) / "invocations"
+        invocations_dir.mkdir(parents=True, exist_ok=True)
+
+        dir_path = QFileDialog.getExistingDirectory(
+            self,
+            tr('SELECT_PREFIX_TITLE'),
+            str(invocations_dir)
+        )
+        if dir_path:
+            self.prefix_path_input.setText(dir_path)
+
+    def select_invocation_art(self):
+        art_dir = Path(self.parent().zordeer_dir) / "heroes"
+        art_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            tr('SELECT_INVOCATION_ART'),
+            str(art_dir),
+            tr('IMAGE_FILTER')
+        )
+        if file_path:
+            self.invocation_art_input.setText(file_path)
+
+    def get_form_data(self):
+        """Gets data from the form fields."""
+        selected_runner = self.runner_input.currentText()
+        if selected_runner == tr('PLACEHOLDER_FOR_RUNNER'):
+            selected_runner = ""
+        
+        selected_lang = self.language_input.currentText()
+        if selected_lang == tr('PLACEHOLDER_FOR_LANGUAGE'):
+            selected_lang = ""
+            
+        env_vars_text = self.env_vars_input.text().strip()
+        
+        force_opengl = self.force_opengl_checkbox.isChecked()
+        use_gamemode = self.gamemode_checkbox.isChecked()
+        show_fps = self.show_fps_checkbox.isChecked()
+        fps_hud_type = self.fps_hud_combo.currentData()  # Get the "id", not the text
+        use_ms_language_code = self.ms_language_code_checkbox.isChecked()
+
+        prefix_text = self.prefix_path_input.text().strip()
+        if not prefix_text:  # If empty, use default
+            prefix_text = str(Path.home() / "AppsFiles" / "Zordeer" / "invocations" / self.DEFAULT_PREFIX_NAME)
+
+        art_path = self.invocation_art_input.text().strip()
+        if not art_path:
+            art_path = self.resolve_default_art_path(self.name_input.text())
+
+        return {
+            "name": self.name_input.text(),
+            "runner": selected_runner,
+            "exec_path": self.exec_path_input.text(),
+            "prefix_path": prefix_text,
+            "art_path": art_path,
+            "language": selected_lang,
+            "use_ms_language_code": use_ms_language_code,
+            "force_opengl": force_opengl,
+            "use_gamemode": use_gamemode,
+            "show_fps": show_fps,
+            "fps_hud_type": fps_hud_type,
+            "env_vars": env_vars_text,
+            "invocation_args": self.invocation_args_input.text(),
+        }
+
+    def resolve_default_art_path(self, invocation_name: str) -> str:
+        heroes_dir = Path.home() / "AppsFiles" / "Zordeer" / "heroes"
+        for folder in heroes_dir.iterdir():
+            if folder.is_dir() and folder.name.lower() == invocation_name.lower():
+                for ext in ("*.jpg", "*.jpeg", "*.png", "*webp"):
+                    images = list(folder.glob(ext))
+                    if images:
+                        return str(images[0])
+        return ""
+
+    def save_and_accept(self):
+        """Validates fields, saves data to file, and updates paths if the name changes."""
+        invocation_data = self.get_form_data()
+        old_safe_name = ""
+        if self.invocation_data:
+            old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
+
+        if invocation_data["name"] and invocation_data["exec_path"] and invocation_data["runner"]:
+            prefix_path = Path(invocation_data["prefix_path"])
+            if not prefix_path.exists():
+                prefix_path.mkdir(parents=True, exist_ok=True)
+
+            config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
+            art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
+            config_dir.mkdir(parents=True, exist_ok=True)
+            art_dir.mkdir(parents=True, exist_ok=True)
+
+            # Normalize name
+            safe_invocation_name = invocation_data["name"].replace(" ", "_").lower()
+            invocation_file_path = config_dir / f"invocation-info-{safe_invocation_name}.json"
+
+            # Check for duplicate invocation name
+            if (
+                invocation_file_path.exists() and
+                (not self.invocation_data or self.invocation_data.get("name", "").lower() != invocation_data["name"].lower())
+            ):
+                QMessageBox.warning(
+                    self,
+                    tr("ERROR"),
+                    tr("INVOCATION_ALREADY_EXISTS")
+                )
+                return
+
+            # Handle artwork copy / rename
+            if invocation_data.get("art_path") and (not self.invocation_data or invocation_data["art_path"] != self.invocation_data.get("art_path")):
+                # User selected a new image
+                if self.invocation_data:
+                    old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
+                    # Remove all old images for this invocation, regardless of extension
+                    for old_file in art_dir.glob(f"{old_safe_name}.*"):
+                        try:
+                            old_file.unlink()
+                        except Exception:
+                            pass
+
+                # Copy new image to art_dir
+                art_path = Path(invocation_data["art_path"])
+                art_extension = art_path.suffix.lower()
+                new_art_path = art_dir / f"{safe_invocation_name}{art_extension}"
+                try:
+                    shutil.copyfile(art_path, new_art_path)
+                    invocation_data["art_path"] = str(new_art_path)
+                except Exception:
+                    invocation_data["art_path"] = ""
+            elif self.invocation_data and self.invocation_data.get("art_path"):
+                # No new image selected, rename old art if invocation name changed
+                old_art_path = Path(self.invocation_data['art_path'])
+                if old_art_path.exists():
+                    old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
+                    if old_safe_name != safe_invocation_name:
+                        try:
+                            new_art_path = art_dir / f"{safe_invocation_name}{old_art_path.suffix.lower()}"
+                            old_art_path.rename(new_art_path)
+                            invocation_data["art_path"] = str(new_art_path)
+                        except Exception:
+                            invocation_data["art_path"] = str(old_art_path)
+
+            # Handle prefix folder rename if it's safe
+            if self.invocation_data:
+                old_prefix_path = Path(self.invocation_data.get('prefix_path', '')).resolve()
+                current_prefix_path = Path(invocation_data.get('prefix_path', '')).resolve()
+
+                # Only attempt rename if the user has not manually changed the prefix
+                if old_prefix_path == current_prefix_path:
+                    # Only rename if the folder exists and its name matches the old invocation name
+                    if old_prefix_path.exists() and old_prefix_path.name.lower() == old_safe_name:
+                        used_by_other = False
+                        # Check if any other invocation is using the same prefix folder
+                        for f in config_dir.glob("invocation-info-*.json"):
+                            old_inv_file = config_dir / f"invocation-info-{old_safe_name}.json"
+                            if f == old_inv_file:
+                                continue  # Skip the current invocation file
+                            try:
+                                with open(f, encoding="utf-8") as jf:
+                                    data = json.load(jf)
+                                    other_prefix = Path(data.get('prefix_path', '')).resolve()
+                                    if other_prefix == old_prefix_path:
+                                        used_by_other = True
+                                        break
+                            except Exception:
+                                pass  # Ignore any errors reading other invocation files
+                        # Rename the prefix folder if no other invocation is using it
+                        if not used_by_other:
+                            new_prefix_path = old_prefix_path.parent / safe_invocation_name
+                            try:
+                                old_prefix_path.rename(new_prefix_path)
+                                invocation_data["prefix_path"] = str(new_prefix_path)
+                            except Exception:
+                                # Keep old path if rename fails
+                                invocation_data["prefix_path"] = str(old_prefix_path)
+                    else:
+                        # Folder name doesn't match old invocation name, keep current path
+                        invocation_data["prefix_path"] = str(old_prefix_path)
+                else:
+                    # User manually changed the prefix, do not rename
+                    invocation_data["prefix_path"] = str(current_prefix_path)
+
+            # Save JSON
+            try:
+                with open(invocation_file_path, 'w', encoding="utf-8") as f:
+                    json.dump(invocation_data, f, indent=4, ensure_ascii=False)
+            except Exception as e:
+                print(e)
+                QMessageBox.critical(
+                    self,
+                    tr('ERROR'),
+                    tr('NAME_INVALID', error=str(e))
+                )
+                return  # JSON antigo permanece intacto
+
+            # Remove old JSON only if name changed
+            if self.invocation_data:
+                old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
+                new_safe_name = safe_invocation_name
+                if old_safe_name != new_safe_name:
+                    old_invocation_file_path = config_dir / f"invocation-info-{old_safe_name}.json"
+                    if old_invocation_file_path.exists():
+                        old_invocation_file_path.unlink()
+
+            # Emit signal and close
+            self.invocation_saved.emit()
+            self.accept()
+        else:
+            QMessageBox.warning(self, tr('CREATE_INVOCATION'), tr('MANDATORY_FIELDS_ERROR'))
+
+    def delete_invocation(self):
+        """Removes the invocation and optionally its data/prefix."""
+        invocation_name = self.name_input.text().strip()
+
+        # Confirmation dialog with checkbox
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setWindowTitle(tr('REMOVE'))
+        msg.setText(tr("DELETE_INVOCATION_CONFIRM_MESSAGE", name=invocation_name))
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+
+        msg.button(QMessageBox.StandardButton.Yes).setText(tr("YES_BUTTON"))
+        msg.button(QMessageBox.StandardButton.No).setText(tr("NO_BUTTON"))
+
+        delete_data_cb = QCheckBox(tr("DELETE_PREFIX_CHECKBOX"))
+        msg.setCheckBox(delete_data_cb)
+
+        if msg.exec() != QMessageBox.StandardButton.Yes:
+            return
+
+        # Path to the JSON file
+        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
+        safe_name = invocation_name.replace(" ", "_").lower()
+        invocation_file = config_dir / f"invocation-info-{safe_name}.json"
+
+        if not invocation_file.exists():
+            QMessageBox.critical(self, tr('ERROR'), tr('INVOCATION_INFO_ERROR'))
+            return
+
+        # Load data
+        with open(invocation_file, encoding='utf-8') as f:
+            invocation_data = json.load(f)
+
+        prefix_path = invocation_data.get('prefix_path')
+        prefix_in_use_by_others = []
+
+        # Checks if the prefix is ​​being used by other invocations
+        if prefix_path:
+            for f in config_dir.glob("invocation-info-*.json"):
+                if f == invocation_file:
+                    continue
+                try:
+                    with open(f, encoding="utf-8") as jf:
+                        data = json.load(jf)
+                        other_prefix = data.get('prefix_path')
+                        if other_prefix and Path(other_prefix).resolve() == Path(prefix_path).resolve():
+                            prefix_in_use_by_others.append(data.get('name', 'Unknown'))
+                except Exception:
+                    pass
+
+        # If the user marked for deletion and the prefix is ​​in use
+        if delete_data_cb.isChecked() and prefix_in_use_by_others:
+            dialog = QDialog(self)
+            dialog.setWindowTitle(tr('REMOVE'))
+            dialog.resize(400, 300)
+            layout = QVBoxLayout(dialog)
+
+            # Main message
+            msg_label = QLabel(tr("PREFIX_IN_USE_MESSAGE"))
+            msg_label.setWordWrap(True)
+            layout.addWidget(msg_label)
+
+            # QTreeWidget to show affected invocations
+            tree_widget = QTreeWidget()
+            tree_widget.setHeaderLabels([tr("PREFIX_REMOTION_INFORMATION")])
+            tree_widget.setColumnCount(1)
+            tree_widget.setRootIsDecorated(True)
+            tree_widget.setSelectionMode(QTreeWidget.SelectionMode.NoSelection)
+
+            # Prefix that would be removed
+            prefix_item = QTreeWidgetItem([prefix_path])
+            tree_widget.addTopLevelItem(prefix_item)
+
+            # Affected invocations
+            affected_item = QTreeWidgetItem([tr("AFFECTED_INVOCATIONS")])
+            prefix_item.addChild(affected_item)
+
+            # Invocations that use this prefix
+            for inv in prefix_in_use_by_others:
+                inv_item = QTreeWidgetItem([inv])
+                affected_item.addChild(inv_item)
+
+            # Expands by default to be visible
+            tree_widget.expandAll()
+
+            layout.addWidget(tree_widget)
+
+            # Radiobuttons
+            keep_radio = QRadioButton(tr('DO_NOT_DELETE_PREFIX'))
+            force_radio = QRadioButton(tr('DELETE_PREFIX_ANYWAY'))
+            keep_radio.setChecked(True)
+            layout.addWidget(keep_radio)
+            layout.addWidget(force_radio)
+
+            # Confirm button
+            buttons_layout = QHBoxLayout()
+            confirm_button = QPushButton(tr('CONFIRM'))
+            buttons_layout.addWidget(confirm_button)
+            layout.addLayout(buttons_layout)
+
+            confirm_button.clicked.connect(dialog.accept)
+
+            if dialog.exec() != QDialog.DialogCode.Accepted:
+                return
+
+            if keep_radio.isChecked():
+                delete_data_cb.setChecked(False)
+
+        # Remove JSON
+        invocation_file.unlink()
+
+        # Remove prefix if checkbox is checked
+        if delete_data_cb.isChecked():
+            if prefix_path:
+                prefix_path_obj = Path(prefix_path)
+                if prefix_path_obj.exists() and prefix_path_obj.is_dir():
+                    try:
+                        shutil.rmtree(prefix_path_obj)
+                    except Exception as e:
+                        QMessageBox.warning(self, tr('APP_NAME'), tr('DELETE_DATA_ERROR', error=str(e)))
+
+        # Remove artwork if it exists
+        art = invocation_data.get('art_path')
+        if art:
+            art_path = Path(art)
+            if art_path.exists() and art_path.is_file():
+                try:
+                    art_path.unlink()
+                except Exception as e:
+                    print(tr("WARNING_DELETE_INVOCATION_ART", e=e))
+
+        # Refresh the list and close
+        self.parent().load_invocations()
+        self.accept()
+
+    def open_winecfg(self):
+        prefix_path = Path(self.prefix_path_input.text().strip())
+        runner = self.runner_input.currentText().strip()
+
+        if not prefix_path.exists():
+            QMessageBox.warning(self, tr('APP_NAME'), tr('INVALID_PREFIX_ERROR'))
+            return
+
+        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
+        runner_path = runners_path / runner / "proton"
+
+        if not runner_path.exists():
+            QMessageBox.critical(self, tr('APP_NAME'), tr('PROTON_NOT_FOUND_ERROR', path=str(runner_path)))
+            return
+
+        cmd = [str(runner_path), "run", "winecfg"]
+        env = os.environ.copy()
+        env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
+        env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(Path.home() / ".steam" / "steam")
+
+        subprocess.Popen(cmd, env=env)
+
+class MultipleCreateInvocationsDialog(QDialog):
+    invocations_saved = pyqtSignal()
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(tr("MULTIPLE_INVOCATION_CREATOR"))
+        self.resize(700, 500)
+
+        self.main_layout = QVBoxLayout(self)
+
+        # Runner and combobox
+        runner_layout = QHBoxLayout()
+        runner_label = QLabel(tr("RUNNER_VERSION"))
+        self.runner_combo = QComboBox()
+        self.populate_runners()
+        runner_layout.addWidget(runner_label)
+        runner_layout.addWidget(self.runner_combo)
+        self.main_layout.addLayout(runner_layout)
+
+        # Language and combobox
+        language_layout = QHBoxLayout()
+        language_label = QLabel(tr("INVOCATION_LANGUAGE"))
+        self.language_input = QComboBox()
+        self.language_input.addItems([
+            tr('PLACEHOLDER_FOR_LANGUAGE'),
+            'English (en_US.UTF-8)',
+            'Português Brasil (pt_BR.UTF-8)',
+            'Português Portugal (pt_PT.UTF-8)',
+            'Español España (es_ES.UTF-8)',
+            'Español México (es_MX.UTF-8)',
+            'Français (fr_FR.UTF-8)',
+            'Deutsch (de_DE.UTF-8)',
+            'Italiano (it_IT.UTF-8)',
+            'Русский (ru_RU.UTF-8)',
+            'Українська (uk_UA.UTF-8)',
+            'Polski (pl_PL.UTF-8)',
+            'Česky (cs_CZ.UTF-8)',
+            'Slovenčina (sk_SK.UTF-8)',
+            'Magyar (hu_HU.UTF-8)',
+            'Română (ro_RO.UTF-8)',
+            'Nederlands (nl_NL.UTF-8)',
+            'Svenska (sv_SE.UTF-8)',
+            'Norsk Bokmål (nb_NO.UTF-8)',
+            'Dansk (da_DK.UTF-8)',
+            'Suomi (fi_FI.UTF-8)',
+            'Ελληνικά (el_GR.UTF-8)',
+            'Български (bg_BG.UTF-8)',
+            '日本語 (ja_JP.UTF-8)',
+            '한국어 (ko_KR.UTF-8)',
+            '简体中文 (zh_CN.UTF-8)',
+            '繁體中文 (zh_TW.UTF-8)',
+            'العربية (ar_SA.UTF-8)',
+            'فارسی (fa_IR.UTF-8)',
+            'Türkçe (tr_TR.UTF-8)',
+            'हिन्दी (hi_IN.UTF-8)',
+            'ไทย (th_TH.UTF-8)',
+            'עברית (he_IL.UTF-8)',
+        ])
+        language_layout.addWidget(language_label)
+        language_layout.addWidget(self.language_input)
+        self.main_layout.addLayout(language_layout)
+
+        # Checkbox animarium_prefix
+        self.animarium_prefix_cb = QCheckBox(tr("USE_ANIMARIUM_PREFIX_FOR_ALL"))
+        self.main_layout.addWidget(self.animarium_prefix_cb)
+
+        # TreeWidget for multiple invocations
+        self.file_list = QTreeWidget()
+        self.file_list.setColumnCount(1)
+        self.file_list.setHeaderHidden(True)
+        self.file_list.setExpandsOnDoubleClick(True)
+        self.main_layout.addWidget(self.file_list)
+
+        # Add/Remove File Buttons
+        btn_layout = QHBoxLayout()
+        self.add_files_button = QPushButton(tr("ADD_FILES"))
+        self.add_files_button.clicked.connect(self.add_files)
+        self.remove_item_button = QPushButton(tr("REMOVE_SELECTED"))
+        self.remove_item_button.clicked.connect(self.remove_selected_item)
+        btn_layout.addWidget(self.add_files_button)
+        btn_layout.addWidget(self.remove_item_button)
+        self.main_layout.addLayout(btn_layout)
+
+        # Save button
+        save_layout = QHBoxLayout()
+        self.save_button = QPushButton(tr("SAVE_BUTTON"))
+        self.save_button.clicked.connect(self.save_multiple)
+        save_layout.addStretch()
+        save_layout.addWidget(self.save_button)
+        self.main_layout.addLayout(save_layout)
+
+        self.paths = []
+
+    # Utility functions
+
+    def populate_runners(self):
+        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
+        runners_path.mkdir(parents=True, exist_ok=True)
+        runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
+        self.runner_combo.clear()
+        self.runner_combo.addItem(tr('PLACEHOLDER_FOR_RUNNER'))
+        self.runner_combo.addItems(sorted(runners, reverse=True))
+
+    def add_files(self):
+        files, _ = QFileDialog.getOpenFileNames(self, tr("SELECT_EXECUTABLE"), "", tr('EXECUTABLE_FILE_FILTER'))
+        for f in files:
+            self.add_file_item(f)
+
+    def remove_selected_item(self):
+        selected = self.file_list.currentItem()
+        if selected and hasattr(selected, "path"):
+            index = self.file_list.indexOfTopLevelItem(selected)
+            self.file_list.takeTopLevelItem(index)
+            self.paths.remove(selected.path)
+
+    def add_file_item(self, path):
+        if path in self.paths:
+            return
+        self.paths.append(path)
+
+        # Internal widget for options
+        item_widget = QWidget()
+        layout = QVBoxLayout(item_widget)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(4)
+
+        # Invocation name
+        name_layout = QHBoxLayout()
+        name_label = QLabel(tr("INVOCATION_NAME"))
+        name_input = QLineEdit(Path(path).stem)
+        name_layout.addWidget(name_label)
+        name_layout.addWidget(name_input)
+        layout.addLayout(name_layout)
+
+        # Prefix
+        prefix_layout = QHBoxLayout()
+        prefix_label = QLabel(tr("PREFIX_PATH"))
+        prefix_input = QLineEdit(
+            str(Path.home() / "AppsFiles" / "Zordeer" / "invocations" / Path(path).stem.replace(" ", "_").lower())
+        )
+        prefix_button = QPushButton(tr("BROWSE_BUTTON"))
+        prefix_layout.addWidget(prefix_label)
+        prefix_layout.addWidget(prefix_input)
+        prefix_layout.addWidget(prefix_button)
+        layout.addLayout(prefix_layout)
+
+        name_input.textChanged.connect(
+            lambda text, inp=prefix_input: inp.setText(
+                str(Path.home() / "AppsFiles" / "Zordeer" / "invocations" / text.replace(" ", "_").lower())
+            )
+        )
+        prefix_button.clicked.connect(lambda _, inp=prefix_input: self.select_prefix_folder(inp))
+
+        # Checkboxes
+        ms_lang_cb = QCheckBox(tr("USE_MS_LANGUAGE_CODE"))
+        ms_lang_cb.setChecked(False)
+        layout.addWidget(ms_lang_cb)
+
+        force_opengl_cb = QCheckBox(tr('FORCE_OPENGL'))
+        force_opengl_cb.setChecked(False)
+        layout.addWidget(force_opengl_cb)
+
+        gamemode_cb = QCheckBox(tr('GAMEMODE'))
+        gamemode_cb.setChecked(True)
+        layout.addWidget(gamemode_cb)
+
+        # FPS HUD
+        fps_layout = QHBoxLayout()
+        show_fps_cb = QCheckBox(tr('SHOW_FPS_OPTION'))
+        fps_hud_combo = QComboBox()
+        fps_hud_options = [
+            ("FPS_GALLIUM_HUD", tr('FPS_GALLIUM_HUD')),
+            ("FPS_DXVK_HUD", tr('FPS_DXVK_HUD')),
+            ("FPS_MANGOHUD", tr('FPS_MANGOHUD'))
+        ]
+        for id, text in fps_hud_options:
+            fps_hud_combo.addItem(text, id)
+        fps_hud_combo.setEnabled(False)
+        show_fps_cb.stateChanged.connect(lambda s, combo=fps_hud_combo: combo.setEnabled(s))
+        fps_layout.addWidget(show_fps_cb)
+        fps_layout.addWidget(fps_hud_combo)
+        layout.addLayout(fps_layout)
+
+        # QTreeWidgetItem with child containing widget
+        parent_item = QTreeWidgetItem(self.file_list)
+        parent_item.setText(0, Path(path).name)
+        child_item = QTreeWidgetItem(parent_item)
+        child_item.setFlags(child_item.flags() & ~Qt.ItemFlag.ItemIsSelectable)
+        self.file_list.setItemWidget(child_item, 0, item_widget)
+        parent_item.setExpanded(True)
+
+        # Save references
+        parent_item.path = path
+        parent_item.name_input = name_input
+        parent_item.prefix_input = prefix_input
+        parent_item.ms_lang_cb = ms_lang_cb
+        parent_item.force_opengl_cb = force_opengl_cb
+        parent_item.gamemode_cb = gamemode_cb
+        parent_item.show_fps_cb = show_fps_cb
+        parent_item.fps_hud_combo = fps_hud_combo
+
+    def select_prefix_folder(self, line_edit: QLineEdit):
+        dir_path = QFileDialog.getExistingDirectory(
+            self,
+            tr("SELECT_PREFIX_TITLE"),
+            str(Path.home() / "AppsFiles" / "Zordeer" / "invocations")
+        )
+        if dir_path:
+            line_edit.setText(dir_path)
+
+    def save_multiple(self):
+        # Runner and item validation
+        runner = self.runner_combo.currentText()
+        if runner == tr('PLACEHOLDER_FOR_RUNNER') or self.file_list.topLevelItemCount() == 0:
+            QMessageBox.warning(self, tr('CREATE_INVOCATION'), tr('MANDATORY_FIELDS_ERROR'))
+            return
+
+        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
+        art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        art_dir.mkdir(parents=True, exist_ok=True)
+
+        # Name and duplicate validation
+        existing_names = set()
+        for i in range(self.file_list.topLevelItemCount()):
+            item = self.file_list.topLevelItem(i)
+            name = item.name_input.text().strip()
+
+            # Empty name
+            if not name:
+                QMessageBox.warning(self, tr("ERROR"), tr("MANDATORY_FIELDS_ERROR"))
+                return
+
+            safe_name = name.replace(" ", "_").lower()
+
+            # Duplicate in own list
+            if safe_name in existing_names:
+                QMessageBox.warning(
+                    self,
+                    tr("ERROR"),
+                    tr("DUPLICATE_NAME_IN_LIST", name=name)
+                )
+                return
+            existing_names.add(safe_name)
+
+            # Duplicate in filesystem
+            test_path = config_dir / f"invocation-info-{safe_name}.json"
+            if test_path.exists():
+                QMessageBox.warning(
+                    self,
+                    tr("ERROR"),
+                    tr("INVOCATION_IN_MULTIPLE_CREATE_ALREADY_EXISTS", name=name)
+                )
+                return
+
+            # Test if you can write the file
+            try:
+                with open(test_path, 'w', encoding="utf-8") as f:
+                    json.dump({}, f)
+                test_path.unlink()
+            except Exception as e:
+                QMessageBox.critical(
+                    self,
+                    tr('ERROR'),
+                    tr("NAME_INVALID_IN_MULTIPLE", name=name, error=str(e))
+                )
+                return
+
+        selected_lang = self.language_input.currentText()
+        if selected_lang == tr('PLACEHOLDER_FOR_LANGUAGE'):
+            selected_lang = ""
+
+        for i in range(self.file_list.topLevelItemCount()):
+            item = self.file_list.topLevelItem(i)
+            name = item.name_input.text().strip()
+            safe_name = name.replace(" ", "_").lower()
+            file_path = config_dir / f"invocation-info-{safe_name}.json"
+
+            # Determine prefix
+            if self.animarium_prefix_cb.isChecked():
+                prefix_path = Path.home() / "AppsFiles" / "Zordeer" / "invocations" / "animarium_prefix"
+                prefix_path.mkdir(parents=True, exist_ok=True)
+            else:
+                prefix_path = Path(item.prefix_input.text())
+                prefix_path.mkdir(parents=True, exist_ok=True)
+
+            # Determining the path of art
+            art_path = getattr(item, "art_path", "")
+            if not art_path:
+                heroes_dir = Path.home() / "AppsFiles" / "Zordeer" / "heroes"
+                for folder in heroes_dir.iterdir():
+                    if folder.is_dir() and folder.name.lower() == name.lower():
+                        for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
+                            images = list(folder.glob(ext))
+                            if images:
+                                art_path = str(images[0])
+                                break
+                    if art_path:
+                        break
+
+            # Copy art to art_dir if it exists
+            if art_path:
+                art_src = Path(art_path)
+                if art_src.exists():
+                    ext = art_src.suffix.lower()
+                    dest_path = art_dir / f"{safe_name}{ext}"
+                    try:
+                        if not dest_path.exists():
+                            shutil.copyfile(art_src, dest_path)
+                        art_path = str(dest_path)
+                    except Exception:
+                        art_path = ""
+
+            # Save JSON
+            try:
+                with open(file_path, 'w', encoding="utf-8") as f:
+                    json.dump({
+                        "name": name,
+                        "runner": runner,
+                        "exec_path": item.path,
+                        "prefix_path": str(prefix_path),
+                        "art_path": art_path,
+                        "language": selected_lang,
+                        "use_ms_language_code": item.ms_lang_cb.isChecked(),
+                        "force_opengl": item.force_opengl_cb.isChecked(),
+                        "use_gamemode": item.gamemode_cb.isChecked(),
+                        "show_fps": item.show_fps_cb.isChecked(),
+                        "fps_hud_type": item.fps_hud_combo.currentData() or "",
+                        "env_vars": "",
+                        "invocation_args": ""
+                    }, f, indent=4, ensure_ascii=False)
+            except Exception as e:
+                QMessageBox.critical(self, tr('ERROR'), tr('FAILED_UPDATE_JSON', error=str(e)))
+                return
+
+        self.invocations_saved.emit()
+        self.accept()
+
+    def save_invocation_data(self, data):
+        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+        safe_name = data["name"].replace(" ", "_").lower()
+        file_path = config_dir / f"invocation-info-{safe_name}.json"
+        if file_path.exists():
+            return
+        with open(file_path, 'w', encoding="utf-8") as f:
+            json.dump(data, f, indent=4, ensure_ascii=False)
+
+class MultipleRemoveInvocationDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(tr("MULTIPLE_INVOCATION_REMOVER"))
+        self.resize(340, 400)
+        self.parent_ref = parent
+
+        self.main_layout = QVBoxLayout(self)
+
+        # Search bar
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText(tr("SEARCH"))
+        self.search_input.textChanged.connect(self.update_invocation_list)
+        self.main_layout.addWidget(self.search_input)
+
+        # Scroll area with invocations
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_content = QWidget()
+        self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_content.setLayout(self.scroll_layout)
+        self.scroll_layout.setContentsMargins(6, 6, 6, 6)
+        self.scroll_layout.setSpacing(4)
+        self.scroll_area.setWidget(self.scroll_content)
+        self.main_layout.addWidget(self.scroll_area)
+
+        # Checkbox to delete prefix
+        self.delete_prefix_checkbox = QCheckBox(tr("DELETE_PREFIX_CHECKBOX"))
+        self.delete_prefix_checkbox.setChecked(False)
+        self.main_layout.addWidget(self.delete_prefix_checkbox)
+
+        # Remove button
+        self.remove_button = QPushButton(tr("REMOVE"))
+        self.remove_button.clicked.connect(self.remove_selected_invocations)
+        self.main_layout.addWidget(self.remove_button)
+
+        # Dictionary invocation_name -> checkbox
+        self.invocation_checkboxes = {}
+        self.load_invocations()
+
+    def load_invocations(self):
+        """Loads all existing invocations in alphabetical order."""
+        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
+        self.invocation_checkboxes.clear()
+
+        # Clean layout
+        while self.scroll_layout.count():
+            item = self.scroll_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+        # Sort files by name (alphabetical)
+        invocation_files = sorted(config_dir.glob("invocation-info-*.json"), key=lambda p: p.stem.lower())
+
+        for invocation_file in invocation_files:
+            try:
+                with open(invocation_file, encoding="utf-8") as f:
+                    invocation_data = json.load(f)
+                name = invocation_data.get("name", invocation_file.stem)
+                checkbox = QCheckBox(name)
+                checkbox.invocation_file = invocation_file
+                checkbox.prefix_path = invocation_data.get("prefix_path")
+                checkbox.art_path = invocation_data.get("art_path")
+
+                checkbox.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+
+                self.scroll_layout.addWidget(checkbox)
+                self.invocation_checkboxes[name] = checkbox
+            except Exception:
+                continue
+
+        self.scroll_layout.addStretch()
+
+    def update_invocation_list(self, text):
+        """Filters invocations by the text entered in the search."""
+        text = text.lower()
+        for name, checkbox in self.invocation_checkboxes.items():
+            checkbox.setVisible(text in name.lower())
+
+    def remove_selected_invocations(self):
+        to_remove = [cb for cb in self.invocation_checkboxes.values() if cb.isChecked()]
+        if not to_remove:
+            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_MULTIPLE"))
+            return
+
+        msg = QMessageBox(self)
+        msg.setIcon(QMessageBox.Icon.Warning)
+        msg.setWindowTitle(tr("MULTIPLE_INVOCATION_REMOVER"))
+        msg.setText(tr("DELETE_INVOCATIONS_CONFIRM_MESSAGE"))
+        msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+        msg.button(QMessageBox.StandardButton.Yes).setText(tr("YES_BUTTON"))
+        msg.button(QMessageBox.StandardButton.No).setText(tr("NO_BUTTON"))
+
+        if msg.exec() != QMessageBox.StandardButton.Yes:
+            return
+
+        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
+        art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
+
+        # Checking prefixes in use
+        prefix_usages = {}
+        if self.delete_prefix_checkbox.isChecked():
+            for cb in to_remove:
+                if not cb.prefix_path:
+                    continue
+                prefix_path_obj = Path(cb.prefix_path)
+                if not prefix_path_obj.exists() or not prefix_path_obj.is_dir():
+                    continue
+
+                selected_using = []
+                affected_using = []
+                for f in config_dir.glob("invocation-info-*.json"):
+                    try:
+                        with open(f, encoding="utf-8") as jf:
+                            data = json.load(jf)
+                            other_prefix = data.get('prefix_path')
+                            if other_prefix and Path(other_prefix).resolve() == prefix_path_obj.resolve():
+                                name = data.get("name", f.stem)
+                                if name in [c.text() for c in to_remove]:
+                                    selected_using.append(name)
+                                else:
+                                    affected_using.append(name)
+                    except Exception:
+                        pass
+
+                if affected_using:
+                    prefix_usages[str(prefix_path_obj)] = {
+                        "selected": selected_using,
+                        "affected": affected_using,
+                    }
+
+        force_delete = False
+        keep_in_use = False
+        if prefix_usages:
+            dialog = QDialog(self)
+            dialog.setWindowTitle(tr("MULTIPLE_INVOCATION_REMOVER"))
+            layout = QVBoxLayout(dialog)
+
+            label = QLabel(tr("PREFIXES_IN_USE_MESSAGE"))
+            label.setWordWrap(True)
+            layout.addWidget(label)
+
+            tree = QTreeWidget()
+            tree.setHeaderLabels([tr("PREFIXES_REMOTION_INFORMATION")])
+            tree.setSelectionMode(QAbstractItemView.SelectionMode.NoSelection)
+            for prefix, info in prefix_usages.items():
+                root = QTreeWidgetItem([prefix])
+
+                selected_item = QTreeWidgetItem([tr("SELECTED_INVOCATIONS")])
+                for name in info["selected"]:
+                    QTreeWidgetItem(selected_item, [name])
+                root.addChild(selected_item)
+
+                affected_item = QTreeWidgetItem([tr("AFFECTED_INVOCATIONS")])
+                for name in info["affected"]:
+                    QTreeWidgetItem(affected_item, [name])
+                root.addChild(affected_item)
+
+                tree.addTopLevelItem(root)
+
+            layout.addWidget(tree)
+
+            rb_keep = QRadioButton(tr("DO_NOT_DELETE_PREFIXES"))
+            rb_delete = QRadioButton(tr("DELETE_PREFIXES_ANYWAY"))
+            rb_keep.setChecked(True)
+            layout.addWidget(rb_keep)
+            layout.addWidget(rb_delete)
+
+            confirm_btn = QPushButton(tr("CONFIRM"))
+            confirm_btn.clicked.connect(dialog.accept)
+            layout.addWidget(confirm_btn)
+
+            if dialog.exec() == QDialog.DialogCode.Accepted:
+                force_delete = rb_delete.isChecked()
+                keep_in_use = rb_keep.isChecked()
+            else:
+                return  # User closed the window, cancel everything
+
+        # Effective removal
+        for cb in to_remove:
+            # Remove JSON
+            try:
+                if cb.invocation_file.exists():
+                    cb.invocation_file.unlink()
+            except Exception:
+                pass
+
+            # Remove artwork
+            if cb.art_path:
+                art_path = Path(cb.art_path)
+                if art_path.exists() and art_path.is_file():
+                    try:
+                        art_path.unlink()
+                    except Exception:
+                        pass
+
+            # Remove prefix if checkbox is checked
+            if self.delete_prefix_checkbox.isChecked() and cb.prefix_path:
+                prefix_path_obj = Path(cb.prefix_path)
+                if prefix_path_obj.exists() and prefix_path_obj.is_dir():
+                    try:
+                        if str(prefix_path_obj) in prefix_usages:
+                            if force_delete:
+                                shutil.rmtree(prefix_path_obj)
+                            elif keep_in_use:
+                                continue  # Keeps
+                        else:
+                            # Unique prefix, can be deleted
+                            shutil.rmtree(prefix_path_obj)
+                    except Exception:
+                        pass
+
+        # Reload the list
+        self.load_invocations()
+        if self.parent_ref:
+            self.parent_ref.load_invocations()
+        
+        self.accept()
+
+class MultipleEditInvocationDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(tr("MULTIPLE_INVOCATION_EDITOR"))
+        self.setMinimumSize(600, 480)
+        self.parent_ref = parent
+
+        # Main layout
+        main_layout = QHBoxLayout(self)
+
+        # Left: selection of invocations
+        left_widget = QWidget()
+        left_layout = QVBoxLayout(left_widget)
+
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText(tr("SEARCH"))
+        self.search_input.textChanged.connect(self.update_invocation_list)
+        left_layout.addWidget(self.search_input)
+
+        self.scroll_area = QScrollArea()
+        self.scroll_area.setWidgetResizable(True)
+        self.scroll_content = QWidget()
+        self.scroll_layout = QVBoxLayout(self.scroll_content)
+        self.scroll_layout.setContentsMargins(6, 6, 6, 6)
+        self.scroll_layout.setSpacing(4)
+        self.scroll_content.setLayout(self.scroll_layout)
+        self.scroll_area.setWidget(self.scroll_content)
+        left_layout.addWidget(self.scroll_area)
+
+        # Select all / Deselect all
+        btn_layout = QHBoxLayout()
+        self.select_all_btn = QPushButton(tr("SELECT_ALL_IN_MULTIPLE_EDIT"))
+        self.deselect_all_btn = QPushButton(tr("DESELECT_ALL_IN_MULTIPLE_EDIT"))
+        self.select_all_btn.clicked.connect(self.select_all_invocations)
+        self.deselect_all_btn.clicked.connect(self.deselect_all_invocations)
+        btn_layout.addWidget(self.select_all_btn)
+        btn_layout.addWidget(self.deselect_all_btn)
+        left_layout.addLayout(btn_layout)
+
+        main_layout.addWidget(left_widget, 1)
+
+        # Right: Mass editing
+        right_widget = QWidget()
+        right_layout = QGridLayout(right_widget)
+        main_layout.addWidget(right_widget, 2)
+
+        row = 0
+
+        # Runner
+        self.runner_label = QLabel(tr("RUNNER_VERSION"))
+        self.runner_combo = QComboBox()
+        self.populate_runners()
+        self.runner_combo.insertItem(0, tr("DO_NOT_CHANGE"))
+        self.runner_combo.setCurrentIndex(0)
+        right_layout.addWidget(self.runner_label, row, 0)
+        right_layout.addWidget(self.runner_combo, row, 1, 1, 2)
+        row += 1
+
+        # Executable path
+        self.exec_label = QLabel(tr("EXECUTABLE_PATH"))
+        self.exec_input = QLineEdit(tr("DO_NOT_CHANGE"))
+        self.exec_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.exec_button.clicked.connect(self.select_executable)
+        right_layout.addWidget(self.exec_label, row, 0)
+        right_layout.addWidget(self.exec_input, row, 1)
+        right_layout.addWidget(self.exec_button, row, 2)
+        row += 1
+
+        # Prefix path
+        self.prefix_label = QLabel(tr("PREFIX_PATH"))
+        self.prefix_input = QLineEdit(tr("DO_NOT_CHANGE"))
+        self.prefix_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.prefix_button.clicked.connect(self.select_prefix)
+        right_layout.addWidget(self.prefix_label, row, 0)
+        right_layout.addWidget(self.prefix_input, row, 1)
+        right_layout.addWidget(self.prefix_button, row, 2)
+        row += 1
+
+        self.animarium_prefix_checkbox = QCheckBox(tr("USE_ANIMARIUM_PREFIX"))
+        self.animarium_prefix_checkbox.stateChanged.connect(self.update_prefix_state)
+        right_layout.addWidget(self.animarium_prefix_checkbox, row, 0, 1, 3)
+        row += 1
+
+        # Art path
+        self.art_label = QLabel(tr("INVOCATION_ART_PATH"))
+        self.art_input = QLineEdit(tr("DO_NOT_CHANGE"))
+        self.art_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.art_button.clicked.connect(self.select_invocation_art)
+        right_layout.addWidget(self.art_label, row, 0)
+        right_layout.addWidget(self.art_input, row, 1)
+        right_layout.addWidget(self.art_button, row, 2)
+        row += 1
+
+        # Language
+        self.lang_label = QLabel(tr("INVOCATION_LANGUAGE"))
+        self.lang_combo = QComboBox()
+        self.lang_combo.addItem(tr("PLACEHOLDER_FOR_LANGUAGE"))
+        for lang in [
+            'English (en_US.UTF-8)',
+            'Português Brasil (pt_BR.UTF-8)',
+            'Português Portugal (pt_PT.UTF-8)',
+            'Español España (es_ES.UTF-8)',
+            'Español México (es_MX.UTF-8)',
+            'Français (fr_FR.UTF-8)',
+            'Deutsch (de_DE.UTF-8)',
+            'Italiano (it_IT.UTF-8)',
+            'Русский (ru_RU.UTF-8)',
+            'Українська (uk_UA.UTF-8)',
+            'Polski (pl_PL.UTF-8)',
+            'Česky (cs_CZ.UTF-8)',
+            'Slovenčina (sk_SK.UTF-8)',
+            'Magyar (hu_HU.UTF-8)',
+            'Română (ro_RO.UTF-8)',
+            'Nederlands (nl_NL.UTF-8)',
+            'Svenska (sv_SE.UTF-8)',
+            'Norsk Bokmål (nb_NO.UTF-8)',
+            'Dansk (da_DK.UTF-8)',
+            'Suomi (fi_FI.UTF-8)',
+            'Ελληνικά (el_GR.UTF-8)',
+            'Български (bg_BG.UTF-8)',
+            '日本語 (ja_JP.UTF-8)',
+            '한국어 (ko_KR.UTF-8)',
+            '简体中文 (zh_CN.UTF-8)',
+            '繁體中文 (zh_TW.UTF-8)',
+            'العربية (ar_SA.UTF-8)',
+            'فارسی (fa_IR.UTF-8)',
+            'Türkçe (tr_TR.UTF-8)',
+            'हिन्दी (hi_IN.UTF-8)',
+            'ไทย (th_TH.UTF-8)',
+            'עברית (he_IL.UTF-8)',
+        ]:
+            self.lang_combo.addItem(lang)
+        self.lang_combo.insertItem(0, tr("DO_NOT_CHANGE"))
+        self.lang_combo.setCurrentIndex(0)
+        right_layout.addWidget(self.lang_label, row, 0)
+        right_layout.addWidget(self.lang_combo, row, 1, 1, 2)
+        row += 1
+
+        # Checkboxes with tristate
+        self.ms_lang_checkbox = QCheckBox(tr("USE_MS_LANGUAGE_CODE"))
+        self.ms_lang_checkbox.setTristate(True)
+        self.ms_lang_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+        right_layout.addWidget(self.ms_lang_checkbox, row, 0, 1, 3)
+        row += 1
+
+        self.force_opengl_checkbox = QCheckBox(tr("FORCE_OPENGL"))
+        self.force_opengl_checkbox.setTristate(True)
+        self.force_opengl_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+        right_layout.addWidget(self.force_opengl_checkbox, row, 0, 1, 3)
+        row += 1
+
+        self.gamemode_checkbox = QCheckBox(tr("GAMEMODE"))
+        self.gamemode_checkbox.setTristate(True)
+        self.gamemode_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+        right_layout.addWidget(self.gamemode_checkbox, row, 0, 1, 3)
+        row += 1
+
+        # FPS HUD
+        self.show_fps_checkbox = QCheckBox(tr("SHOW_FPS_OPTION"))
+        self.show_fps_checkbox.setTristate(True)
+        self.show_fps_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+        self.fps_hud_combo = QComboBox()
+        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr('FPS_GALLIUM_HUD')), 
+                                ("FPS_DXVK_HUD", tr('FPS_DXVK_HUD')), 
+                                ("FPS_MANGOHUD", tr('FPS_MANGOHUD'))]
+        for id, text in self.fps_hud_options:
+            self.fps_hud_combo.addItem(text, id)
+        self.fps_hud_combo.setEnabled(False)
+        self.show_fps_checkbox.stateChanged.connect(self.update_fps_hud_state)
+        right_layout.addWidget(self.show_fps_checkbox, row, 0)
+        right_layout.addWidget(self.fps_hud_combo, row, 1, 1, 3)
+        row += 1
+
+        # Env vars
+        self.env_label = QLabel(tr("ENVIRONMENT_VARS"))
+        self.env_input = QLineEdit(tr("DO_NOT_CHANGE"))
+        right_layout.addWidget(self.env_label, row, 0)
+        right_layout.addWidget(self.env_input, row, 1, 1, 2)
+        row += 1
+
+        # Invocation args
+        self.args_label = QLabel(tr("INVOCATION_ARGS"))
+        self.args_input = QLineEdit(tr("DO_NOT_CHANGE"))
+        right_layout.addWidget(self.args_label, row, 0)
+        right_layout.addWidget(self.args_input, row, 1, 1, 2)
+        row += 1
+
+        self.add_default_clear(self.exec_input)
+        self.add_default_clear(self.prefix_input)
+        self.add_default_clear(self.art_input)
+        self.add_default_clear(self.env_input)
+        self.add_default_clear(self.args_input)
+
+        # Reset and save buttons
+        self.reset_button = QPushButton(tr("RESET_BUTTON_MULTIPLE_EDIT"))
+        self.reset_button.clicked.connect(self.reset_fields)
+
+        self.save_button = QPushButton(tr("SAVE_BUTTON"))
+        self.save_button.clicked.connect(self.apply_multiple_edit)
+
+        buttons_layout = QHBoxLayout()
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(self.reset_button)
+        buttons_layout.addWidget(self.save_button)
+
+        right_layout.addLayout(buttons_layout, row, 0, 1, 3)
+
+        # Loads invocations
+        self.invocation_checkboxes = {}
+        self.load_invocations()
+
+    # Auxiliary functions
+    def add_default_clear(self, line_edit):
+        original_keyPressEvent = line_edit.keyPressEvent
+
+        def new_keyPressEvent(event):
+            if line_edit.text() == tr("DO_NOT_CHANGE"):
+                line_edit.clear()
+            # Invoke normal QLineEdit behavior
+            original_keyPressEvent(event)
+
+        line_edit.keyPressEvent = new_keyPressEvent
+
+    def eventFilter(self, obj, event):
+        if isinstance(obj, QLineEdit) and event.type() == QEvent.Type.FocusIn:
+            if obj.text() == tr("DO_NOT_CHANGE"):
+                obj.clear()
+        return super().eventFilter(obj, event)
+
+    def populate_runners(self):
+        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
+        runners_path.mkdir(parents=True, exist_ok=True)
+        runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
+        self.runner_combo.addItems(sorted(runners, reverse=True))
+
+    def update_prefix_state(self, state):
+        # Disables input and button when the checkbox is checked
+        is_checked = self.animarium_prefix_checkbox.isChecked()
+        self.prefix_input.setEnabled(not is_checked)
+        self.prefix_button.setEnabled(not is_checked)
+
+    def update_fps_hud_state(self, state):
+        self.fps_hud_combo.setEnabled(Qt.CheckState(state) == Qt.CheckState.Checked)
+
+    def select_executable(self):
+        invocations_dir = Path.home() / "AppsFiles" / "Zordeer" / "invocations"
+        invocations_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            tr('SELECT_EXECUTABLE'),
+            str(invocations_dir),
+            tr('EXECUTABLE_FILE_FILTER')
+        )
+
+        if file_path:
+            self.exec_input.setText(file_path)
+
+    def select_prefix(self):
+        invocations_dir = Path.home() / "AppsFiles" / "Zordeer" / "invocations"
+        invocations_dir.mkdir(parents=True, exist_ok=True)
+
+        dir_path = QFileDialog.getExistingDirectory(
+            self,
+            tr('SELECT_PREFIX_TITLE'),
+            str(invocations_dir)
+        )
+        if dir_path:
+            self.prefix_input.setText(dir_path)
+
+    def select_invocation_art(self):
+        art_dir = Path.home() / "AppsFiles" / "Zordeer" / "heroes"
+        art_dir.mkdir(parents=True, exist_ok=True)
+
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            tr('SELECT_INVOCATION_ART'),
+            str(art_dir),
+            tr('IMAGE_FILTER')
+        )
+        if file_path:
+            self.art_input.setText(file_path)
+
+    def load_invocations(self):
+        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
+        self.invocation_checkboxes.clear()
+        while self.scroll_layout.count():
+            item = self.scroll_layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+        invocation_files = sorted(config_dir.glob("invocation-info-*.json"), key=lambda p: p.stem.lower())
+        for invocation_file in invocation_files:
+            try:
+                with open(invocation_file, encoding="utf-8") as f:
+                    data = json.load(f)
+                name = data.get("name", invocation_file.stem)
+                cb = QCheckBox(name)
+                cb.invocation_file = invocation_file
+                self.scroll_layout.addWidget(cb)
+                self.invocation_checkboxes[name] = cb
+            except Exception:
+                continue
+        self.scroll_layout.addStretch()
+
+    def update_invocation_list(self, text):
+        text = text.lower()
+        for name, cb in self.invocation_checkboxes.items():
+            cb.setVisible(text in name.lower())
+
+    def select_all_invocations(self):
+        for cb in self.invocation_checkboxes.values():
+            cb.setChecked(True)
+
+    def deselect_all_invocations(self):
+        for cb in self.invocation_checkboxes.values():
+            cb.setChecked(False)
+
+    def reset_fields(self):
+        # Runner
+        self.runner_combo.setCurrentIndex(0)
+
+        # Executable / Prefix / Art
+        self.exec_input.setText(tr("DO_NOT_CHANGE"))
+        self.prefix_input.setText(tr("DO_NOT_CHANGE"))
+        self.art_input.setText(tr("DO_NOT_CHANGE"))
+
+        # Language
+        self.lang_combo.setCurrentIndex(0)
+
+        # Checkboxes
+        self.ms_lang_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+        self.force_opengl_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+        self.gamemode_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+
+        # FPS HUD
+        self.show_fps_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+        self.fps_hud_combo.setCurrentIndex(0)
+        self.fps_hud_combo.setEnabled(False)
+
+        # Animarium prefix
+        self.animarium_prefix_checkbox.setChecked(False)
+        self.prefix_input.setEnabled(True)
+        self.prefix_button.setEnabled(True)
+
+        # Env vars / Args
+        self.env_input.setText(tr("DO_NOT_CHANGE"))
+        self.args_input.setText(tr("DO_NOT_CHANGE"))
+
+    # Apply changes
+    def apply_multiple_edit(self):
+        selected = [cb for cb in self.invocation_checkboxes.values() if cb.isChecked()]
+        if not selected:
+            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_MULTIPLE"))
+            return
+
+        for cb in selected:
+            with open(cb.invocation_file, encoding="utf-8") as f:
+                data = json.load(f)
+
+            # Apply fields
+            # Runner
+            runner = self.runner_combo.currentText()
+            if runner != tr("DO_NOT_CHANGE"):
+                data["runner"] = runner
+
+            # Executable
+            exec_path = self.exec_input.text()
+            if exec_path != tr("DO_NOT_CHANGE"):
+                data["exec_path"] = exec_path
+
+            # Prefix
+            if self.animarium_prefix_checkbox.isChecked():
+                prefix_path = Path.home() / "AppsFiles" / "Zordeer" / "invocations" / "animarium_prefix"
+                prefix_path.mkdir(parents=True, exist_ok=True)
+                data["prefix_path"] = str(prefix_path)
+            else:
+                prefix_path = self.prefix_input.text()
+                if prefix_path != tr("DO_NOT_CHANGE") and prefix_path.strip():
+                    data["prefix_path"] = prefix_path
+
+            # Art
+            art_path = self.art_input.text().strip()
+            if art_path != tr("DO_NOT_CHANGE") and art_path:
+                try:
+                    # Copy image to art folder with invocation name
+                    art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
+                    art_dir.mkdir(parents=True, exist_ok=True)
+                    ext = Path(art_path).suffix.lower()
+                    new_art_path = art_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
+                    shutil.copyfile(art_path, new_art_path)
+                    data["art_path"] = str(new_art_path)
+                except FileNotFoundError:
+                    pass
+
+            # Language
+            lang = self.lang_combo.currentText()
+            if lang != tr("DO_NOT_CHANGE"):
+                data["language"] = lang
+
+            # Checkboxes
+            def apply_checkbox(cb_widget, key):
+                state = cb_widget.checkState()
+                if state != Qt.CheckState.PartiallyChecked:
+                    data[key] = (state == Qt.CheckState.Checked)
+            apply_checkbox(self.ms_lang_checkbox, "use_ms_language_code")
+            apply_checkbox(self.force_opengl_checkbox, "force_opengl")
+            apply_checkbox(self.gamemode_checkbox, "use_gamemode")
+
+            # FPS HUD
+            if self.show_fps_checkbox.checkState() == Qt.CheckState.Checked:
+                data["show_fps"] = True
+                data["fps_hud_type"] = self.fps_hud_combo.currentData()
+            elif self.show_fps_checkbox.checkState() == Qt.CheckState.Unchecked:
+                data["show_fps"] = False
+                data["fps_hud_type"] = self.fps_hud_combo.currentData()
+
+            # Env vars
+            env_vars = self.env_input.text()
+            if env_vars != tr("DO_NOT_CHANGE"):
+                data["env_vars"] = env_vars.strip()
+
+            # Invocation args
+            args = self.args_input.text()
+            if args != tr("DO_NOT_CHANGE"):
+                data["invocation_args"] = args.strip()
+
+            # Save JSON
+            with open(cb.invocation_file, "w", encoding="utf-8") as f:
+                json.dump(data, f, indent=4, ensure_ascii=False)
+
+        if self.parent_ref:
+            self.parent_ref.load_invocations()
+
+        QMessageBox.information(
+            self,
+            tr("MULTIPLE_INVOCATION_EDITOR"),
+            tr("CHANGES_SAVED")
+        )
+
+class SettingsDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle(tr("ZORDEER_SETTINGS"))
+        self.setMinimumSize(350, 90)
+
+        self.settings = load_settings()
+
+        layout = QVBoxLayout(self)
+
+        # Qt Style Choice
+        style_layout = QHBoxLayout()
+        style_label = QLabel(tr("QT_STYLE"))
+        self.style_combo = QComboBox()
+        self.style_combo.addItems(QStyleFactory.keys())
+
+        # Set saved style or Oxygen as default
+        default_style = self.settings.get("qt_style", "Oxygen")
+        if default_style in QStyleFactory.keys():
+            self.style_combo.setCurrentText(default_style)
+        style_layout.addWidget(style_label)
+        style_layout.addWidget(self.style_combo)
+        layout.addLayout(style_layout)
+
+        # Language Choice
+        lang_layout = QHBoxLayout()
+        lang_label = QLabel(tr("LANGUAGE"))
+        self.lang_combo = QComboBox()
+        self.lang_combo.addItems(SUPPORTED_LANGUAGES.keys())
+
+        # Get the saved language or use the current full locale
+        saved_lang = self.settings.get("language", LANG)
+
+        # Creates list of codes to map directly to the index
+        lang_codes = list(SUPPORTED_LANGUAGES.values())
+        if saved_lang in lang_codes:
+            self.lang_combo.setCurrentIndex(lang_codes.index(saved_lang))
+        else:
+            self.lang_combo.setCurrentIndex(0)  # Fallback to first language
+
+        lang_layout.addWidget(lang_label)
+        lang_layout.addWidget(self.lang_combo)
+        layout.addLayout(lang_layout)
+
+        # Hide Invocation Images
+        images_layout = QHBoxLayout()
+        self.hide_images_checkbox = QCheckBox(tr("HIDE_INVOCATION_IMAGES"))
+        self.hide_images_checkbox.setChecked(self.settings.get("hide_invocation_images", False))
+        images_layout.addWidget(self.hide_images_checkbox)
+        layout.addLayout(images_layout)
+
+        # Save button
+        save_btn = QPushButton(tr("SAVE_BUTTON"))
+        save_btn.clicked.connect(self.save_and_close)
+        layout.addWidget(save_btn, alignment=Qt.AlignmentFlag.AlignRight)
+
+    def save_and_close(self):
+        self.settings["qt_style"] = self.style_combo.currentText()
+        # Save chosen language
+        selected_index = self.lang_combo.currentIndex()
+        self.settings["language"] = list(SUPPORTED_LANGUAGES.values())[selected_index]
+        self.settings["hide_invocation_images"] = self.hide_images_checkbox.isChecked()
+        save_settings(self.settings)
+
+        QMessageBox.information(
+            self,
+            tr("APP_NAME"),
+            tr("SETTINGS_SAVED_RESTART")
+        )
+        self.accept()
+
+class RunInPrefix(QDialog):
+    def __init__(self, parent, invocation_name):
+        super().__init__(parent)
+        self.parent = parent  # Zordeer
+        self.invocation_name = invocation_name
+        self.setWindowTitle(tr('RUN_IN_PREFIX_INVOCATION_NAME', invocation_name=invocation_name))
+        self.resize(500, 300)
+
+        # Preventive cleanup: delete old leftovers
+        config_dir = Path(self.parent.zordeer_dir) / "config"
+        config_dir.mkdir(parents=True, exist_ok=True)
+
+        for fname in config_dir.iterdir():
+            if fname.name.endswith("_ztffrip.json"):
+                try:
+                    fname.unlink()
+                except Exception:
+                    pass
+
+        # Main layout
+        layout = QVBoxLayout(self)
+
+        # List of executables (Only names, no paths)
+        self.exe_list = QTreeWidget()
+        self.exe_list.setHeaderLabels([tr("SELECTED_EXECUTABLES")])
+        self.exe_list.setColumnCount(1)
+        self.exe_list.setRootIsDecorated(True)
+        self.exe_list.setSelectionMode(QTreeWidget.SelectionMode.NoSelection)
+        layout.addWidget(self.exe_list)
+
+        # Top buttons (Browse / Clear)
+        btn_top = QHBoxLayout()
+        self.select_btn = QPushButton(tr("ADD_FILES"))
+        self.clear_btn = QPushButton(tr("CLEAR_LIST"))
+        btn_top.addWidget(self.select_btn)
+        btn_top.addWidget(self.clear_btn)
+        layout.addLayout(btn_top)
+
+        # Execution mode section (radio buttons)
+        layout.addWidget(QLabel(tr("EXECUTION_MODE")))
+
+        self.radio_group = QButtonGroup(self)
+
+        self.radio_clean = QRadioButton(tr("CLEAN_RUN"))               # Prevents env vars
+        self.radio_automatic = QRadioButton(tr("AUTOMATIC_RUN"))       # Silent args like /VERYSILENT
+        self.radio_normal = QRadioButton(tr("NORMAL_RUN"))             # Untouched JSON
+
+        self.radio_group.addButton(self.radio_clean)
+        self.radio_group.addButton(self.radio_automatic)
+        self.radio_group.addButton(self.radio_normal)
+
+        self.radio_clean.setChecked(True)  # Default selection
+
+        # Group layout for radios
+        radios_layout = QVBoxLayout()
+        radios_layout.addWidget(self.radio_clean)
+        radios_layout.addWidget(self.radio_automatic)
+        radios_layout.addWidget(self.radio_normal)
+        layout.addLayout(radios_layout)
+
+        # Bottom buttons (Run / Stop)
+        btn_bottom = QHBoxLayout()
+        self.run_btn = QPushButton(tr("CONFIRM_AND_RUN"))
+        self.force_stop_btn = QPushButton(tr("STOP_CURRENT"))
+
+        if hasattr(self.parent, "stop_execution"):
+            self.force_stop_btn.clicked.connect(self.parent.stop_execution)
+        else:
+            self.force_stop_btn.setEnabled(False)
+
+        btn_bottom.addWidget(self.run_btn)
+        btn_bottom.addWidget(self.force_stop_btn)
+        layout.addLayout(btn_bottom)
+
+        # Progress bar
+        self.progress = QProgressBar()
+        self.progress.setValue(0)
+        layout.addWidget(self.progress)
+
+        # Connections
+        self.select_btn.clicked.connect(self.select_exes)
+        self.clear_btn.clicked.connect(self.clear_list)
+        self.run_btn.clicked.connect(self.start_execution)
+
+        # Control variables
+        self.exe_queue = []
+        self.current_index = 0
+
+        # JSON paths
+        self.safe_invocation = self.invocation_name.replace(" ", "_").lower()
+        self.real_json_path = config_dir / f"invocation-info-{self.safe_invocation}.json"
+        self.temp_json_path = config_dir / f"invocation-info-{self.safe_invocation}_ztffrip.json"
+
+        # Backup of the original JSON in memory (loaded in start_execution)
+        self._original_json = None
+    
+    def clear_list(self):
+        self.exe_list.clear()
+        self.exe_queue = []
+        self.current_index = 0
+
+        if self.progress.value() == self.progress.maximum() and self.progress.maximum() > 0:
+            self.progress.setValue(0)
+
+    def select_exes(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            self, tr("SELECT_EXECUTABLE"), "", tr("EXECUTABLE_FILE_FILTER")
+        )
+        for f in files:
+            path_obj = Path(f)
+            item = QTreeWidgetItem([path_obj.name])
+            # Stores the full path to UserRole
+            item.setData(0, 0x0100, str(path_obj))
+            self.exe_list.addTopLevelItem(item)
+
+    def start_execution(self):
+        if self.exe_list.topLevelItemCount() == 0:
+            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_EXECUTABLE_SELECTED"))
+            return
+
+        # Load and store the original JSON once
+        try:
+            with open(self.real_json_path, "r", encoding="utf-8") as f:
+                self._original_json = json.load(f)
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                tr("ERROR"),
+                tr("INVOCATION_INFO_ERROR", error=str(e))
+            )
+            return
+
+        # Build queue
+        self.exe_queue = [self.exe_list.topLevelItem(i).data(0, 0x0100)for i in range(self.exe_list.topLevelItemCount())]
+        self.current_index = 0
+        self.progress.setMaximum(len(self.exe_queue))
+        self.progress.setValue(0)
+
+        # Start execution
+        self.run_next_exe()
+
+    def run_next_exe(self):
+        # End of the queue?
+        if self.current_index >= len(self.exe_queue):
+            # Clean up the temporary file and finish
+            try:
+                temp_path = Path(self.temp_json_path)
+                if temp_path.exists():
+                    temp_path.unlink()
+                    print(tr("DEBUG_TEMP_FILE_REMOVED", path=str(temp_path)))
+            except Exception:
+                pass
+            print(tr("RUN_IN_PREFIX_DONE"))
+            return
+
+        # Current executable
+        exe_path = self.exe_queue[self.current_index]
+
+        # Temporary name/file (derived from the original safe name)
+        temp_safe_name = f"{self.safe_invocation}_ztffrip".lower()
+        config_dir = Path(self.parent.zordeer_dir) / "config"
+        self.temp_json_path = str(config_dir / f"invocation-info-{temp_safe_name}.json")
+
+        # Clone original and set the exe to run
+        mod = dict(self._original_json)
+        mod["exec_path"] = exe_path
+        mod["name"] = temp_safe_name  # Ensures that start_invocation validates the name
+
+        # Clear fields from 'language' onward when "Disable variables" is selected
+        if self.radio_clean.isChecked():
+            mod["language"] = ""
+            mod["force_opengl"] = False
+            mod["use_gamemode"] = False
+            mod["env_vars"] = ""
+            mod["invocation_args"] = ""
+            mod["show_fps"] = False
+            mod["fps_hud_type"] = ""
+
+        elif self.radio_automatic.isChecked():
+            # Normal values restored, but add silent args
+            for key in ("language", "force_opengl", "use_gamemode", "env_vars",
+                        "show_fps", "fps_hud_type"):
+                if key in self._original_json:
+                    mod[key] = self._original_json[key]
+                else:
+                    mod.pop(key, None)
+            mod["invocation_args"] = "/VERYSILENT /NORESTART /SILENT /S /quiet /qn"
+
+        else:  # Self.radio_normal.isChecked()
+            # Just restore original JSON (no modifications)
+            for key in ("language", "force_opengl", "use_gamemode", "env_vars",
+                        "show_fps", "fps_hud_type", "invocation_args"):
+                if key in self._original_json:
+                    mod[key] = self._original_json[key]
+                else:
+                    mod.pop(key, None)
+
+            mod["invocation_args"] = self._original_json.get("invocation_args", "")
+
+        # Save ONLY the temporary JSON
+        try:
+            with open(self.temp_json_path, "w", encoding="utf-8") as f:
+                json.dump(mod, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            QMessageBox.critical(self, tr("ERROR"), tr("FAILED_UPDATE_JSON", error=e))
+            return
+
+        print(tr(
+            "RUNNING_IN_PREFIX",
+            name=self.invocation_name,
+            exe=exe_path,
+            silent=self.radio_automatic.isChecked()
+        ))
+
+        # If silent install, make sure no previous process is running
+        if self.radio_automatic.isChecked() and hasattr(self.parent, "stop_execution"):
+            self.parent.stop_execution()
+
+        # Run the temporary "invocation" (start_invocation resolves the path by safe name)
+        self.parent.start_invocation(temp_safe_name)
+
+        # Schedule periodic check for completion
+        QTimer.singleShot(2000, self._wait_until_finished)
+
+    def _wait_until_finished(self):
+        # If still running, re-check
+        if self.parent.invocation_process and self.parent.invocation_process.poll() is None:
+            QTimer.singleShot(2000, self._wait_until_finished)
+            return
+
+        # Finished > stop, advance, update progress bar and go to next
+        self.parent.stop_execution()
+        self.current_index += 1
+        self.progress.setValue(self.current_index)
+        self.run_next_exe()
+
+        # Cleanup at the end of the queue
+        try:
+            temp_path = Path(self.temp_json_path)
+            if temp_path.exists():
+                temp_path.unlink()
+        except Exception:
+            pass
+
+    def _restore_original_json(self):
+        if self._original_json is None:
+            return
+        try:
+            with open(self.real_json_path, "w", encoding="utf-8") as f:
+                json.dump(self._original_json, f, indent=2, ensure_ascii=False)
+        except Exception as e:
+            QMessageBox.critical(self, tr("ERROR"), tr("CANNOT_RESTORE_JSON", error=str(e)))
+
+    def closeEvent(self, event):
+        # Cleanup if the window is manually closed
+        try:
+            temp_path = Path(self.temp_json_path)
+            if temp_path.exists():
+                temp_path.unlink()
+                print(tr("DEBUG_TEMP_FILE_REMOVED", path=str(temp_path)))
+        except Exception:
+            pass
+        event.accept()
+
+class Zordeer(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        settings = load_settings()
+        self.hide_invocation_images = settings.get("hide_invocation_images", False)
+        wanted = settings.get("qt_style")
+
+        self.settings = QSettings("Kyuyrii", "Zordeer")
+
+        size = self.settings.value("windowSize")
+        if size:
+            self.resize(size)
+        else:
+            self.resize(780, 640)
+
+        # Only set if style exists on this system
+        if wanted and wanted in QStyleFactory.keys():
+            QApplication.setStyle(wanted)
+        self.setWindowTitle(tr('APP_NAME'))
+        self.setMinimumSize(300, 160)
+        self.invocation_process = None
+        
+        # Add the icon to the main window
+        local_icons = ['zordeer.svg', 'Zordeer.svg']
+
+        icon_set = False
+        for icon_file in local_icons:
+            if Path(icon_file).exists():
+                self.setWindowIcon(QIcon(icon_file))
+                icon_set = True
+                break
+        if not icon_set:
+            for name in ['zordeer', 'Zordeer', 'applications-games']:
+                icon = QIcon.fromTheme(name)
+                if not icon.isNull():
+                    self.setWindowIcon(icon)
+                    break
+
+        self.zordeer_dir = Path.home() / "AppsFiles" / "Zordeer"
+        self.setup_directories()
+
+        # Clean temporary extra JSON files
+        self.cleanup_temp_json_files()
+
+        # Toolbar
+        self.toolbar = QToolBar()
+        self.addToolBar(self.toolbar)
+        self.toolbar.setMovable(False)
+        self.toolbar.setFloatable(False)
+
+        # MenuBar
+        self.menu_bar = self.menuBar()
+
+        # Menu INVOCATION
+        self.invocation_menu = self.menu_bar.addMenu(tr("INVOCATION"))
+
+        # Open executable folder
+        open_exe_path_action = QAction(tr("OPEN_EXEC_PATH"), self)
+        open_exe_path_action.triggered.connect(lambda: self.open_path(self.get_selected_invocation(), chosen_path="exe"))
+        self.invocation_menu.addAction(open_exe_path_action)
+
+        # Open prefix folder
+        open_prefix_path_action = QAction(tr("OPEN_PREFIX_PATH"), self)
+        open_prefix_path_action.triggered.connect(lambda: self.open_path(self.get_selected_invocation(), chosen_path="prefix"))
+        self.invocation_menu.addAction(open_prefix_path_action)
+
+        # Run in prefix
+        run_in_prefix_action = QAction(tr("RUN_IN_PREFIX"), self)
+        run_in_prefix_action.triggered.connect(self.run_in_prefix_dialog)
+        self.invocation_menu.addAction(run_in_prefix_action)
+
+        # Menu TRANSFER
+        self.transfer_menu = self.menu_bar.addMenu(tr("TRANSFER"))
+
+        transfer_runners_menu = QAction(tr("TRANSFER_RUNNERS"), self)
+        transfer_runners_menu.triggered.connect(self.show_runner_transfer_dialog)
+        self.transfer_menu.addAction(transfer_runners_menu)
+
+        transfer_heroes_menu = QAction(tr("TRANSFER_HEROES"), self)
+        transfer_heroes_menu.triggered.connect(self.open_transfer_heroes)
+        self.transfer_menu.addAction(transfer_heroes_menu)
+
+        # Menu EXTRAS
+        self.extras_menu = self.menu_bar.addMenu(tr("EXTRAS"))
+
+        # Add multiple invocations
+        multiple_create_action = QAction(tr("CREATE_MULTIPLE_INVOCATIONS"), self)
+        multiple_create_action.triggered.connect(self.open_multiple_create_dialog)
+        self.extras_menu.addAction(multiple_create_action)
+
+        multiple_remove_invocations_action = QAction(tr("REMOVE_MULTIPLE_INVOCATIONS"), self)
+        multiple_remove_invocations_action.triggered.connect(self.open_multiple_remove_invocations_dialog)
+        self.extras_menu.addAction(multiple_remove_invocations_action)
+
+        multiple_edit_invocations_action = QAction(tr("EDIT_MULTIPLE_INVOCATIONS"), self)
+        multiple_edit_invocations_action.triggered.connect(self.open_multiple_edit_invocations_dialog)
+        self.extras_menu.addAction(multiple_edit_invocations_action)
+
+        settings_action = QAction(tr("ZORDEER_SETTINGS"), self)
+        settings_action.triggered.connect(self.open_settings)
+        self.extras_menu.addAction(settings_action)
+
+        about_action = QAction(tr("ABOUT_ZORDEER"), self)
+        about_action.triggered.connect(self.show_about)
+        self.extras_menu.addAction(about_action)
+
+        # Increase the size of icons
+        self.toolbar.setIconSize(QSize(32, 32))
+
+        self.add_invocation_action = QAction(QIcon.fromTheme("list-add"), tr('CREATE_INVOCATION'), self)
+        self.add_invocation_action.triggered.connect(self.add_invocation)
+        self.toolbar.addAction(self.add_invocation_action)
+
+        self.edit_invocation_action = QAction(QIcon.fromTheme("document-edit"), tr('MODIFY_INVOCATION'), self)
+        self.edit_invocation_action.triggered.connect(self.edit_invocation)
+        self.toolbar.addAction(self.edit_invocation_action)
+
+        self.run_action = QAction(QIcon.fromTheme("media-playback-start"), tr('START_INVOCATION'), self)
+        self.run_action.triggered.connect(self.start_selected_invocation)
+        self.toolbar.addAction(self.run_action)
+
+        self.stop_execution_action = QAction(QIcon.fromTheme("media-playback-stop"), tr('STOP_INVOCATION'), self)
+        self.stop_execution_action.triggered.connect(self.stop_execution)
+        self.toolbar.addAction(self.stop_execution_action)
+
+        # Adds the search bar to the toolbar
+        self.search_bar = QLineEdit()
+        self.search_bar.setPlaceholderText(tr("SEARCH"))
+        self.search_bar.textChanged.connect(self.filter_invocations)
+
+        # Turns the search bar into a QAction for the toolbar
+        search_widget_action = QWidgetAction(self)
+        search_widget_action.setDefaultWidget(self.search_bar)
+        self.toolbar.addAction(search_widget_action)
+        
+        self.central_widget = QWidget()
+        self.setCentralWidget(self.central_widget)
+        self.main_layout = QVBoxLayout()
+        self.central_widget.setLayout(self.main_layout)
+
+        self.invocation_list_widget = QListWidget()
+        self.invocation_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+
+        # List mode (vertical list with icons + text)
+        self.invocation_list_widget.setViewMode(QListWidget.ViewMode.ListMode)
+        self.invocation_list_widget.setMovement(QListWidget.Movement.Static)
+        self.invocation_list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
+        self.invocation_list_widget.setAlternatingRowColors(True)
+
+        # Set icon size
+        self.invocation_list_widget.setIconSize(QSize(420, int(420 * (620 / 1920))))
+
+        self.main_layout.addWidget(self.invocation_list_widget)
+
+        self.load_invocations()
+        
+        atexit.register(self.kill_invocation_process_on_exit)
+        self.transfer_successful = False
+
+    def closeEvent(self, event):
+        self.settings.setValue("windowSize", self.size())
+        # Checks if the title contains the string "INVOCATION_STARTED"
+        if self.windowTitle().startswith(tr("INVOCATION_STARTED", invocation_name="").split("{invocation_name}")[0].strip()):
+            reply = QMessageBox.question(
+                self,
+                tr("APP_NAME"),
+                tr("CONFIRM_CLOSE_MESSAGE"),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+            if reply == QMessageBox.StandardButton.Yes:
+                self.stop_execution()
+                event.accept()
+            else:
+                event.ignore()
+        else:
+            event.accept()
+
+    def filter_invocations(self, text):
+        text = text.lower()
+        first_visible_item = None
+        current_item = self.invocation_list_widget.currentItem()
+
+        for i in range(self.invocation_list_widget.count()):
+            item = self.invocation_list_widget.item(i)
+            visible = text in item.text().lower()
+            item.setHidden(not visible)
+
+            if visible and first_visible_item is None:
+                first_visible_item = item
+
+        # If the currently selected item is no longer visible, select the first visible one
+        if current_item is None or current_item.isHidden():
+            if first_visible_item:
+                self.invocation_list_widget.setCurrentItem(first_visible_item)
+
+        # Remove context menus
+        self.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
+
+    def stop_execution(self):
+        self.setWindowTitle(tr('APP_NAME'))
+
+        # Try to kill by the real executable
+        if hasattr(self, "last_executable") and self.last_executable:
+            exe_name = Path(self.last_executable).name.lower()
+            found = False
+            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+                try:
+                    cmdline = " ".join(proc.info['cmdline'] or []).lower()
+                    if exe_name in cmdline:
+                        print(tr("STOP_KILL_PROCESS", pid=proc.pid, exe=exe_name))
+                        try:
+                            proc.kill()
+                            print(tr("STOP_PROCESS_SUCCESS", pid=proc.pid))
+                        except Exception as e:
+                            print(tr("STOP_KILL_ERROR", pid=proc.pid, error=e))
+                        found = True
+                except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                    print(tr("STOP_ACCESS_ERROR", error=e))
+                    continue
+            if found:
+                print(tr("STOP_INVOCATION_SUCCESS"))
+            else:
+                print(tr("STOP_NO_PROCESS_FOUND"))
+        else:
+            print(tr("STOP_NO_INVOCATION_ACTIVE"))
+
+        # Clear internal references
+        if hasattr(self, "invocation_process"):
+            self.invocation_process = None
+        if hasattr(self, "last_executable"):
+            self.last_executable = None
+
+    def kill_invocation_process_on_exit(self):
+        if self.invocation_process and self.invocation_process.poll() is None:
+            print(tr('ZORDEER_CLOSED'))
+            self.stop_execution()
+
+    def setup_directories(self):
+        """Creates the main Zordeer directory structure using pathlib with real folder names."""
+        base = Path(self.zordeer_dir)
+        subdirs = [
+            base / "invocations",
+            base / "runners",
+            base / "config",
+            base / "art"
+        ]
+
+        for subdir in subdirs:
+            subdir.mkdir(parents=True, exist_ok=True)
+
+    def load_invocations(self):
+        """Loads invocation data from JSON files and populates the list, preserving the selection by JSON file."""
+
+        # Save scroll position
+        scroll_pos = self.invocation_list_widget.verticalScrollBar().value()
+
+        # Save which file was selected
+        selected_invocation_file = None
+        current_item = self.invocation_list_widget.currentItem()
+        if current_item:
+            selected_invocation_file = current_item.data(Qt.ItemDataRole.UserRole)
+
+        self.invocation_list_widget.clear()
+
+        config_dir = Path(self.zordeer_dir) / "config"
+        if not config_dir.exists():
+            return
+
+        invocations = []
+        for file_path in config_dir.glob("invocation-info-*.json"):
+            try:
+                with file_path.open('r', encoding='utf-8') as f:
+                    invocation_data = json.load(f)
+                    invocations.append((invocation_data, file_path))
+            except (IOError, json.JSONDecodeError) as e:
+                print(tr("ERROR_LOADING_FILE", file=file_path, error=e))
+
+        invocations.sort(key=lambda g: g[0].get('name', '').casefold())
+
+        restored_selection_item = None
+        for invocation_data, file_path in invocations:
+            item = self.add_invocation_to_list(invocation_data)
+            item.setData(Qt.ItemDataRole.UserRole, file_path)  # Associate the JSON with the item
+
+            if selected_invocation_file and selected_invocation_file == file_path:
+                restored_selection_item = item
+
+        # Restores the selection
+        if restored_selection_item:
+            self.invocation_list_widget.setCurrentItem(restored_selection_item)
+        else:
+            if self.invocation_list_widget.count() > 0:
+                self.invocation_list_widget.setCurrentRow(0)
+
+        # Reapply the search filter
+        if hasattr(self, "search_bar"):
+            current_text = self.search_bar.text()
+            self.filter_invocations(current_text)
+
+        # Restore scroll position
+        self.invocation_list_widget.verticalScrollBar().setValue(scroll_pos)
+
+    def add_invocation(self):
+        dialog = AddInvocationDialog(self)
+        dialog.invocation_saved.connect(self.load_invocations)
+        dialog.exec()
+
+    def open_multiple_create_dialog(self):
+        dialog = MultipleCreateInvocationsDialog(self)
+        dialog.invocations_saved.connect(self.load_invocations)  # Update list
+        dialog.exec()
+
+    def open_multiple_remove_invocations_dialog(self):
+        dialog = MultipleRemoveInvocationDialog(self)
+        dialog.exec()
+
+    def open_multiple_edit_invocations_dialog(self):
+        dialog = MultipleEditInvocationDialog(self)
+        dialog.exec()
+
+    def edit_invocation(self):
+        invocation_name = self.get_selected_invocation()
+        if not invocation_name:
+            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
+            return
+
+        config_dir = Path(self.zordeer_dir) / "config"
+        safe_invocation_name = invocation_name.replace(" ", "_").lower()
+        invocation_file_path = config_dir / f"invocation-info-{safe_invocation_name}.json"
+
+        try:
+            with invocation_file_path.open('r', encoding='utf-8') as f:
+                invocation_data = json.load(f)
+        except (IOError, json.JSONDecodeError):
+            QMessageBox.critical(self, tr('ERROR'), tr('INVOCATION_INFO_ERROR', name=invocation_name))
+            return
+
+        dialog = AddInvocationDialog(self, invocation_data)
+        dialog.invocation_saved.connect(self.load_invocations)
+        dialog.exec()
+
+    def start_invocation(self, item_or_name):
+        if self.windowTitle().startswith(tr("INVOCATION_STARTED", invocation_name="").split("{invocation_name}")[0].strip()):
+            reply = QMessageBox.question(
+                self,
+                tr("APP_NAME"),
+                tr("INVOCATION_ALREADY_ACTIVE"),
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
+            )
+
+            if reply == QMessageBox.StandardButton.Yes:
+                self.stop_execution()
+            else:
+                return
+
+        if not item_or_name:
+            QMessageBox.warning(self, tr('APP_NAME'), tr('NO_INVOCATION_SELECTED_ERROR'))
+            return
+
+        # Accepts QListWidgetItem or string
+        if isinstance(item_or_name, QListWidgetItem):
+            invocation_name = item_or_name.text()
+        else:
+            invocation_name = str(item_or_name)
+
+        print(tr('STARTING_INVOCATION', name=invocation_name))
+
+        config_dir = Path(self.zordeer_dir) / "config"
+        safe_invocation_name = invocation_name.replace(" ", "_").lower()
+        invocation_file_path = config_dir / f"invocation-info-{safe_invocation_name}.json"
+
+        try:
+            with invocation_file_path.open('r', encoding='utf-8') as f:
+                invocation_data = json.load(f)
+            print(tr('INVOCATION_INFO_LOADED', name=invocation_name))
+
+            runner_base_path = Path(self.zordeer_dir) / "runners" / invocation_data['runner']
+            exec_path_full = Path(invocation_data['exec_path'])
+            prefix_path = Path(invocation_data['prefix_path'])
+
+            proton_script_path = runner_base_path / "proton"
+            if not proton_script_path.exists():
+                QMessageBox.critical(self, tr('ERROR'), tr('ERROR_RUNNER', path=str(runner_base_path)))
+                return
+
+            command = [str(proton_script_path), "run", str(exec_path_full)]
+
+            # Gamemode
+            use_gamemode = invocation_data.get('use_gamemode', True)
+            if use_gamemode:
+                gamemoderun_path = shutil.which('gamemoderun')
+                if gamemoderun_path:
+                    command.insert(0, gamemoderun_path)
+
+            # Invocation arguments
+            invocation_args_str = invocation_data.get('invocation_args', '').strip()
+            if invocation_args_str:
+                command.extend(invocation_args_str.split())
+
+            # Environment variables
+            env = os.environ.copy()
+            env['WINEPREFIX'] = str(prefix_path)
+            env['STEAM_COMPAT_DATA_PATH'] = str(prefix_path)
+            env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = str(Path.home() / ".steam" / "steam")
+            env['STEAM_EXTRA_COMPAT_TOOLS_PATHS'] = str(runner_base_path)
+
+            # Symlink "pfx" > prefix_path
+            pfx_symlink = prefix_path / "pfx"
+            try:
+                if not pfx_symlink.exists():
+                    if pfx_symlink.is_symlink():
+                        pfx_symlink.unlink()
+                    pfx_symlink.symlink_to(prefix_path)
+                    print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink), prefix=str(prefix_path)))
+            except Exception as e:
+                print(tr("SYMLINK_ERROR", error=e))
+
+            # Language configuration
+            language = invocation_data.get('language', '').strip()
+            locale_code = ""
+            env_prefix = ["env"]
+            if language:
+                try:
+                    if "(" in language and ")" in language:
+                        locale_code = language.split("(")[1].replace(")", "").strip()
+                    else:
+                        locale_code = language
+                    env_prefix.append(f"LC_ALL={locale_code}")
+                    env_prefix.append(f"LANG={locale_code}")
+                    env_prefix.append(f"LANGUAGE={locale_code}")
+                except Exception as e:
+                    print(tr("LANGUAGE_SET_ERROR", error=e))
+
+            # Map to MS language code
+            locale_to_ms_code = {
+                "en_US.UTF-8": "ENU",
+                "pt_BR.UTF-8": "PTB",
+                "pt_PT.UTF-8": "PTG",
+                "es_ES.UTF-8": "ESN",
+                "es_MX.UTF-8": "ESM",
+                "fr_FR.UTF-8": "FRA",
+                "de_DE.UTF-8": "DEU",
+                "it_IT.UTF-8": "ITA",
+                "ru_RU.UTF-8": "RUS",
+                "uk_UA.UTF-8": "UKR",
+                "pl_PL.UTF-8": "PLK",
+                "cs_CZ.UTF-8": "CSY",
+                "sk_SK.UTF-8": "SKY",
+                "hu_HU.UTF-8": "HUN",
+                "ro_RO.UTF-8": "ROM",
+                "nl_NL.UTF-8": "NLD",
+                "sv_SE.UTF-8": "SVE",
+                "nb_NO.UTF-8": "NOR",
+                "da_DK.UTF-8": "DAN",
+                "fi_FI.UTF-8": "FIN",
+                "el_GR.UTF-8": "ELL",
+                "bg_BG.UTF-8": "BGR",
+                "ja_JP.UTF-8": "JPN",
+                "ko_KR.UTF-8": "KOR",
+                "zh_CN.UTF-8": "CHS",
+                "zh_TW.UTF-8": "CHT",
+                "ar_SA.UTF-8": "ARA",
+                "fa_IR.UTF-8": "FAR",
+                "tr_TR.UTF-8": "TRK",
+                "hi_IN.UTF-8": "HIN",
+                "th_TH.UTF-8": "THA",
+                "he_IL.UTF-8": "HEB",
+            }
+            if locale_code and invocation_data.get('use_ms_language_code', False):
+                ms_lang_code = locale_to_ms_code.get(locale_code)
+                if ms_lang_code:
+                    command.append(f"-language={ms_lang_code}")
+                    print(tr("USING_MS_LANGUAGE_CODE", code=ms_lang_code))
+
+            # FPS HUD
+            show_fps = invocation_data.get('show_fps', False)
+            fps_hud_type = invocation_data.get('fps_hud_type', '')
+            if show_fps:
+                if fps_hud_type == "FPS_DXVK_HUD":
+                    env_prefix.append("DXVK_HUD=fps,gpuload,frametimes")
+                elif fps_hud_type == "FPS_GALLIUM_HUD":
+                    env_prefix.append("GALLIUM_HUD=fps+cpu,frametime")
+                elif fps_hud_type == "FPS_MANGOHUD":
+                    env_prefix.append("MANGOHUD=1")
+
+            # OpenGL (wined3d)
+            if invocation_data.get('force_opengl', False):
+                env_prefix.append("PROTON_USE_WINED3D=1")
+
+            # Extra environment variables
+            env_vars_str = invocation_data.get('env_vars', '').strip()
+            if env_vars_str:
+                for item in env_vars_str.split():
+                    if '=' in item:
+                        env_prefix.append(item)
+
+            # Prefix in the final command
+            command = env_prefix + command
+
+            print(tr('RUNNING_COMMAND', command=" ".join(command)))
+            self.invocation_process = subprocess.Popen(
+                command,
+                env=env,
+                cwd=str(exec_path_full.parent),
+                stdout=sys.stdout,
+                stderr=sys.stderr
+            )
+            self.last_wineprefix = env.get("WINEPREFIX")
+            print(tr("DEBUG_WINEPREFIX_USED", wineprefix=self.last_wineprefix))
+            self.last_executable = str(exec_path_full)
+            self.setWindowTitle(tr('INVOCATION_STARTED', invocation_name=invocation_name))
+
+            # Give Proton some time to spawn child processes
+            time.sleep(3)
+
+            # Capture real process
+            try:
+                parent = psutil.Process(self.invocation_process.pid)
+                children = parent.children(recursive=True)
+                if children:
+                    self.real_invocation_process = children[-1]
+                    print(tr("DEBUG_REAL_INVOCATION_INITIATED", pid=self.real_invocation_process.pid))
+                else:
+                    self.real_invocation_process = None
+            except psutil.NoSuchProcess:
+                self.real_invocation_process = None
+
+        except (IOError, json.JSONDecodeError):
+            QMessageBox.critical(self, tr('ERROR'), tr('INVOCATION_INFO_ERROR', name=invocation_name))
+        except Exception as e:
+            QMessageBox.critical(self, tr('ERROR'), tr('INVOCATION_START_ERROR', error=str(e)))
+
+    def start_selected_invocation(self):
+        invocation_name = self.get_selected_invocation()
+        self.start_invocation(invocation_name)
+
+    def get_selected_invocation(self):
+        item = self.invocation_list_widget.currentItem()
+        if item:
+            return item.text()
+        return None
+
+    def add_invocation_to_list(self, invocation_data):
+        invocation_name = invocation_data['name']
+
+        item = QListWidgetItem()
+        item.setText(invocation_name)
+
+        # Bold
+        font = item.font()
+        font.setBold(True)
+        item.setFont(font)
+
+        # Art as an icon
+        art_path = invocation_data.get('art_path')
+        if art_path and not getattr(self, "hide_invocation_images", False):
+            art_file = Path(art_path)
+            if art_file.exists():
+                pixmap = QPixmap(str(art_file))
+                if not pixmap.isNull():
+                    pixmap = pixmap.scaled(
+                        self.invocation_list_widget.iconSize(),
+                        Qt.AspectRatioMode.KeepAspectRatio,
+                        Qt.TransformationMode.SmoothTransformation
+                    )
+                    icon = QIcon()
+                    icon.addPixmap(pixmap, QIcon.Mode.Normal, QIcon.State.Off)
+                    icon.addPixmap(pixmap, QIcon.Mode.Selected, QIcon.State.Off)
+                    icon.addPixmap(pixmap, QIcon.Mode.Active, QIcon.State.Off)
+                    icon.addPixmap(pixmap, QIcon.Mode.Disabled, QIcon.State.Off)
+                    item.setIcon(icon)
+
+        self.invocation_list_widget.addItem(item)
+        return item
+
+    def show_runner_transfer_dialog(self):
+        """Opens the runner transfer tab (Runner Transfer Dialog)."""
+        dialog = RunnerTransferDialog(self)
+        dialog.exec()
+
+    def open_transfer_heroes(self):
+        dialog = SteamGridDBApp(self)
+        dialog.exec()
+
+    def run_in_prefix_dialog(self):
+        invocation_name = self.get_selected_invocation()  # Use self directly
+        if not invocation_name:
+            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
+            return
+
+        dlg = RunInPrefix(self, invocation_name)
+        dlg.exec()
+
+    def run_in_prefix(self, base_invocation_name):
+        exe_path, _ = QFileDialog.getOpenFileName(
+            self,
+            tr("SELECT_EXE"),
+            str(Path.home()),
+            tr("EXECUTABLE_FILE_FILTER")
+        )
+        if not exe_path:
+            return  # User canceled
+
+        config_dir = Path(self.zordeer_dir) / "config"
+        safe_invocation_name = base_invocation_name.replace(" ", "_").lower()
+        base_file = config_dir / f"invocation-info-{safe_invocation_name}.json"
+
+        if not base_file.exists():
+            QMessageBox.warning(self, tr("APP_NAME"), tr("INVOCATION_INFO_NOT_FOUND"))
+            return
+
+        with base_file.open("r", encoding="utf-8") as f:
+            base_info = json.load(f)
+
+        # Create temporary JSON
+        temp_id = str(uuid.uuid4())[:8]
+        temp_name = f"TEMP_EXEC_{temp_id}"
+        safe_temp_name = temp_name.lower()
+        temp_file = config_dir / f"invocation-info-{safe_temp_name}.json"
+
+        temp_info = base_info.copy()
+        temp_info["name"] = temp_name
+        temp_info["exec_path"] = exe_path  # Update the executable
+
+        with temp_file.open("w", encoding="utf-8") as f:
+            json.dump(temp_info, f, indent=4)
+
+        # Start as normal invocation
+        self.start_invocation(temp_name)
+
+        # Cleanup function
+        def cleanup():
+            if temp_file.exists():
+                temp_file.unlink()
+                print(tr("RUN_IN_PREFIX_TEMP_FILE_REMOVED", temp_file=str(temp_file)))
+
+        # Remove temp JSON after process ends
+        if self.invocation_process:
+            threading.Thread(target=lambda: (self.invocation_process.wait(), cleanup()), daemon=True).start()
+        else:
+            cleanup()
+
+    def run_in_prefix_for_selected_invocation(self):
+        invocation_name = self.get_selected_invocation()
+        self.run_in_prefix(invocation_name)
+    
+    def cleanup_temp_json_files(self):
+        config_dir = Path(self.zordeer_dir) / "config"
+        removed = 0
+        if config_dir.exists():
+            for file in config_dir.iterdir():
+                if file.name.endswith("_ztffrip.json"):
+                    try:
+                        file.unlink()
+                        removed += 1
+                    except Exception as e:
+                        print(tr("ERROR_REMOVING_FILE", file=file.name, error=e))
+        if removed > 0:
+            print(tr("TEMP_FILES_REMOVED", count=removed))
+
+    def open_path(self, base_invocation_name, chosen_path="prefix"):
+        if not base_invocation_name:
+            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
+            return
+
+        base_file = Path(self.zordeer_dir) / "config" / f"invocation-info-{base_invocation_name.replace(' ', '_').lower()}.json"
+
+        if not base_file.exists():
+            QMessageBox.warning(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR"))
+            return
+
+        with base_file.open("r", encoding="utf-8") as f:
+            invocation_info = json.load(f)
+
+        path = None
+        if chosen_path == "prefix":
+            path = Path(invocation_info.get("prefix_path", ""))
+        elif chosen_path == "exe":
+            exec_path = invocation_info.get("exec_path")
+            path = Path(exec_path).parent if exec_path else None
+
+        if path and path.exists():
+            subprocess.run(["xdg-open", str(path)])
+        else:
+            QMessageBox.critical(
+                self,
+                tr("APP_NAME"),
+                tr("OPEN_PATH_ERROR", path=str(path) if path else "")
+            )
+
+    def open_settings(self):
+        dlg = SettingsDialog(self)
+        if dlg.exec() == QDialog.DialogCode.Accepted:
+            self.hide_invocation_images = load_settings().get("hide_invocation_images", True)
+
+    def show_about(self):
+        about_text = tr("ABOUT_TEXT_HTML")
+
+        special_thanks_text = f"""
+        <br><br>
+        <b>{tr("SPECIAL_THANKS")}</b><br>
+        GloriousEggroll: <a href='https://github.com/GloriousEggroll/proton-ge-custom'>Proton-GE</a><br>
+        pythonlover02: <a href='https://github.com/pythonlover02/Proton-Sarek'>Proton-Sarek</a><br>
+        """
+
+        full_text = about_text + special_thanks_text
+
+        QMessageBox.about(self, tr("ABOUT_ZORDEER"), full_text)
+
+# API key
+API_DIR = Path.home() / "AppsFiles" / "Zordeer" / "config"
+API_FILE = API_DIR / "sgdb_apikey.json"
+
+# Heroes images / SteamGridDB
+HEROES_DIR = Path.home() / "AppsFiles" / "Zordeer" / "heroes"
+HEROES_DIR.mkdir(parents=True, exist_ok=True)
+
+# ===================== SGDB: heroes worker (thread) =====================
+class HeroesLoader(QThread):
+    finished = pyqtSignal(list)  # List of heroes [{id, url, img_data}, ...]
+    error = pyqtSignal(str)
+    progress = pyqtSignal(int)   # 0 to 100%
+
+    def __init__(self, api_key, game_id):
+        super().__init__()
+        self.api_key = api_key
+        self.game_id = game_id
+
+    def run(self):
+        try:
+            headers = {"Authorization": f"Bearer {self.api_key}"}
+            url = f"https://www.steamgriddb.com/api/v2/heroes/game/{self.game_id}"
+            resp = requests.get(url, headers=headers, timeout=20)
+            resp.raise_for_status()
+            data = resp.json().get("data", [])
+
+            results = []
+            total = len(data)
+
+            for idx, hero in enumerate(data):
+                # Attempt to get thumbnail; fallback to full URL
+                thumb_url = (
+                    hero.get("thumb")
+                    or hero.get("thumb_url")
+                    or (hero.get("thumbs")[0] if isinstance(hero.get("thumbs"), list) and hero["thumbs"] else None)
+                    or hero.get("url")
+                )
+                img_data = None
+                if thumb_url:
+                    try:
+                        rt = requests.get(thumb_url, timeout=15)
+                        rt.raise_for_status()
+                        img_data = rt.content
+                    except Exception:
+                        img_data = None  # If it fails, continue
+
+                results.append({
+                    "id": hero.get("id"),
+                    "url": hero.get("url"),
+                    "img_data": img_data
+                })
+
+                # Updates the progress bar
+                if total > 0:
+                    self.progress.emit(int((idx + 1) / total * 100))
+
+            self.finished.emit(results)
+
+        except Exception as e:
+            self.error.emit(tr("HEROES_LOAD_ERROR", error=str(e)))
+
+# ===================== SGDB: Transfer heroes window =====================
+class SteamGridDBApp(QDialog):
+    def __init__(self, parent):
+        super().__init__(parent)
+        self.api_key = None
+        self.headers = None
+        self.results = []
+        self.heroes = []
+        self.selected_game = None
+
+        self.setWindowTitle(tr('TRANSFER_HEROES_TITLE'))
+        self.resize(750, 480)
+        self.setMinimumSize(300, 250)
+
+        main_layout = QVBoxLayout(self)
+        self.setLayout(main_layout)
+
+        # API Key
+        key_row = QHBoxLayout()
+        key_row.addWidget(QLabel(tr('SGDB_API_KEY_LABEL')))
+        self.key_input = QLineEdit()
+        self.key_input.setEchoMode(QLineEdit.EchoMode.Password)
+        key_row.addWidget(self.key_input)
+
+        save_btn = QPushButton(tr('SAVE_BUTTON'))
+        save_btn.clicked.connect(self.save_api_key)
+        save_btn.setAutoDefault(False)  # Prevents being triggered by Enter
+        save_btn.setDefault(False)      # Prevents being triggered by Enter
+        key_row.addWidget(save_btn)
+        main_layout.addLayout(key_row)
+
+        # Lists (results and images) with resizable splitter
+        self.games_panel = self._make_radio_panel_for_games()
+
+        # Image Container Using QScrollArea
+        self.images_container = QWidget()
+        self.images_layout = QVBoxLayout(self.images_container)
+        self.images_layout.setContentsMargins(6, 6, 6, 6)
+        self.images_layout.setSpacing(4)
+        self.images_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # Force items to the top
+
+        self.images_scroll = QScrollArea()
+        self.images_scroll.setWidgetResizable(True)
+        self.images_scroll.setWidget(self.images_container)
+
+        # Creates horizontal splitter
+        body_splitter = QSplitter(Qt.Orientation.Horizontal)
+        body_splitter.addWidget(self.games_panel["scroll"])
+        body_splitter.addWidget(self.images_scroll)
+
+        # Equal initial width for both sides
+        body_splitter.setSizes([1, 1])
+
+        # Prevents any side from disappearing when dragging
+        body_splitter.setChildrenCollapsible(False)
+
+        # Adds to main layout
+        main_layout.addWidget(body_splitter)
+
+        # Search
+        search_row = QHBoxLayout()
+        self.search_input = QLineEdit()
+        search_row.addWidget(self.search_input)
+
+        search_btn = QPushButton(tr('SEARCH'))
+        search_btn.clicked.connect(self.search_game)
+        self.search_input.returnPressed.connect(self.search_game)
+        search_row.addWidget(search_btn)
+        main_layout.addLayout(search_row)
+
+        # Transfer button
+        self.transfer_button = QPushButton(tr('TRANSFER'))
+        self.transfer_button.setEnabled(False)
+        self.transfer_button.clicked.connect(self.transfer_images)
+        self.transfer_button.setAutoDefault(False)  # Prevents being triggered by Enter
+        self.transfer_button.setDefault(False)      # Prevents being triggered by Enter
+        main_layout.addWidget(self.transfer_button)
+
+        # Progress bar always visible
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)  # Starts at 0%
+        main_layout.addWidget(self.progress_bar)
+
+        # Load API key if it exists
+        self.load_api_key()
+
+    # API key persistence
+    def load_api_key(self):
+        try:
+            if API_FILE.exists():
+                with API_FILE.open("r", encoding="utf-8") as f:
+                    try:
+                        data = json.load(f)
+                        self.api_key = data.get("apikey", "").strip()
+                    except Exception:
+                        # Fallback: If not valid JSON, read as plain text
+                        f.seek(0)
+                        self.api_key = f.read().strip()
+                self.key_input.setText(self.api_key)
+                self.headers = {"Authorization": f"Bearer {self.api_key}"}
+        except Exception:
+            pass
+
+    def save_api_key(self):
+        key = self.key_input.text().strip()
+        if not key:
+            QMessageBox.warning(self, tr('APP_NAME'), tr('API_KEY_REQUIRED_SGDB'))
+            return
+        try:
+            API_DIR.mkdir(parents=True, exist_ok=True)
+            with API_FILE.open("w", encoding="utf-8") as f:
+                json.dump({"apikey": key}, f, indent=2, ensure_ascii=False)
+            self.api_key = key
+            self.headers = {"Authorization": f"Bearer {self.api_key}"}
+            QMessageBox.information(self, tr('TRANSFER_HEROES'), tr('API_KEY_SAVED'))
+        except Exception as e:
+            QMessageBox.critical(self, tr("ERROR"), tr("API_KEY_SAVE_ERROR", error=str(e)))
+
+    # Search games
+    def search_game(self):
+        """Searches for games in SteamGridDB and updates the radio panel."""
+        if not self.headers:
+            QMessageBox.warning(self, tr('APP_NAME'), tr('API_KEY_SAVE_FIRST'))
+            return
+
+        term = self.search_input.text().strip()
+        if not term:
+            QMessageBox.warning(self, tr('APP_NAME'), tr('ENTER_GAME_NAME'))
+            return
+
+        # Clear selection and UI before fetching
+        self.selected_game = None
+        # Clear the image container
+        for i in reversed(range(self.images_layout.count())):
+            widget = self.images_layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+        self.transfer_button.setEnabled(False)
+        self._clear_radio_panel(self.games_panel)
+
+        # API Search
+        try:
+            url = f"https://www.steamgriddb.com/api/v2/search/autocomplete/{term}"
+            resp = requests.get(url, headers=self.headers, timeout=20)
+            resp.raise_for_status()
+            data = resp.json()
+            self.results = data.get("data", []) if isinstance(data, dict) else []
+        except Exception as e:
+            QMessageBox.critical(self, tr('ERROR'), tr('API_FAIL', error=str(e)))
+            return
+
+        layout = self.games_panel["layout"]
+        group = self.games_panel["button_group"]
+
+        # No results
+        if not self.results:
+            layout.addWidget(QLabel(tr('NO_RESULTS')))
+            return
+
+        # Create new radios
+        for game in self.results:
+            rb = QRadioButton(f"{game.get('id')} - {game.get('name')}")
+            rb.setProperty("game_data", game)
+            rb.toggled.connect(self.on_game_radio_toggled)
+            group.addButton(rb)
+            layout.addWidget(rb)
+
+    def _clear_radio_panel(self, panel: dict):
+        """Removes all radios and widgets from a radio panel."""
+        group = panel["button_group"]
+        layout = panel["layout"]
+
+        # Remove buttons from group
+        for btn in group.buttons():
+            group.removeButton(btn)
+            btn.deleteLater()
+
+        # Remove widgets from the layout
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.deleteLater()
+
+    def _make_radio_panel_for_games(self):
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(6, 6, 6, 6)
+        layout.setSpacing(4)
+        scroll.setWidget(container)
+
+        group = QButtonGroup(self)
+        group.setExclusive(True)
+
+        return {
+            "scroll": scroll,
+            "container": container,
+            "layout": layout,
+            "button_group": group,
+        }
+
+    def on_game_radio_toggled(self, checked: bool):
+        if not checked:
+            return
+        rb = self.sender()
+        game = rb.property("game_data")
+        if not game:
+            return
+        self.selected_game = game
+        game_id = game.get("id")
+        if game_id is not None:
+            self._load_images_by_id(game_id)
+
+    def _load_images_by_id(self, game_id: int):
+        """Loads hero images via worker."""
+        self.setEnabled(False)
+        # Clear the image container
+        for i in reversed(range(self.images_layout.count())):
+            widget = self.images_layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+        self.transfer_button.setEnabled(False)
+
+        # Infinite progress bar while loading
+        self.progress_bar.setRange(0, 0)
+
+        self.loader = HeroesLoader(self.api_key, game_id)
+        self.loader.finished.connect(self.on_images_loaded)
+        self.loader.error.connect(self.on_loader_error)
+        self.loader.start()
+
+    def on_loader_error(self, msg):
+        self.setEnabled(True)
+        # Reset the bar
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+        QMessageBox.critical(self, tr("ERROR"), msg)
+
+    def on_images_loaded(self, heroes):
+        self.setEnabled(True)
+
+        # Reset progress bar
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(0)
+
+        self.heroes = heroes or []
+
+        # Clear image container
+        for i in reversed(range(self.images_layout.count())):
+            widget = self.images_layout.itemAt(i).widget()
+            if widget:
+                widget.setParent(None)
+
+        if not self.heroes:
+            label = QLabel(tr('NO_HERO_IMAGES'))
+            self.images_layout.addWidget(label)
+            self.transfer_button.setEnabled(False)
+            return
+
+        for hero in self.heroes:
+            row = QWidget()
+            row_layout = QHBoxLayout(row)
+            row_layout.setContentsMargins(0, 0, 0, 0)
+            # Adjust spacing according to the current Qt style
+            if QApplication.style().objectName().lower() == "oxygen":
+                row_layout.setSpacing(0)  # Specific Spacing for Oxygen
+            else:
+                row_layout.setSpacing(8)  # Default Spacing
+
+            # Checkbox on the left
+            checkbox = QCheckBox()
+            checkbox.setProperty("hero_data", hero)
+            row_layout.addWidget(checkbox)
+
+            # Image
+            img_label = QLabel()
+            if img_data := hero.get("img_data"):
+                pixmap = QPixmap()
+                pixmap.loadFromData(img_data)
+                img_label.setPixmap(pixmap.scaled(
+                    200, 90,
+                    Qt.AspectRatioMode.KeepAspectRatio,
+                    Qt.TransformationMode.SmoothTransformation
+                ))
+            row_layout.addWidget(img_label)
+
+            # Name/ID next to image
+            text_label = QLabel(f"ID {hero.get('id')}")
+            text_label.setContentsMargins(8, 0, 0, 0)
+            row_layout.addWidget(text_label)
+
+            row_layout.addStretch()  # Maintains clean horizontal alignment
+
+            self.images_layout.addWidget(row)
+
+        self.transfer_button.setEnabled(True)
+
+    def transfer_images(self):
+        """Transfers the selected images."""
+        if not self.selected_game:
+            return
+
+        to_transfer = []
+
+        for i in range(self.images_layout.count()):
+            row = self.images_layout.itemAt(i).widget()
+            if not row:
+                continue
+            checkbox = row.findChild(QCheckBox)
+            if checkbox and checkbox.isChecked():
+                hero = checkbox.property("hero_data")
+                if hero and hero.get("url"):
+                    to_transfer.append(hero)
+
+        if not to_transfer:
+            QMessageBox.information(self, tr('APP_NAME'), tr('SELECT_AT_LEAST_ONE_IMAGE'))
+            return
+
+        self.setEnabled(False)
+
+        game_name = (self.selected_game.get("name") or str(self.selected_game.get('id'))).replace("/", "_")
+        save_dir = HEROES_DIR / game_name
+        save_dir.mkdir(parents=True, exist_ok=True)
+
+        # Pull-up bar
+        self.progress_bar.setRange(0, len(to_transfer))
+        self.progress_bar.setValue(0)
+
+        for i, hero in enumerate(to_transfer, start=1):
+            url = hero.get("url")
+            try:
+                r = requests.get(url, timeout=30)
+                r.raise_for_status()
+                ext = Path(url).suffix
+                if not ext or len(ext) > 6:
+                    ext = ".png"
+                filename = save_dir / f"hero_{hero.get('id')}{ext}"
+                with filename.open("wb") as f:
+                    f.write(r.content)
+            except Exception as e:
+                print(tr("ERROR_TRANSFERRING_URL", url=url, error=e))
+
+            self.progress_bar.setValue(i)
+            QApplication.processEvents()
+
+        # Reset bar
+        self.progress_bar.setValue(100)
+        QMessageBox.information(self, tr('DONE'), tr('TRANSFER_SUMMARY', len=len(to_transfer), dir=str(save_dir)))
+        self.setEnabled(True)
+        self.progress_bar.setValue(0)
+
+if __name__ == "__main__":
+    # Loads settings
+    settings = load_settings()
+    # Uses full saved locale, or LANG defined in the module (which already has 'pt_BR.UTF-8', for example)
+    current_lang = settings.get("language", LANG)  
+    LANG = current_lang  # Update the global variable
+    app = QApplication(sys.argv)
+
+    # Define the application ID so Wayland can find the icon.
+    # We use the lowercase application name with hyphens instead of spaces.
+    app_id = tr('APP_NAME').lower().replace(' ', '-')
+    app.setDesktopFileName(app_id)
+
+    window = Zordeer()
+    window.show()
+    sys.exit(app.exec())
