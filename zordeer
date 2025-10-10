@@ -422,6 +422,8 @@ def detect_default_settings() -> dict:
     available = QStyleFactory.keys()
     if "Oxygen" in available:
         style = "Oxygen"
+    elif "kvantum" in available:
+        style = "kvantum"
     elif "Breeze" in available:
         style = "Breeze"
     elif "Windows" in available:
