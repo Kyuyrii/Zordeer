@@ -33,7 +33,7 @@ SUPPORTED_LANGUAGES = {
     "Português": "pt_BR",
 }
 
-__version__ = "0.2"
+__version__ = "0.2.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 TRANSLATIONS = {
@@ -1141,7 +1141,7 @@ class AddInvocationDialog(QDialog):
 
         runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
 
-        self.runner_input.addItem("wine")
+        self.runner_input.addItem("Wine")
         self.runner_input.addItems(sorted(runners, reverse=True))
 
     def select_executable(self):
@@ -1518,7 +1518,7 @@ class AddInvocationDialog(QDialog):
 
         selected_runner = self.runner_input.currentText().strip()
 
-        if selected_runner == "wine":
+        if selected_runner == "Wine":
             # Use the system wine
             cmd = ["winecfg"]
             env = os.environ.copy()
@@ -1529,7 +1529,7 @@ class AddInvocationDialog(QDialog):
             runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
             runner_path = runners_path / selected_runner / "proton"
             if not runner_path.exists():
-                QMessageBox.critical(self, tr('APP_NAME'), tr('PROTON_NOT_FOUND_ERROR', path=str(runner_path)))
+                QMessageBox.critical(self, tr("APP_NAME"), tr("ERROR_RUNNER", path=str(runner_path)))
                 return
             cmd = [str(runner_path), "run", "winecfg"]
             env = os.environ.copy()
@@ -1638,8 +1638,11 @@ class MultipleCreateInvocationsDialog(QDialog):
         runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
         runners_path.mkdir(parents=True, exist_ok=True)
         runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
+        
         self.runner_combo.clear()
-        self.runner_combo.addItem(tr('PLACEHOLDER_FOR_RUNNER'))
+
+        self.runner_combo.addItem("Wine")
+
         self.runner_combo.addItems(sorted(runners, reverse=True))
 
     def add_files(self):
@@ -2340,6 +2343,10 @@ class MultipleEditInvocationDialog(QDialog):
         runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
         runners_path.mkdir(parents=True, exist_ok=True)
         runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
+
+        self.runner_combo.clear()
+        self.runner_combo.addItem("Wine")
+
         self.runner_combo.addItems(sorted(runners, reverse=True))
 
     def update_prefix_state(self, state):
