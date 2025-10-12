@@ -33,7 +33,7 @@ SUPPORTED_LANGUAGES = {
     "Português": "pt_BR",
 }
 
-__version__ = "0.1"
+__version__ = "0.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 TRANSLATIONS = {
@@ -116,7 +116,7 @@ TRANSLATIONS = {
         "INVOCATION_STARTED": "Zordeer - Invocation started: {invocation_name}",
         "LANGUAGE": "Language:",
         "LANGUAGE_SET_ERROR": "[Error] Failed to set LC_ALL: {error}",
-        "MANDATORY_FIELDS_ERROR": "Name, executable, and runner are mandatory.",
+        "MANDATORY_FIELDS_ERROR": "Name and executable are mandatory.",
         "MODIFY_INVOCATION": "Modify invocation",
         "MULTIPLE_INVOCATION_EDITOR": "Multiple invocation editor",
         "MULTIPLE_INVOCATION_CREATOR": "Creator of multiple invocations",
@@ -209,6 +209,7 @@ TRANSLATIONS = {
         "USE_ON_ALL": "Use on all",
         "USING_MS_LANGUAGE_CODE": "Using Microsoft language code: -language={code}",
         "USING_PYQT6": "Using PyQt6",
+        "WINE_NOT_FOUND": "Wine was not found, please check if it is installed",
         "WINECFG_BUTTON": "Winecfg",
         "YES_BUTTON": "Yes",
         "ZORDEER_CLOSED": "Zordeer closed. Finalizing processes...",
@@ -293,7 +294,7 @@ TRANSLATIONS = {
         "INVOCATION_STARTED": "Zordeer - Invocação iniciada: {invocation_name}",
         "LANGUAGE": "Idioma:",
         "LANGUAGE_SET_ERROR": "[Erro] Falha ao definir LC_ALL: {error}",
-        "MANDATORY_FIELDS_ERROR": "Nome, executável e runner são obrigatórios.",
+        "MANDATORY_FIELDS_ERROR": "Nome e executável são obrigatórios.",
         "MODIFY_INVOCATION": "Modificar invocação",
         "MULTIPLE_INVOCATION_EDITOR": "Editor de multiplas invocações",
         "MULTIPLE_INVOCATION_CREATOR": "Criador de múltiplas invocações",
@@ -386,6 +387,7 @@ TRANSLATIONS = {
         "USE_ON_ALL": "Usar em todas",
         "USING_MS_LANGUAGE_CODE": "Usando código de idioma da Microsoft: -language={code}",
         "USING_PYQT6": "Usando PyQt6",
+        "WINE_NOT_FOUND": "Wine não foi encontrado, verifique se ele está instalado",
         "WINECFG_BUTTON": "Winecfg",
         "YES_BUTTON": "Sim",
         "ZORDEER_CLOSED": "Zordeer fechado. Finalizando processos...",
@@ -1139,8 +1141,8 @@ class AddInvocationDialog(QDialog):
 
         runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
 
-        self.runner_input.clear()
-        self.runner_input.addItems([tr('PLACEHOLDER_FOR_RUNNER')] + sorted(runners, reverse=True))
+        self.runner_input.addItem("wine")
+        self.runner_input.addItems(sorted(runners, reverse=True))
 
     def select_executable(self):
         # Paths in order of priority
@@ -1510,24 +1512,31 @@ class AddInvocationDialog(QDialog):
 
     def open_winecfg(self):
         prefix_path = Path(self.prefix_path_input.text().strip())
-        runner = self.runner_input.currentText().strip()
-
         if not prefix_path.exists():
             QMessageBox.warning(self, tr('APP_NAME'), tr('INVALID_PREFIX_ERROR'))
             return
 
-        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
-        runner_path = runners_path / runner / "proton"
+        selected_runner = self.runner_input.currentText().strip()
 
-        if not runner_path.exists():
-            QMessageBox.critical(self, tr('APP_NAME'), tr('PROTON_NOT_FOUND_ERROR', path=str(runner_path)))
-            return
+        if selected_runner == "wine":
+            # Use the system wine
+            cmd = ["winecfg"]
+            env = os.environ.copy()
+            # Set Wine prefix
+            env["WINEPREFIX"] = str(prefix_path)
+        else:
+            # Use Proton
+            runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runners"
+            runner_path = runners_path / selected_runner / "proton"
+            if not runner_path.exists():
+                QMessageBox.critical(self, tr('APP_NAME'), tr('PROTON_NOT_FOUND_ERROR', path=str(runner_path)))
+                return
+            cmd = [str(runner_path), "run", "winecfg"]
+            env = os.environ.copy()
+            env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
+            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(Path.home() / ".steam" / "steam")
 
-        cmd = [str(runner_path), "run", "winecfg"]
-        env = os.environ.copy()
-        env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
-        env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(Path.home() / ".steam" / "steam")
-
+        # Run winecfg
         subprocess.Popen(cmd, env=env)
 
 class MultipleCreateInvocationsDialog(QDialog):
@@ -3253,12 +3262,19 @@ class Zordeer(QMainWindow):
             exec_path_full = Path(invocation_data['exec_path'])
             prefix_path = Path(invocation_data['prefix_path'])
 
-            proton_script_path = runner_base_path / "proton"
-            if not proton_script_path.exists():
-                QMessageBox.critical(self, tr('ERROR'), tr('ERROR_RUNNER', path=str(runner_base_path)))
-                return
-
-            command = [str(proton_script_path), "run", str(exec_path_full)]
+            runner = invocation_data['runner'].lower()
+            if runner == "wine":
+                wine_path = shutil.which("wine")
+                if not wine_path:
+                    QMessageBox.critical(self, tr("ERROR"), tr("WINE_NOT_FOUND"))
+                    return
+                command = [wine_path, str(exec_path_full)]
+            else:
+                proton_script_path = runner_base_path / "proton"
+                if not proton_script_path.exists():
+                    QMessageBox.critical(self, tr("ERROR"), tr('ERROR_RUNNER', path=str(runner_base_path)))
+                    return
+                command = [str(proton_script_path), "run", str(exec_path_full)]
 
             # Gamemode
             use_gamemode = invocation_data.get('use_gamemode', True)
