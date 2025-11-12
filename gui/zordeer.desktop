@@ -1,10 +1,10 @@
 [Desktop Entry]
 Name=Zordeer
+Exec=zordeer
+Icon=applications-games
 StartupWMClass=zordeer
 Comment=A launcher for games that run via Proton
 Categories=Game;
-Keywords=gaming;proton;
-Exec=zordeer
-Icon=applications-games
+Keywords=gaming;proton;invocation;
 Terminal=false
 Type=Application
