@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "0.4"
+__version__ = "0.4.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -2277,7 +2277,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         self.language_input = QComboBox()
         self.language_input.addItems([
             tr("PLACEHOLDER_FOR_LANGUAGE"),
-            'English (en_US.UTF-8)',
+            'English USA (en_US.UTF-8)',
             'Português Brasil (pt_BR.UTF-8)',
             'Português Portugal (pt_PT.UTF-8)',
             'Español España (es_ES.UTF-8)',
@@ -3053,7 +3053,7 @@ class MultipleEditInvocationDialog(QDialog):
         self.lang_combo = QComboBox()
         self.lang_combo.addItem(tr("PLACEHOLDER_FOR_LANGUAGE"))
         for lang in [
-            'English (en_US.UTF-8)',
+            'English USA (en_US.UTF-8)',
             'Português Brasil (pt_BR.UTF-8)',
             'Português Portugal (pt_PT.UTF-8)',
             'Español España (es_ES.UTF-8)',
@@ -4766,7 +4766,7 @@ class Zordeer(QMainWindow):
             icon_width = icon_width_grid
             icon_height = int(icon_width * (620 / 1920))
             grid_width = icon_width + 5
-            grid_height = icon_height + 40
+            grid_height = icon_height + 30
             self.invocation_list_widget.setIconSize(QSize(icon_width, icon_height))
             self.invocation_list_widget.setGridSize(QSize(grid_width, grid_height))
             self.invocation_list_widget.setMovement(QListWidget.Movement.Static)
