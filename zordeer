@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "0.4.1"
+__version__ = "0.4.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -3903,21 +3903,21 @@ class RunInPrefix(QDialog):
 
         self.radio_group = QButtonGroup(self)
 
+        self.radio_normal = QRadioButton(tr("NORMAL_RUN"))             # Untouched TOML
         self.radio_clean = QRadioButton(tr("CLEAN_RUN"))               # Prevents env vars
         self.radio_automatic = QRadioButton(tr("AUTOMATIC_RUN"))       # Silent args like /VERYSILENT
-        self.radio_normal = QRadioButton(tr("NORMAL_RUN"))             # Untouched TOML
 
+        self.radio_group.addButton(self.radio_normal)
         self.radio_group.addButton(self.radio_clean)
         self.radio_group.addButton(self.radio_automatic)
-        self.radio_group.addButton(self.radio_normal)
 
-        self.radio_clean.setChecked(True)  # Default selection
+        self.radio_normal.setChecked(True)  # Default selection
 
         # Group layout for radios
         radios_layout = QVBoxLayout()
+        radios_layout.addWidget(self.radio_normal)
         radios_layout.addWidget(self.radio_clean)
         radios_layout.addWidget(self.radio_automatic)
-        radios_layout.addWidget(self.radio_normal)
         layout.addLayout(radios_layout)
 
         # Bottom buttons (Run / Stop)
@@ -5608,7 +5608,6 @@ class Zordeer(QMainWindow):
         return item
 
     def show_runner_transfer_dialog(self):
-        """Opens the runner transfer tab (Runner Transfer Dialog)."""
         dialog = RunnerTransferDialog(self)
         dialog.exec()
 
