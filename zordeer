@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "0.4.2"
+__version__ = "0.4.3"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -560,7 +560,7 @@ def load_external_translations():
     # Translation folders
     translation_dirs = [
         Path.home() / "AppsFiles" / "Zordeer" / "translation",
-        Path("/usr/share/zordeer/translation"),
+        Path("/usr/share/Zordeer/translation"),
         Path(__file__).parent / "translation",
         Path(sys.argv[0]).parent / "translation"
     ]
