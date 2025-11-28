@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "0.5"
+__version__ = "1.0"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -1629,12 +1629,7 @@ class AddInvocationDialog(QDialog):
             prefix_text = str(Path.home() / "AppsFiles" / "Zordeer" / "invocation" / self.DEFAULT_PREFIX_NAME)
 
         art_path = self.invocation_art_input.text().strip()
-        if not art_path:
-            art_path = self.resolve_default_art_path(self.name_input.text())
-
         gui_path = self.invocation_gui_input.text().strip()
-        if not gui_path:
-            gui_path = self.resolve_default_gui_path(self.name_input.text())
 
         return {
             "name": self.name_input.text(),
@@ -1653,26 +1648,6 @@ class AddInvocationDialog(QDialog):
             "env_vars": env_vars_text,
             "invocation_args": self.invocation_args_input.text(),
         }
-
-    def resolve_default_art_path(self, invocation_name: str) -> str:
-        heroes_dir = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" /"heroes"
-        for folder in heroes_dir.iterdir():
-            if folder.is_dir() and folder.name.lower() == invocation_name.lower():
-                for ext in ("*.jpg", "*.jpeg", "*.png", "*webp"):
-                    images = list(folder.glob(ext))
-                    if images:
-                        return str(images[0])
-        return ""
-
-    def resolve_default_gui_path(self, invocation_name: str) -> str:
-        icons_dir = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "icons"
-        for folder in icons_dir.iterdir():
-            if folder.is_dir() and folder.name.lower() == invocation_name.lower():
-                for ext in ("*.jpg", "*.jpeg", "*.png", "*webp"):
-                    images = list(folder.glob(ext))
-                    if images:
-                        return str(images[0])
-        return ""
 
     def save_and_accept(self):
         """Validates fields, saves data to file, and updates paths if the name changes."""
@@ -1730,73 +1705,100 @@ class AddInvocationDialog(QDialog):
                 )
                 return
 
-            # Handle artwork copy / rename
-            if invocation_data.get("art_path") and (not self.invocation_data or invocation_data["art_path"] != self.invocation_data.get("art_path")):
-                # User selected a new image
-                if self.invocation_data:
-                    old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
-                    # Remove all old images for this invocation, regardless of extension
-                    for old_file in art_dir.glob(f"{old_safe_name}.*"):
-                        try:
-                            old_file.unlink()
-                        except Exception:
-                            pass
+            # Handle artwork
+            safe_invocation_name = invocation_data["name"].replace(" ", "_").lower()
 
-                # Copy new image to art_dir
+            # art_path
+            if invocation_data.get("art_path"):
                 art_path = Path(invocation_data["art_path"])
-                art_extension = art_path.suffix.lower()
-                new_art_path = art_dir / f"{safe_invocation_name}{art_extension}"
-                try:
-                    shutil.copyfile(art_path, new_art_path)
-                    invocation_data["art_path"] = str(new_art_path)
-                except Exception:
-                    invocation_data["art_path"] = ""
-            elif self.invocation_data and self.invocation_data.get("art_path"):
-                # No new image selected, rename old art if invocation name changed
-                old_art_path = Path(self.invocation_data['art_path'])
-                if old_art_path.exists():
-                    old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
-                    if old_safe_name != safe_invocation_name:
+                if art_path.exists() and art_path.is_file():
+                    # Remove old images with old name only if we're selecting a NEW file
+                    if self.invocation_data and self.invocation_data.get("art_path"):
+                        old_art_path = Path(self.invocation_data['art_path'])
+                        # Only remove if the new file is different from the old one
+                        if old_art_path != art_path:
+                            old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
+                            for old_file in art_dir.glob(f"{old_safe_name}.*"):
+                                try:
+                                    old_file.unlink()
+                                except Exception:
+                                    pass
+                    
+                    # Copy new image only if it's not already in the art_dir
+                    if art_path.parent != art_dir:
+                        art_extension = art_path.suffix.lower()
+                        new_art_path = art_dir / f"{safe_invocation_name}{art_extension}"
                         try:
-                            new_art_path = art_dir / f"{safe_invocation_name}{old_art_path.suffix.lower()}"
-                            old_art_path.rename(new_art_path)
+                            shutil.copyfile(art_path, new_art_path)
                             invocation_data["art_path"] = str(new_art_path)
                         except Exception:
-                            invocation_data["art_path"] = str(old_art_path)
+                            invocation_data["art_path"] = ""
+                    else:
+                        # File is already in art_dir, just update the path with new name if needed
+                        if self.invocation_data:
+                            old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
+                            if old_safe_name != safe_invocation_name:
+                                new_art_path = art_dir / f"{safe_invocation_name}{art_path.suffix.lower()}"
+                                try:
+                                    art_path.rename(new_art_path)
+                                    invocation_data["art_path"] = str(new_art_path)
+                                except Exception:
+                                    invocation_data["art_path"] = str(art_path)
+            elif self.invocation_data and self.invocation_data.get("art_path"):
+                # User removed the art path - delete old file
+                old_art_path = Path(self.invocation_data['art_path'])
+                if old_art_path.exists() and old_art_path.is_file() and old_art_path.parent == art_dir:
+                    try:
+                        old_art_path.unlink()
+                    except Exception:
+                        pass
+                invocation_data["art_path"] = ""
 
-            # Handle gui gui copy / rename
-            if invocation_data.get("gui_path") and (not self.invocation_data or invocation_data["gui_path"] != self.invocation_data.get("gui_path")):
-                # User selected a new image
-                if self.invocation_data:
-                    old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
-                    # Remove all old images for this invocation, regardless of extension
-                    for old_file in gui_dir.glob(f"{old_safe_name}.*"):
-                        try:
-                            old_file.unlink()
-                        except Exception:
-                            pass
-
-                # Copy new image to gui_dir
+            # gui_path
+            if invocation_data.get("gui_path"):
                 gui_path = Path(invocation_data["gui_path"])
-                gui_extension = gui_path.suffix.lower()
-                new_gui_path = gui_dir / f"{safe_invocation_name}{gui_extension}"
-                try:
-                    shutil.copyfile(gui_path, new_gui_path)
-                    invocation_data["gui_path"] = str(new_gui_path)
-                except Exception:
-                    invocation_data["gui_path"] = ""
-            elif self.invocation_data and self.invocation_data.get("gui_path"):
-                # No new image selected, rename old gui if invocation name changed
-                old_gui_path = Path(self.invocation_data['gui_path'])
-                if old_gui_path.exists():
-                    old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
-                    if old_safe_name != safe_invocation_name:
+                if gui_path.exists() and gui_path.is_file():
+                    # Remove old images with old name only if we're selecting a NEW file
+                    if self.invocation_data and self.invocation_data.get("gui_path"):
+                        old_gui_path = Path(self.invocation_data['gui_path'])
+                        # Only remove if the new file is different from the old one
+                        if old_gui_path != gui_path:
+                            old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
+                            for old_file in gui_dir.glob(f"{old_safe_name}.*"):
+                                try:
+                                    old_file.unlink()
+                                except Exception:
+                                    pass
+                    
+                    # Copy new image only if it's not already in the gui_dir
+                    if gui_path.parent != gui_dir:
+                        gui_extension = gui_path.suffix.lower()
+                        new_gui_path = gui_dir / f"{safe_invocation_name}{gui_extension}"
                         try:
-                            new_gui_path = gui_dir / f"{safe_invocation_name}{old_gui_path.suffix.lower()}"
-                            old_gui_path.rename(new_gui_path)
+                            shutil.copyfile(gui_path, new_gui_path)
                             invocation_data["gui_path"] = str(new_gui_path)
                         except Exception:
-                            invocation_data["gui_path"] = str(old_gui_path)
+                            invocation_data["gui_path"] = ""
+                    else:
+                        # File is already in gui_dir, just update the path with new name if needed
+                        if self.invocation_data:
+                            old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
+                            if old_safe_name != safe_invocation_name:
+                                new_gui_path = gui_dir / f"{safe_invocation_name}{gui_path.suffix.lower()}"
+                                try:
+                                    gui_path.rename(new_gui_path)
+                                    invocation_data["gui_path"] = str(new_gui_path)
+                                except Exception:
+                                    invocation_data["gui_path"] = str(gui_path)
+            elif self.invocation_data and self.invocation_data.get("gui_path"):
+                # User removed the gui path - delete old file
+                old_gui_path = Path(self.invocation_data['gui_path'])
+                if old_gui_path.exists() and old_gui_path.is_file() and old_gui_path.parent == gui_dir:
+                    try:
+                        old_gui_path.unlink()
+                    except Exception:
+                        pass
+                invocation_data["gui_path"] = ""
 
             # Handle prefix folder rename if it's safe
             if self.invocation_data:
@@ -2585,60 +2587,6 @@ class MultipleCreateInvocationsDialog(QDialog):
                 prefix_path = Path(item.prefix_input.text())
                 prefix_path.mkdir(parents=True, exist_ok=True)
 
-            # Determining the path of art
-            art_path = getattr(item, "art_path", "")
-            if not art_path:
-                heroes_dir = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "heroes"
-                for folder in heroes_dir.iterdir():
-                    if folder.is_dir() and folder.name.lower() == name.lower():
-                        for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
-                            images = list(folder.glob(ext))
-                            if images:
-                                art_path = str(images[0])
-                                break
-                    if art_path:
-                        break
-
-            # Copy art to art_dir if it exists
-            if art_path:
-                art_src = Path(art_path)
-                if art_src.exists():
-                    ext = art_src.suffix.lower()
-                    dest_path = art_dir / f"{safe_name}{ext}"
-                    try:
-                        if not dest_path.exists():
-                            shutil.copyfile(art_src, dest_path)
-                        art_path = str(dest_path)
-                    except Exception:
-                        art_path = ""
-
-            # Determining the path of gui icon
-            gui_path = getattr(item, "gui_path", "")
-            if not gui_path:
-                icons_dir = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "icons"
-                for folder in icons_dir.iterdir():
-                    if folder.is_dir() and folder.name.lower() == name.lower():
-                        for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
-                            images = list(folder.glob(ext))
-                            if images:
-                                gui_path = str(images[0])
-                                break
-                    if gui_path:
-                        break
-
-            # Copy gui to gui_dir if it exists
-            if gui_path:
-                gui_src = Path(gui_path)
-                if gui_src.exists():
-                    ext = gui_src.suffix.lower()
-                    dest_path = gui_dir / f"{safe_name}{ext}"
-                    try:
-                        if not dest_path.exists():
-                            shutil.copyfile(gui_src, dest_path)
-                        gui_path = str(dest_path)
-                    except Exception:
-                        gui_path = ""
-
             # Save TOML
             try:
                 with open(file_path, 'w', encoding="utf-8") as f:
@@ -2647,8 +2595,8 @@ class MultipleCreateInvocationsDialog(QDialog):
                         "runner": runner,
                         "exec_path": item.path,
                         "prefix_path": str(prefix_path),
-                        "art_path": art_path,
-                        "gui_path": gui_path,
+                        "art_path": "",
+                        "gui_path": "",
                         "language": selected_lang,
                         "use_ms_language_code": item.ms_lang_cb.isChecked(),
                         "force_opengl": item.force_opengl_cb.isChecked(),
@@ -3074,7 +3022,7 @@ class MultipleEditInvocationDialog(QDialog):
             'Dansk (da_DK.UTF-8)',
             'Suomi (fi_FI.UTF-8)',
             'Ελληνικά (el_GR.UTF-8)',
-            'Български (bg_BL.UTF-8)',
+            'Български (bg_BG.UTF-8)',
             '日本語 (ja_JP.UTF-8)',
             '한국어 (ko_KR.UTF-8)',
             '简体中文 (zh_CN.UTF-8)',
@@ -3321,7 +3269,7 @@ class MultipleEditInvocationDialog(QDialog):
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            tr("SELECT_INVOCATION_ART"),
+            tr("SELECT_INVOCATION_GUI"),
             str(icons_dir),
             tr("IMAGE_FILTER")
         )
@@ -3406,26 +3354,6 @@ class MultipleEditInvocationDialog(QDialog):
         self.env_input.setText(tr("DO_NOT_CHANGE"))
         self.args_input.setText(tr("DO_NOT_CHANGE"))
 
-    def resolve_default_art_path(self, invocation_name: str) -> str:
-        heroes_dir = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "heroes"
-        for folder in heroes_dir.iterdir():
-            if folder.is_dir() and folder.name.lower() == invocation_name.lower():
-                for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
-                    images = list(folder.glob(ext))
-                    if images:
-                        return str(images[0])
-        return ""
-
-    def resolve_default_gui_path(self, invocation_name: str) -> str:
-        icons_dir = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "icons"
-        for folder in icons_dir.iterdir():
-            if folder.is_dir() and folder.name.lower() == invocation_name.lower():
-                for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
-                    images = list(folder.glob(ext))
-                    if images:
-                        return str(images[0])
-        return ""
-
     # Apply changes
     def apply_multiple_edit(self):
         selected = [cb for cb in self.invocation_checkboxes.values() if cb.isChecked()]
@@ -3463,35 +3391,71 @@ class MultipleEditInvocationDialog(QDialog):
             art_input_text = self.art_input.text().strip()
             if art_input_text != tr("DO_NOT_CHANGE"):
                 if not art_input_text:
-                    art_input_text = self.resolve_default_art_path(data["name"])
+                    # Remove previous file if it exists.
+                    if data.get("art_path"):
+                        old_art_path = Path(data["art_path"])
+                        if old_art_path.exists() and old_art_path.is_file():
+                            try:
+                                old_art_path.unlink()
+                            except Exception:
+                                pass
+                    data["art_path"] = ""
+                else:
+                    art_path = Path(art_input_text)
+                    if art_path.exists() and art_path.is_file():
+                        # Remove previous file if it exists.
+                        if data.get("art_path"):
+                            old_art_path = Path(data["art_path"])
+                            if old_art_path.exists() and old_art_path.is_file():
+                                try:
+                                    old_art_path.unlink()
+                                except Exception:
+                                    pass
 
-                if art_input_text:
-                    try:
                         art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
                         art_dir.mkdir(parents=True, exist_ok=True)
-                        ext = Path(art_input_text).suffix.lower()
+                        ext = art_path.suffix.lower()
                         new_art_path = art_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
-                        shutil.copyfile(art_input_text, new_art_path)
-                        data["art_path"] = str(new_art_path)
-                    except FileNotFoundError:
-                        pass
+                        try:
+                            shutil.copyfile(art_path, new_art_path)
+                            data["art_path"] = str(new_art_path)
+                        except Exception:
+                            data["art_path"] = ""
 
             # Gui
             gui_input_text = self.gui_input.text().strip()
             if gui_input_text != tr("DO_NOT_CHANGE"):
                 if not gui_input_text:
-                    gui_input_text = self.resolve_default_gui_path(data["name"])
+                    # Remove previous file if it exists.
+                    if data.get("gui_path"):
+                        old_gui_path = Path(data["gui_path"])
+                        if old_gui_path.exists() and old_gui_path.is_file():
+                            try:
+                                old_gui_path.unlink()
+                            except Exception:
+                                pass
+                    data["gui_path"] = ""
+                else:
+                    gui_path = Path(gui_input_text)
+                    if gui_path.exists() and gui_path.is_file():
+                        # Remove GUI antiga se existir
+                        if data.get("gui_path"):
+                            old_gui_path = Path(data["gui_path"])
+                            if old_gui_path.exists() and old_gui_path.is_file():
+                                try:
+                                    old_gui_path.unlink()
+                                except Exception:
+                                    pass
 
-                if gui_input_text:
-                    try:
                         gui_dir = Path.home() / "AppsFiles" / "Zordeer" / "art" / "gui"
                         gui_dir.mkdir(parents=True, exist_ok=True)
-                        ext = Path(gui_input_text).suffix.lower()
+                        ext = gui_path.suffix.lower()
                         new_gui_path = gui_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
-                        shutil.copyfile(gui_input_text, new_gui_path)
-                        data["gui_path"] = str(new_gui_path)
-                    except FileNotFoundError:
-                        pass
+                        try:
+                            shutil.copyfile(gui_path, new_gui_path)
+                            data["gui_path"] = str(new_gui_path)
+                        except Exception:
+                            data["gui_path"] = ""
 
             # Language
             lang = self.lang_combo.currentText()
