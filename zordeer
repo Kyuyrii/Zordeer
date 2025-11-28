@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "0.4.3"
+__version__ = "0.5"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -45,7 +45,7 @@ BUILTIN_TRANSLATIONS = {
         "ABOUT_ZORDEER": "About Zordeer",
         "ADD_FILES": "Add files",
         "ADD_VARIABLES_BUTTON": "Add variables",
-        "AFFECTED_INVOCATIONS": "Summons that will be affected",
+        "AFFECTED_INVOCATIONS": "Invocations that will be affected",
         "ALREADY_UPDATED": "You are on the latest version.",
         "API_FAIL": "API error:\n{e}",
         "API_KEY_SAVE_FIRST": "Save your API KEY in the Zordeer settings first.",
@@ -54,7 +54,7 @@ BUILTIN_TRANSLATIONS = {
         "APP_NAME": "Zordeer",
         "ARTS_LOAD_ERROR": "[DEBUG] Failed to load arts: {error}",
         "AUTO_TRANSFER_BUTTON": "Automatic mode",
-        "AUTO_TRANSFER_EXPLAIN": "Do you want to try downloading hero artwork and icons for all the summons that don't have them?<br>After the download, they will be applied automatically.",
+        "AUTO_TRANSFER_EXPLAIN": "Do you want to try downloading hero artwork and icons for all the invocations that don't have them?<br>After the download, they will be applied automatically.",
         "AUTO_TRANSFER_FINISHED": "Automatic transfer completed",
         "AUTO_TRANSFER_GENERAL_ERROR": "General error in {inv_name}: {error}",
         "AUTO_TRANSFER_NO_MISSING_ARTS": "All invocations already have hero art and icon",
@@ -565,9 +565,9 @@ def load_external_translations():
         Path(sys.argv[0]).parent / "translation"
     ]
     
-    for trans_dir in translation_dirs:
-        if trans_dir.exists():
-            for toml_file in trans_dir.glob("zordeer-translation-*.toml"):
+    for translation_folder in translation_dirs:
+        if translation_folder.exists():
+            for toml_file in translation_folder.glob("zordeer-translation-*.toml"):
                 try:
                     lang_code = toml_file.stem.replace("zordeer-translation-", "")
                     with open(toml_file, 'r', encoding='utf-8') as f:
@@ -701,8 +701,8 @@ def load_settings() -> dict:
     current_style = data["design"]["qt_style"]
     if current_style != "indefinite" and current_style not in QStyleFactory.keys():
         data["design"]["qt_style"] = "indefinite"
+        save_settings(data)
 
-    save_settings(data)
     return data
 
 def save_settings(data: dict) -> None:
@@ -4342,8 +4342,7 @@ class ShortcutManager(QDialog):
 
         # Get values or use defaults
         menu_dir = shortcut_section.get("menu_dir") or str(
-            Path.home() / ".local" / "share" / "applications" / "Zordeer-menu-shortcuts"
-        )
+            Path.home() / ".local" / "share" / "applications")
 
         # Determine desktop dir from XDG user dirs
         desktop_dir = shortcut_section.get("desktop_dir")
@@ -4543,6 +4542,9 @@ class ShortcutManager(QDialog):
             checked = cb.isChecked()
             self.handle_desktop_creation(name, checked, menu_dir)
 
+        os.system(f'chmod 777 "{menu_dir}/"invocation-*.desktop')
+        os.system(f'chmod 777 "{desktop_dir}/"invocation-*.desktop')
+
         QMessageBox.information(self, tr("APP_NAME"), tr("SHORTCUTS_SAVED"))
         self.update_list_view()
         self.accept()
@@ -4560,7 +4562,7 @@ class ShortcutManager(QDialog):
                 f"Icon={gui_path}",
                 "StartupWMClass=zordeer",
                 "Categories=Game;",
-                "Keywords=gaming;proton;invocation;",
+                "Keywords=gaming;proton;wine;invocation;",
                 "Terminal=false",
                 "Type=Application"
             ]
@@ -6490,7 +6492,7 @@ if __name__ == "__main__":
         QLocalServer.removeServer("zordeer_single_instance")
         return False
 
-    # Create the single-instance server only if the option is NOT checked
+    # If another instance is already running, send the command to it and exit
     if is_instance_alive():
         if "--start-invocation" in sys.argv:
             try:
