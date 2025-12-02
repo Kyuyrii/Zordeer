@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.0"
+__version__ = "1.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -654,8 +654,8 @@ def detect_default_settings() -> dict:
             "windowSize": [780, 640],
         },
         "shortcut": {
-            "menu_dir": "",
             "desktop_dir": "",
+            "menu_dir": "",
             "zordeer_command": "zordeer",
         },
         "other": {
@@ -4225,13 +4225,9 @@ class ShortcutManager(QDialog):
 
         try:
             content = file_path.read_text(encoding="utf-8")
-            for inv_name in self.invocations.keys():
-                if f'--start-invocation "{inv_name}"' in content:
-                    return True
+            return '--start-invocation' in content
         except Exception:
             return False
-
-        return False
 
     # Checkbox Helpers
     def select_all_checkboxes(self):
@@ -4328,29 +4324,30 @@ class ShortcutManager(QDialog):
 
         zordeer_command = shortcut_section.get("zordeer_command") or "zordeer"
 
-        # Update class dictionary
+        # Processed settings for shortcut manager
         info = {
-            "menu_dir": str(menu_dir),
             "desktop_dir": str(desktop_dir),
+            "menu_dir": str(menu_dir),
             "zordeer_command": zordeer_command
         }
 
-        # Update TOML defaults if empty
-        settings.setdefault("shortcut", {})
-        settings["shortcut"]["menu_dir"] = str(menu_dir)
-        settings["shortcut"]["desktop_dir"] = str(desktop_dir)
-        settings["shortcut"]["zordeer_command"] = zordeer_command
-        save_settings(settings)
+        # Save defaults only if fields are empty
+        if not shortcut_section.get("desktop_dir", "") or not shortcut_section.get("menu_dir", ""):
+            settings.setdefault("shortcut", {})
+            if not shortcut_section.get("desktop_dir", ""):
+                settings["shortcut"]["desktop_dir"] = str(desktop_dir)
+            if not shortcut_section.get("menu_dir", ""):
+                settings["shortcut"]["menu_dir"] = str(menu_dir)
+            save_settings(settings)
 
         return info
 
     def save_shortcut_manager_info(self):
-        """Save menu_dir, desktop_dir and zordeer_command to TOML settings."""
+        """Save menu_dir and desktop_dir to TOML settings."""
         settings = load_settings()
         settings.setdefault("shortcut", {})
-        settings["shortcut"]["menu_dir"] = self.shortcut_manager_info.get("menu_dir", "")
         settings["shortcut"]["desktop_dir"] = self.shortcut_manager_info.get("desktop_dir", "")
-        settings["shortcut"]["zordeer_command"] = self.shortcut_manager_info.get("zordeer_command", "zordeer")
+        settings["shortcut"]["menu_dir"] = self.shortcut_manager_info.get("menu_dir", "")
         save_settings(settings)
 
     # Folder browsing
@@ -4428,51 +4425,24 @@ class ShortcutManager(QDialog):
 
         self.scroll_layout.addStretch()
 
-    def remove_residual_desktops(self):
-        menu_dir = Path(self.menu_dir_input.text())
-        desktop_dir = Path(self.desktop_dir_input.text())
-        valid_names = set(self.invocations.keys())  # Valid invocations
-
-        for folder in [menu_dir, desktop_dir]:
-            if not folder.exists():
-                continue
-
-            for f in folder.glob("*.desktop"):
-                if not f.stem.startswith("invocation-"):
-                    continue  # It's not a Zordeer desktop.
-
-                try:
-                    content = f.read_text(encoding="utf-8").splitlines()
-
-                    # Invocation name extracted from filename
-                    filename_invocation = f.stem[len("invocation-"):]
-
-                    # Name inside Name=
-                    name_line = next((line[5:] for line in content if line.startswith("Name=")), None)
-
-                    # Name inside Exec=
-                    exec_invocation = None
-                    for line in content:
-                        if line.startswith("Exec=") and "--start-invocation" in line:
-                            start_index = line.find('--start-invocation "') + len('--start-invocation "')
-                            end_index = line.find('"', start_index)
-                            exec_invocation = line[start_index:end_index]
-                            break
-
-                    # If any of them are invalid, remove them.
-                    if filename_invocation not in valid_names or name_line not in valid_names or exec_invocation not in valid_names:
-                        f.unlink()
-                except Exception as e:
-                    print(tr("ERROR_REMOVING_FILE", file=f, error=e))
-
     # Save and create .desktop
+
+    def remove_all_zordeer_desktops(self, folder: Path):
+        if not folder.exists():
+            return
+        
+        for f in folder.glob("invocation-*.desktop"):
+            try:
+                if self.is_zordeer_desktop(f):
+                    f.unlink()
+            except Exception as e:
+                print(tr("ERROR_REMOVING_FILE", file=f, error=e))
+
     def update_and_apply(self):
         menu_dir = Path(self.menu_dir_input.text().strip())
         desktop_dir = Path(self.desktop_dir_input.text().strip())
 
-        try:
-            menu_dir.mkdir(parents=True, exist_ok=True)
-        except PermissionError:
+        if not menu_dir.exists():
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
@@ -4480,9 +4450,7 @@ class ShortcutManager(QDialog):
             )
             return
 
-        try:
-            desktop_dir.mkdir(parents=True, exist_ok=True)
-        except PermissionError:
+        if not desktop_dir.exists():
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
@@ -4494,17 +4462,18 @@ class ShortcutManager(QDialog):
         self.shortcut_manager_info["desktop_dir"] = str(desktop_dir)
         self.save_shortcut_manager_info()
 
-        # Remove invalid .desktop files
-        self.remove_residual_desktops()
+        # Remove existing .desktop files.
+        self.remove_all_zordeer_desktops(desktop_dir)
+        self.remove_all_zordeer_desktops(menu_dir)
 
-        # Process each type separately.
+        # Create each type separately.
         for name, cb in self.checkbox_widgets["desktop"].items():
             checked = cb.isChecked()
-            self.handle_desktop_creation(name, checked, desktop_dir)
+            self.create_desktop_file(name, checked, desktop_dir)
 
         for name, cb in self.checkbox_widgets["menu"].items():
             checked = cb.isChecked()
-            self.handle_desktop_creation(name, checked, menu_dir)
+            self.create_desktop_file(name, checked, menu_dir)
 
         os.system(f'chmod 777 "{menu_dir}/"invocation-*.desktop')
         os.system(f'chmod 777 "{desktop_dir}/"invocation-*.desktop')
@@ -4513,50 +4482,31 @@ class ShortcutManager(QDialog):
         self.update_list_view()
         self.accept()
 
-    def handle_desktop_creation(self, name: str, checked: bool, folder: Path):
+    def create_desktop_file(self, name: str, checked: bool, folder: Path):
+        if not checked:
+            return
+
         desktop_file = folder / f"invocation-{name}.desktop"
         current_zordeer = self.shortcut_manager_info.get("zordeer_command", "zordeer") + f' --start-invocation "{name}"'
         gui_path = self.invocations.get(name, {}).get("gui_path", "")
 
-        if checked:
-            content_lines = [
-                "[Desktop Entry]",
-                f"Name={name}",
-                f"Exec={current_zordeer}",
-                f"Icon={gui_path}",
-                "StartupWMClass=zordeer",
-                "Categories=Game;",
-                "Keywords=gaming;proton;wine;invocation;",
-                "Terminal=false",
-                "Type=Application"
-            ]
-            if desktop_file.exists():
-                try:
-                    old_lines = desktop_file.read_text(encoding="utf-8").splitlines()
-                    new_lines = []
-                    for line in old_lines:
-                        if line.startswith("Exec="):
-                            new_lines.append(f"Exec={current_zordeer}")
-                        elif line.startswith("Name="):
-                            new_lines.append(f"Name={name}")
-                        elif line.startswith("Icon="):
-                            new_lines.append(f"Icon={gui_path}")
-                        else:
-                            new_lines.append(line)
-                    content_lines = new_lines
-                except Exception:
-                    pass
-            try:
-                with open(desktop_file, "w", encoding="utf-8") as f:
-                    f.write("\n".join(content_lines) + "\n")
-            except Exception as e:
-                print(tr("ERROR_CREATING_FILE", file=desktop_file, error=e))
-        else:
-            if desktop_file.exists():
-                try:
-                    desktop_file.unlink()
-                except Exception as e:
-                    print(tr("ERROR_REMOVING_FILE", file=desktop_file, error=e))
+        content_lines = [
+            "[Desktop Entry]",
+            f"Name={name}",
+            f"Exec={current_zordeer}",
+            f"Icon={gui_path}",
+            "StartupWMClass=zordeer",
+            "Categories=Game;",
+            "Keywords=gaming;proton;wine;invocation;",
+            "Terminal=false",
+            "Type=Application"
+        ]
+
+        try:
+            with open(desktop_file, "w", encoding="utf-8") as f:
+                f.write("\n".join(content_lines) + "\n")
+        except Exception as e:
+            print(tr("ERROR_CREATING_FILE", file=desktop_file, error=e))
 
 class Zordeer(QMainWindow):
     def __init__(self):
