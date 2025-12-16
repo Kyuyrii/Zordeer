@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.1"
+__version__ = "1.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -228,6 +228,7 @@ BUILTIN_TRANSLATIONS = {
         "SELECTED_EXECUTABLES": "Selected executables",
         "SELECTED_INVOCATIONS": "Selected Invocations",
         "SELECT_AVAILABLE_RUNNER_CONFIRM": "The selected runner appears to be absent.<br>Save anyway?",
+        "SELECT_AVAILABLE_UMU_CONFIRM": "The selected version of umu-launcher appears to be missing.<br>Save anyway?",
         "SELECT_INVOCATION_ART": "Select art",
         "SELECT_INVOCATION_GUI": "Select gui icon",
         "SELECT_PREFIX_TITLE": "Select prefix",
@@ -483,6 +484,7 @@ BUILTIN_TRANSLATIONS = {
         "SELECT_AT_LEAST_ONE_IMAGE": "Selecione pelo menos uma imagem.",
         "SELECT_EXECUTABLE": "Selecionar executável",
         "SELECT_AVAILABLE_RUNNER_CONFIRM": "O runner escolhido parece estar ausente.<br>Salvar mesmo assim?",
+        "SELECT_AVAILABLE_UMU_CONFIRM": "A versão escolhida do umu-launcher parece estar ausente.<br>Salvar mesmo assim?",
         "SELECT_INVOCATION_ART": "Selecionar arte",
         "SELECT_INVOCATION_GUI": "Selecionar ícone gui",
         "SELECT_PREFIX_TITLE": "Selecionar prefixo",
@@ -4209,6 +4211,9 @@ class ShortcutManager(QDialog):
         main_layout.addLayout(buttons_layout)
 
         self.update_list_view()
+        self.view_combo.setCurrentIndex(1)
+        self.update_list_view()
+        self.view_combo.setCurrentIndex(0)
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
@@ -4251,7 +4256,18 @@ class ShortcutManager(QDialog):
 
         # Current folder and existing desktops
         folder_path = Path(self.shortcut_manager_info.get(f"{self.current_view}_dir", ""))
-        existing_desktops = {f.stem[len("invocation-"):] for f in folder_path.glob("*.desktop") if f.stem.startswith("invocation-") and self.is_zordeer_desktop(f)} if folder_path.exists() else set()
+        existing_desktops = set()
+        
+        if folder_path.exists():
+            safe_to_display = {data["safe_invocation_name"]: name 
+                              for name, data in self.invocations.items() 
+                              if "safe_invocation_name" in data}
+            
+            for f in folder_path.glob("invocation-*.desktop"):
+                if self.is_zordeer_desktop(f):
+                    safe_name = f.stem.replace("invocation-", "")
+                    if safe_name in safe_to_display:
+                        existing_desktops.add(safe_to_display[safe_name])
 
         # Clean up the old layout.
         while self.scroll_layout.count():
@@ -4289,8 +4305,9 @@ class ShortcutManager(QDialog):
                 data = toml.loads(content)
                 name = data.get("name")
                 gui_path = data.get("gui_path", "")
+                safe_invocation_name = f.stem.replace("invocation-info-", "")
                 if name:
-                    invs[name] = {"gui_path": gui_path}
+                    invs[name] = {"gui_path": gui_path, "safe_invocation_name": safe_invocation_name}
             except Exception:
                 continue
         return invs
@@ -4399,17 +4416,24 @@ class ShortcutManager(QDialog):
 
         # Update the checkboxes according to the new folder.
         folder_path = new_folder
-        existing_desktops = {f.stem[len("invocation-"):] for f in folder_path.glob("*.desktop") if f.stem.startswith("invocation-")} if folder_path.exists() else set()
+        existing_desktops = set()
+        
+        if folder_path.exists():
+            safe_to_display = {data["safe_invocation_name"]: name 
+                              for name, data in self.invocations.items() 
+                              if "safe_invocation_name" in data}
+            
+            for f in folder_path.glob("invocation-*.desktop"):
+                if self.is_zordeer_desktop(f):
+                    safe_name = f.stem.replace("invocation-", "")
+                    if safe_name in safe_to_display:
+                        existing_desktops.add(safe_to_display[safe_name])
 
-        new_checkboxes = {}
-        for inv in sorted(self.invocations.keys()):
-            cb = QCheckBox(inv)
-            cb.setChecked(inv in existing_desktops)
-            new_checkboxes[inv] = cb
+        # Update existing checkboxes
+        for name, cb in self.checkbox_widgets[view_key].items():
+            cb.setChecked(name in existing_desktops)
 
-        self.checkbox_widgets[view_key] = new_checkboxes
-
-        # Reapply the search bar filter.
+        # Reapply filter
         while self.scroll_layout.count():
             item = self.scroll_layout.takeAt(0)
             if item.widget():
@@ -4475,8 +4499,8 @@ class ShortcutManager(QDialog):
             checked = cb.isChecked()
             self.create_desktop_file(name, checked, menu_dir)
 
-        os.system(f'chmod 777 "{menu_dir}/"invocation-*.desktop')
-        os.system(f'chmod 777 "{desktop_dir}/"invocation-*.desktop')
+        os.system(f'chmod +x "{menu_dir}/"invocation-*.desktop')
+        os.system(f'chmod +x "{desktop_dir}/"invocation-*.desktop')
 
         QMessageBox.information(self, tr("APP_NAME"), tr("SHORTCUTS_SAVED"))
         self.update_list_view()
@@ -4486,7 +4510,10 @@ class ShortcutManager(QDialog):
         if not checked:
             return
 
-        desktop_file = folder / f"invocation-{name}.desktop"
+        invocation_data = self.invocations.get(name, {})
+        safe_name = invocation_data.get("safe_invocation_name", "")
+
+        desktop_file = folder / f"invocation-{safe_name}.desktop"
         current_zordeer = self.shortcut_manager_info.get("zordeer_command", "zordeer") + f' --start-invocation "{name}"'
         gui_path = self.invocations.get(name, {}).get("gui_path", "")
 
