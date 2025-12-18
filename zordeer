@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.2"
+__version__ = "1.3"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -185,11 +185,11 @@ BUILTIN_TRANSLATIONS = {
         "NO_RUNNER_SELECTED_ERROR": "Please select a runner to transfer.",
         "NO_TAGS_FOUND": "No tags found in the repository.",
         "NORMAL_RUN": "Normal run",
-        "OK_BUTTON": "OK",
         "OPEN_EXEC_PATH": "Open executable folder",
         "OPEN_PATH_ERROR": "Could not find this path on your device:<br>{path}",
         "OPEN_PREFIX_PATH": "Open prefix folder",
         "OPEN_REPO": "Open repository",
+        "OWN_CATEGORY": "Own category",
         "PLACEHOLDER_FOR_LANGUAGE": "- No language chosen -",
         "PLACEHOLDER_FOR_RUNNER": "- Default runner -",
         "PREFIX_PATH_NOT_FOUND": "The prefix for this invocation was not found:<br>\"{path}\"",
@@ -443,11 +443,11 @@ BUILTIN_TRANSLATIONS = {
         "NO_RUNNER_SELECTED_ERROR": "Por favor, selecione um runner para baixar.",
         "NO_TAGS_FOUND": "Nenhuma tag encontrada no repositório.",
         "NORMAL_RUN": "Execução normal",
-        "OK_BUTTON": "OK",
         "OPEN_EXEC_PATH": "Abrir pasta do executável",
         "OPEN_PATH_ERROR": "Não foi possível encontrar esse caminho no seu dispositivo:<br>{path}",
         "OPEN_PREFIX_PATH": "Abrir pasta prefixo",
         "OPEN_REPO": "Abrir repositório",
+        "OWN_CATEGORY": "Categoria própria",
         "PLACEHOLDER_FOR_LANGUAGE": "- Sem idioma escolhido -",
         "PLACEHOLDER_FOR_RUNNER": "- Runner padrão -",
         "PREFIX_PATH_NOT_FOUND": "O prefixo dessa invocação não foi encontrado:<br>\"{path}\"",
@@ -659,6 +659,9 @@ def detect_default_settings() -> dict:
             "desktop_dir": "",
             "menu_dir": "",
             "zordeer_command": "zordeer",
+            "own_category": True,
+            "menu_file": "",
+            "directory_file": "",
         },
         "other": {
             "default_runner": "indefinite",
@@ -4176,6 +4179,19 @@ class ShortcutManager(QDialog):
         select_layout.addWidget(self.deselect_all_btn)
         main_layout.addLayout(select_layout)
 
+        # Own category checkbox
+        self.own_category_cb = QCheckBox(tr("OWN_CATEGORY"))
+        own_category_checked = self.shortcut_manager_info.get("own_category", False)
+        menu_dir_str = self.shortcut_manager_info.get("menu_dir", "")
+        
+        # Uncheck and disable if menu_dir does not contain /.local/share/applications
+        if "/.local/share/applications" not in menu_dir_str:
+            own_category_checked = False
+            self.own_category_cb.setEnabled(False)
+        
+        self.own_category_cb.setChecked(own_category_checked)
+        main_layout.addWidget(self.own_category_cb)
+
         # Folder selection
         grid = QGridLayout()
         self.desktop_dir_input = QLineEdit(self.shortcut_manager_info.get("desktop_dir", ""))
@@ -4341,11 +4357,16 @@ class ShortcutManager(QDialog):
 
         zordeer_command = shortcut_section.get("zordeer_command") or "zordeer"
 
+        own_category = shortcut_section.get("own_category", False)
+
         # Processed settings for shortcut manager
         info = {
             "desktop_dir": str(desktop_dir),
             "menu_dir": str(menu_dir),
-            "zordeer_command": zordeer_command
+            "zordeer_command": zordeer_command,
+            "own_category": own_category,
+            "menu_file": shortcut_section.get("menu_file", ""),
+            "directory_file": shortcut_section.get("directory_file", "")
         }
 
         # Save defaults only if fields are empty
@@ -4365,6 +4386,9 @@ class ShortcutManager(QDialog):
         settings.setdefault("shortcut", {})
         settings["shortcut"]["desktop_dir"] = self.shortcut_manager_info.get("desktop_dir", "")
         settings["shortcut"]["menu_dir"] = self.shortcut_manager_info.get("menu_dir", "")
+        settings["shortcut"]["own_category"] = self.own_category_cb.isChecked()
+        settings["shortcut"]["menu_file"] = self.shortcut_manager_info.get("menu_file", "")
+        settings["shortcut"]["directory_file"] = self.shortcut_manager_info.get("directory_file", "")
         save_settings(settings)
 
     # Folder browsing
@@ -4408,6 +4432,13 @@ class ShortcutManager(QDialog):
         if line_edit == self.menu_dir_input:
             self.shortcut_manager_info["menu_dir"] = str(new_folder)
             view_key = "menu"
+            
+            # Update checkbox based on menu_dir
+            if "/.local/share/applications" not in str(new_folder):
+                self.own_category_cb.setChecked(False)
+                self.own_category_cb.setEnabled(False)
+            else:
+                self.own_category_cb.setEnabled(True)
         elif line_edit == self.desktop_dir_input:
             self.shortcut_manager_info["desktop_dir"] = str(new_folder)
             view_key = "desktop"
@@ -4466,14 +4497,6 @@ class ShortcutManager(QDialog):
         menu_dir = Path(self.menu_dir_input.text().strip())
         desktop_dir = Path(self.desktop_dir_input.text().strip())
 
-        if not menu_dir.exists():
-            QMessageBox.warning(
-                self,
-                tr("APP_NAME"),
-                tr("ERROR_CREATING_SHORTCUTS_LOCATION", location=menu_dir)
-            )
-            return
-
         if not desktop_dir.exists():
             QMessageBox.warning(
                 self,
@@ -4482,9 +4505,77 @@ class ShortcutManager(QDialog):
             )
             return
 
+        if not menu_dir.exists():
+            QMessageBox.warning(
+                self,
+                tr("APP_NAME"),
+                tr("ERROR_CREATING_SHORTCUTS_LOCATION", location=menu_dir)
+            )
+            return
+
         self.shortcut_manager_info["menu_dir"] = str(menu_dir)
         self.shortcut_manager_info["desktop_dir"] = str(desktop_dir)
+        self.shortcut_manager_info["own_category"] = self.own_category_cb.isChecked()
+
+        # Remove files if the own_category checkbox is unchecked.
+        if not self.own_category_cb.isChecked():
+            saved_menu_file = self.shortcut_manager_info.get("menu_file", "")
+            saved_directory_file = self.shortcut_manager_info.get("directory_file", "")
+            
+            if saved_menu_file and Path(saved_menu_file).exists():
+                Path(saved_menu_file).unlink()
+            
+            if saved_directory_file and Path(saved_directory_file).exists():
+                Path(saved_directory_file).unlink()
+            
+            self.shortcut_manager_info["menu_file"] = ""
+            self.shortcut_manager_info["directory_file"] = ""
+
         self.save_shortcut_manager_info()
+
+        # Manage category files
+        menu_dir_str = str(menu_dir)
+        if self.own_category_cb.isChecked() and "/.local/share/applications" in menu_dir_str:
+            # Extract the home folder
+            home_path = Path(menu_dir_str.split("/.local/share/applications")[0])
+
+            # Create directories
+            menu_dir_path = home_path / ".config" / "menus" / "applications-merged"
+            directory_dir = home_path / ".local" / "share" / "desktop-directories"
+            menu_dir_path.mkdir(parents=True, exist_ok=True)
+            directory_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create Zordeer.menu
+            menu_content = "\n".join([
+                "<Menu>",
+                "  <Name>Applications</Name>",
+                "  <Menu>",
+                "    <Name>Zordeer</Name>",
+                "    <Directory>Zordeer.directory</Directory>",
+                "    <Include>",
+                "      <Category>Zordeer</Category>",
+                "    </Include>",
+                "  </Menu>",
+                "</Menu>"
+            ])
+            menu_file_path = menu_dir_path / "Zordeer.menu"
+            menu_file_path.write_text(menu_content, encoding="utf-8")
+            
+            # Create Zordeer.directory
+            directory_content = "\n".join([
+                "[Desktop Entry]",
+                "Name=Zordeer",
+                "Icon=zordeer"
+            ])
+            directory_file_path = directory_dir / "Zordeer.directory"
+            directory_file_path.write_text(directory_content, encoding="utf-8")
+            
+            # Save the file paths for menu_file and directory_file.
+            self.shortcut_manager_info["menu_file"] = str(menu_file_path)
+            self.shortcut_manager_info["directory_file"] = str(directory_file_path)
+            
+            # Save again with the paths
+            self.save_shortcut_manager_info()
 
         # Remove existing .desktop files.
         self.remove_all_zordeer_desktops(desktop_dir)
@@ -4517,13 +4608,15 @@ class ShortcutManager(QDialog):
         current_zordeer = self.shortcut_manager_info.get("zordeer_command", "zordeer") + f' --start-invocation "{name}"'
         gui_path = self.invocations.get(name, {}).get("gui_path", "")
 
+        categories = "Zordeer;" if self.own_category_cb.isChecked() else "Game;"
+
         content_lines = [
             "[Desktop Entry]",
             f"Name={name}",
             f"Exec={current_zordeer}",
             f"Icon={gui_path}",
             "StartupWMClass=zordeer",
-            "Categories=Game;",
+            f"Categories={categories}",
             "Keywords=gaming;proton;wine;invocation;",
             "Terminal=false",
             "Type=Application"
@@ -4818,9 +4911,6 @@ class Zordeer(QMainWindow):
         start_minimized = settings["window"].get("start_minimized", False)
         if start_minimized:
             self.hide()
-            self.tray_icon.showMessage(
-                tr("APP_NAME"),
-                tr("RUNNING_IN_BACKGROUND"), QSystemTrayIcon.MessageIcon.NoIcon, 3000)
         elif settings["window"].get("isFullScreen", False):
             self.showFullScreen()
         elif settings["window"].get("isMaximized", False):
