@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Zordeer
 Exec=zordeer
-Icon=applications-games
+Icon=zordeer
 StartupWMClass=zordeer
 Comment=A launcher for games that run via Wine/Proton
 Comment[pt_BR]=Um launcher para jogos que rodam via Wine/Proton
