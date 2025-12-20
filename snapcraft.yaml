@@ -1,0 +1,111 @@
+name: zordeer
+base: core24
+version: '1.4-Snap'
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+summary: A launcher for games that run via Wine/Proton.
+description: |
+  A launcher for games that run via Wine/Proton.
+grade: stable
+confinement: strict
+
+apps:
+  zordeer:
+    command: zordeer
+    desktop: zordeer.desktop
+    environment:
+      HOME: $SNAP_REAL_HOME
+      PYTHONPATH: $SNAP/usr/lib/python3/dist-packages
+      LD_LIBRARY_PATH: $SNAP/lxqt-support/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$LD_LIBRARY_PATH
+      QT_PLUGIN_PATH: $SNAP/lxqt-support/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/qt6/plugins:$QT_PLUGIN_PATH
+    extensions: [kde-neon-6]
+    plugs:
+      - screen-inhibit-control
+      - home
+      - removable-media
+      - mount-observe
+      - joystick
+      - bluez
+      - udisks2
+      - steam-support
+
+plugs:
+  shared-memory:
+    private: true
+  lxqt-support:
+    content: lxqt-support
+    interface: content
+    target: $SNAP/lxqt-support
+    default-provider: lxqt-support
+
+layout:
+  /usr/share/color-schemes:
+    symlink: $SNAP/lxqt-support/usr/share/color-schemes
+  /usr/share/Kvantum:
+    symlink: $SNAP/lxqt-support/usr/share/Kvantum
+
+package-repositories:
+  - type: apt
+    url: http://archive.ubuntu.com/ubuntu
+    suites: [noble]
+    components: [main, multiverse, restricted, universe]
+    architectures: [amd64, i386]
+    key-id: F6ECB3762474EDA9D21B7022871920D1991BC93C
+    key-server: keyserver.ubuntu.com
+#  - type: apt
+#    url: https://dl.winehq.org/wine-builds/ubuntu
+#    suites: [noble]
+#    components: [main]
+#    architectures: [amd64]
+#    key-id: D43F640145369C51D786DDEA76F1A20FF987672F
+
+parts:
+  zordeer-app:
+    plugin: dump
+    source: https://github.com/Kyuyrii/Zordeer.git
+    source-branch: Snap
+
+  base-dependencies:
+    plugin: nil
+    stage-packages: [python3-pyqt6, python3-requests, python3-psutil, python3-toml]
+    prime:
+      - usr/lib/python3/dist-packages
+
+  gamemode:
+    plugin: nil
+    stage-packages: [gamemode, gamemode-daemon, libgamemode0, libgamemode0:i386, libgamemodeauto0, libgamemodeauto0:i386]
+    prime:
+      - etc/security/limits.d/10-gamemode.conf
+      - usr/bin/gamemoded
+      - usr/games/gamemodelist
+      - usr/games/gamemoderun
+      - usr/games/gamemode-simulate-game
+      - usr/lib/*/libgamemode.so*
+      - usr/lib/*/libgamemodeauto.so*
+      - usr/lib/*/libinih.so*
+      - usr/lib/systemd/user/gamemoded.service
+      - usr/lib/sysusers.d/gamemode.conf
+      - usr/libexec/cpucorectl
+      - usr/libexec/cpugovctl
+      - usr/libexec/gpuclockctl
+      - usr/libexec/procsysctl
+      - usr/share/dbus-1/services/com.feralinteractive.GameMode.service
+      - usr/share/gamemode/gamemode.ini
+      - usr/share/lintian/overrides/libgamemode0
+      - usr/share/metainfo/io.github.feralinteractive.gamemode.metainfo.xml
+      - usr/share/polkit-1/actions/com.feralinteractive.GameMode.policy
+      - usr/share/polkit-1/rules.d/gamemode.rules
+
+  mangohud:
+    plugin: nil
+    stage-packages: [mangohud, libspdlog1.12]
+    prime:
+      - usr/bin/mangohud
+      - usr/lib/x86_64-linux-gnu/mangohud/libMangoHud.so*
+      - usr/lib/x86_64-linux-gnu/mangohud/libMangoHud_opengl.so*
+      - usr/lib/x86_64-linux-gnu/mangohud/libMangoHud_shim.so*
+      - usr/lib/x86_64-linux-gnu/libspdlog.so*
+      - usr/share/metainfo/io.github.flightlessmango.mangohud.metainfo.xml
+      - usr/share/vulkan/implicit_layer.d/MangoHud.x86_64.json
