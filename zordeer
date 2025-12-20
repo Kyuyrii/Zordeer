@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.4"
+__version__ = "1.4-Snap"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -1385,14 +1385,15 @@ class AddInvocationDialog(QDialog):
         self.main_layout.addWidget(self.gamemode_checkbox, 9, 0, 1, 3)
 
         self.umu_checkbox = QCheckBox(tr("USE_UMU_LAUNCHER"))
-        self.umu_checkbox.setChecked(False)
+        self.umu_checkbox.setChecked(True)
+        self.umu_checkbox.setEnabled(False)
         self.umu_checkbox.setToolTip(tr("USE_UMU_LAUNCHER_TOOLTIP"))
         self.umu_checkbox.stateChanged.connect(self.toggle_umu_button)
         self.main_layout.addWidget(self.umu_checkbox, 10, 0, 1, 3)
 
         self.umu_search_button = QPushButton(tr("UMU_DATABASE_BUTTON"))
         self.umu_search_button.clicked.connect(self.open_umu_search)
-        self.umu_search_button.setEnabled(False)
+        self.umu_search_button.setEnabled(True)
         self.main_layout.addWidget(self.umu_search_button, 10, 2)
 
         self.fps_layout = QHBoxLayout()
@@ -3067,7 +3068,8 @@ class MultipleEditInvocationDialog(QDialog):
 
         self.umu_checkbox = QCheckBox(tr("USE_UMU_LAUNCHER"))
         self.umu_checkbox.setTristate(True)
-        self.umu_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
+        self.umu_checkbox.setCheckState(Qt.CheckState.Checked)
+        self.umu_checkbox.setEnabled(False)
         right_layout.addWidget(self.umu_checkbox, row, 0, 1, 3)
         row += 1
 
@@ -4573,7 +4575,7 @@ class ShortcutManager(QDialog):
             directory_content = "\n".join([
                 "[Desktop Entry]",
                 "Name=Zordeer",
-                "Icon=zordeer"
+                "Icon=/snap/zordeer/current/zordeer.svg"
             ])
             directory_file_path = directory_dir / "Zordeer.directory"
             directory_file_path.write_text(directory_content, encoding="utf-8")
@@ -4657,7 +4659,7 @@ class Zordeer(QMainWindow):
         self.invocation_process = None
         
         # Add the icon to the main window
-        local_icons = ['zordeer.svg', 'Zordeer.svg']
+        local_icons = ['zordeer.svg', 'Zordeer.svg', '/snap/zordeer/current/zordeer.svg']
 
         icon_set = False
         for icon_file in local_icons:
@@ -5421,7 +5423,7 @@ class Zordeer(QMainWindow):
 
             if use_umu and runner_name.lower() != "wine":
                 # Set XDG_DATA_HOME to redirect UMU data to Zordeer directory
-                umu_launcher_files_dir = Path(self.zordeer_dir) / "umu-launcher" / "umu-files"
+                umu_launcher_files_dir = Path.home()
                 umu_launcher_files_dir.mkdir(parents=True, exist_ok=True)
                 env['XDG_DATA_HOME'] = str(umu_launcher_files_dir)
 
@@ -5791,9 +5793,9 @@ class Zordeer(QMainWindow):
         layout.addWidget(label)
 
         # Update button
-        update_button = QPushButton(tr("CHECK_UPDATE_BUTTON"))
-        update_button.clicked.connect(self.check_update)
-        layout.addWidget(update_button, alignment=Qt.AlignmentFlag.AlignCenter)
+#        update_button = QPushButton(tr("CHECK_UPDATE_BUTTON"))
+#        update_button.clicked.connect(self.check_update)
+#        layout.addWidget(update_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         dialog.exec()
 
