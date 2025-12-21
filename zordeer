@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.4"
+__version__ = "1.6"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -5421,8 +5421,7 @@ class Zordeer(QMainWindow):
 
             if use_umu and runner_name.lower() != "wine":
                 # Set XDG_DATA_HOME to redirect UMU data to Zordeer directory
-                umu_launcher_files_dir = Path(self.zordeer_dir) / "umu-launcher" / "umu-files"
-                umu_launcher_files_dir.mkdir(parents=True, exist_ok=True)
+                umu_launcher_files_dir = Path.home()
                 env['XDG_DATA_HOME'] = str(umu_launcher_files_dir)
 
                 if runner_name.lower() != "wine":
