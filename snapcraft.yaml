@@ -18,6 +18,7 @@ apps:
     environment:
       HOME: $SNAP_REAL_HOME
       PYTHONPATH: $SNAP/usr/lib/python3/dist-packages
+      QT_QPA_PLATFORMTHEME: xdgdesktopportal
       LD_LIBRARY_PATH: $SNAP/lxqt-support/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$LD_LIBRARY_PATH
       QT_PLUGIN_PATH: $SNAP/lxqt-support/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/qt6/plugins:$QT_PLUGIN_PATH
     extensions: [kde-neon-6]
