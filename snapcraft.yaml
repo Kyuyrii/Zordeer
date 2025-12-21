@@ -1,6 +1,6 @@
 name: zordeer
 base: core24
-version: '1.4-Snap'
+version: '1.5-Snap'
 platforms:
   amd64:
     build-on: [amd64]

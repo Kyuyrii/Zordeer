@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.4-Snap"
+__version__ = "1.5-Snap"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -3883,6 +3883,7 @@ class RunInPrefix(QDialog):
         self.radio_group.addButton(self.radio_automatic)
 
         self.radio_normal.setChecked(True)  # Default selection
+        self.radio_clean.setEnabled(False)
 
         # Group layout for radios
         radios_layout = QVBoxLayout()
