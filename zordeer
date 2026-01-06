@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.6"
+__version__ = "1.6.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -4657,7 +4657,7 @@ class Zordeer(QMainWindow):
         self.invocation_process = None
         
         # Add the icon to the main window
-        local_icons = ['zordeer.svg', 'Zordeer.svg']
+        local_icons = ['zordeer.svg', 'Zordeer.svg', '/snap/zordeer/current/animarium/zordeer.svg']
 
         icon_set = False
         for icon_file in local_icons:
