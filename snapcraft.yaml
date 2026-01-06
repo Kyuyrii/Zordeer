@@ -10,7 +10,6 @@ description: |
   A launcher for games that run via Wine/Proton.
 grade: stable
 confinement: strict
-icon: zordeer.svg
 
 apps:
   zordeer:
@@ -78,12 +77,12 @@ parts:
       mv -f $CRAFT_PART_INSTALL/zordeer* $CRAFT_PART_INSTALL/animarium/
       mv -f $CRAFT_PART_INSTALL/translation $CRAFT_PART_INSTALL/animarium/
       sed -i 's|Name=Zordeer|Name=Zordeer [Snap]|' $CRAFT_PART_INSTALL/animarium/zordeer.desktop
+      sed -i 's|Exec=zordeer|Exec=${SNAP}/animarium/zordeer|' $CRAFT_PART_INSTALL/animarium/zordeer.desktop
+      sed -i 's|Icon=zordeer|Icon=${SNAP}/animarium/zordeer.svg|' $CRAFT_PART_INSTALL/animarium/zordeer.desktop
       sed -i 's|"Icon=zordeer"|"Icon=/snap/zordeer/current/animarium/zordeer.svg"|' $CRAFT_PART_INSTALL/animarium/zordeer
 #      sed -i 's|"umu_global": False,|"umu_global": True,|' $CRAFT_PART_INSTALL/animarium/zordeer
     prime:
-      - animarium/zordeer
-      - animarium/zordeer.desktop
-      - animarium/translation
+      - animarium
 
   base-dependencies:
     plugin: nil
