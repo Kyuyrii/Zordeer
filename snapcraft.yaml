@@ -1,0 +1,160 @@
+name: zordeer
+base: core24
+version: '1.6.1'
+platforms:
+  amd64:
+    build-on: [amd64]
+    build-for: [amd64]
+summary: A launcher for games that run via Wine/Proton.
+description: |
+  A launcher for games that run via Wine/Proton.
+grade: stable
+confinement: strict
+icon: zordeer.svg
+
+apps:
+  zordeer:
+    command: animarium/zordeer
+    desktop: animarium/zordeer.desktop
+    environment:
+      HOME: $SNAP_REAL_HOME
+      PYTHONPATH: $SNAP/usr/lib/python3/dist-packages:$PYTHONPATH
+      QT_QPA_PLATFORMTHEME: xdgdesktopportal
+      LD_LIBRARY_PATH: $SNAP/lxqt-support/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR:$SNAP/wine-kyu/usr/lib/i386-linux-gnu:$SNAP/wine-kyu/usr/lib/i386-linux-gnu/pulseaudio:$SNAP/wine-kyu/usr/lib/x86_64-linux-gnu:$SNAP/wine-kyu/usr/lib/x86_64-linux-gnu/pulseaudio:$LD_LIBRARY_PATH
+      QT_PLUGIN_PATH: $SNAP/lxqt-support/usr/lib/$CRAFT_ARCH_TRIPLET_BUILD_FOR/qt6/plugins:$QT_PLUGIN_PATH
+    extensions: [kde-neon-6]
+    plugs:
+      - screen-inhibit-control
+      - home
+      - removable-media
+      - mount-observe
+      - joystick
+      - bluez
+      - udisks2
+#      - steam-support
+
+plugs:
+  shared-memory:
+    private: true
+  lxqt-support:
+    content: lxqt-support
+    interface: content
+    target: $SNAP/lxqt-support
+    default-provider: lxqt-support
+  wine-kyu:
+    content: wine-kyu
+    interface: content
+    target: $SNAP/wine-kyu
+    default-provider: wine-kyu
+
+layout:
+  /usr/share/color-schemes:
+    symlink: $SNAP/lxqt-support/usr/share/color-schemes
+  /usr/share/Kvantum:
+    symlink: $SNAP/lxqt-support/usr/share/Kvantum
+  /usr/lib/x86_64-linux-gnu/mangohud:
+    symlink: $SNAP/usr/lib/x86_64-linux-gnu/mangohud
+  /opt/wine-staging:
+    symlink: $SNAP/wine-kyu/opt/wine-staging
+  /usr/bin/wine:
+    symlink: $SNAP/wine-kyu/opt/wine-staging/bin/wine
+
+#package-repositories:
+#  - type: apt
+#    url: https://dl.winehq.org/wine-builds/ubuntu
+#    suites: [resolute]
+#    components: [main]
+#    architectures: [amd64]
+#    key-id: D43F640145369C51D786DDEA76F1A20FF987672F
+
+parts:
+  zordeer-app:
+    plugin: dump
+    source: https://github.com/Kyuyrii/Zordeer.git
+    #source-tag: $SNAPCRAFT_PROJECT_VERSION
+    override-build: |
+      craftctl default
+      mkdir -p $CRAFT_PART_INSTALL/animarium
+      mv -f $CRAFT_PART_INSTALL/zordeer* $CRAFT_PART_INSTALL/animarium/
+      mv -f $CRAFT_PART_INSTALL/translation $CRAFT_PART_INSTALL/animarium/
+      sed -i 's|Name=Zordeer|Name=Zordeer [Snap]|' $CRAFT_PART_INSTALL/animarium/zordeer.desktop
+      sed -i 's|"Icon=zordeer"|"Icon=/snap/zordeer/current/animarium/zordeer.svg"|' $CRAFT_PART_INSTALL/animarium/zordeer
+#      sed -i 's|"umu_global": False,|"umu_global": True,|' $CRAFT_PART_INSTALL/animarium/zordeer
+    prime:
+      - animarium/zordeer
+      - animarium/zordeer.desktop
+      - animarium/translation
+
+  base-dependencies:
+    plugin: nil
+    stage-packages:
+      - python3-pyqt6
+      - python3-requests
+      - python3-psutil
+      - python3-toml
+      - libsdl2-2.0-0
+      - libdecor-0-0
+    prime:
+      - usr/lib/python3/dist-packages
+      - usr/lib/x86_64-linux-gnu/libSDL2-2.0.so*
+      - usr/lib/x86_64-linux-gnu/libdecor-0.so*
+
+  gamemode:
+    plugin: nil
+    stage-packages: [gamemode, gamemode-daemon, libgamemode0, libgamemodeauto0]
+    prime:
+      - etc/security/limits.d/10-gamemode.conf
+      - usr/bin/gamemoded
+      - usr/games/gamemodelist
+      - usr/games/gamemoderun
+      - usr/games/gamemode-simulate-game
+      - usr/lib/x86_64-linux-gnu/libgamemode.so*
+      - usr/lib/x86_64-linux-gnu/libgamemodeauto.so*
+      - usr/lib/x86_64-linux-gnu/libinih.so*
+      - usr/lib/systemd/user/gamemoded.service
+      - usr/lib/sysusers.d/gamemode.conf
+      - usr/libexec/cpucorectl
+      - usr/libexec/cpugovctl
+      - usr/libexec/gpuclockctl
+      - usr/libexec/procsysctl
+      - usr/share/dbus-1/services/com.feralinteractive.GameMode.service
+      - usr/share/gamemode/gamemode.ini
+      - usr/share/lintian/overrides/libgamemode0
+      - usr/share/metainfo/io.github.feralinteractive.gamemode.metainfo.xml
+      - usr/share/polkit-1/actions/com.feralinteractive.GameMode.policy
+      - usr/share/polkit-1/rules.d/gamemode.rules
+
+  mangohud:
+    plugin: nil
+    stage-packages: [mangohud, libspdlog1.12]
+    prime:
+      - usr/bin/mangohud
+      - usr/lib/x86_64-linux-gnu/mangohud/libMangoHud.so*
+      - usr/lib/x86_64-linux-gnu/mangohud/libMangoHud_opengl.so*
+      - usr/lib/x86_64-linux-gnu/mangohud/libMangoHud_shim.so*
+      - usr/lib/x86_64-linux-gnu/libspdlog.so*
+      - usr/share/metainfo/io.github.flightlessmango.mangohud.metainfo.xml
+      - usr/share/vulkan/implicit_layer.d/MangoHud.x86_64.json
+
+#  wine:
+#    plugin: nil
+#    stage-packages:
+#      - winehq-staging
+
+  cleanup:
+    after: [mangohud, gamemode, base-dependencies, zordeer-app]
+    plugin: nil
+    build-snaps:
+      - mesa-2404
+      - kf6-core24
+    override-prime: |
+      set -eux
+      cd /snap/mesa-2404/current/usr/lib
+      find . -type f,l -exec rm -f $CRAFT_PRIME/usr/lib/{} \;
+      cd /snap/mesa-2404/current/usr/share
+      find . -type f,l -exec rm -f $CRAFT_PRIME/usr/share/{} \;
+
+      cd /snap/kf6-core24/current/usr/lib
+      find . -type f,l -exec rm -f $CRAFT_PRIME/usr/lib/{} \;
+      cd /snap/kf6-core24/current/usr/share
+      find . -type f,l -exec rm -f $CRAFT_PRIME/usr/share/{} \;
