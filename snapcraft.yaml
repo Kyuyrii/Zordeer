@@ -31,7 +31,6 @@ apps:
       - joystick
       - bluez
       - udisks2
-#      - steam-support
 
 plugs:
   shared-memory:
