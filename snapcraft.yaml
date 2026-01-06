@@ -140,8 +140,12 @@ parts:
 #    stage-packages:
 #      - winehq-staging
 
+  udisks2:
+    plugin: nil
+    stage-packages: [udisks2]
+
   cleanup:
-    after: [mangohud, gamemode, base-dependencies, zordeer-app]
+    after: [zordeer-app, base-dependencies, gamemode, mangohud, udisks2]
     plugin: nil
     build-snaps:
       - mesa-2404
