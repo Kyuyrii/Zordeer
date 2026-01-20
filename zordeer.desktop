@@ -7,6 +7,6 @@ Comment=A launcher for games that run via Wine/Proton
 Comment[pt_BR]=Um launcher para jogos que rodam via Wine/Proton
 Comment[es_ES]=Un lanzador para juegos que se ejecutan a través de Wine/Proton
 Categories=Game;
-Keywords=gaming;proton;wine;invocation;
+Keywords=gaming;invocation;
 Terminal=false
 Type=Application

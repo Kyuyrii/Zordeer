@@ -17,10 +17,10 @@ import time
 import psutil
 import uuid
 import re
-import webbrowser
 import random
 import csv
 from pathlib import Path
+from functools import partial
 
 # Translation System
 try:
@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.6.1"
+__version__ = "1.7"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -47,7 +47,7 @@ BUILTIN_TRANSLATIONS = {
         "ADD_VARIABLES_BUTTON": "Add variables",
         "AFFECTED_INVOCATIONS": "Invocations that will be affected",
         "ALREADY_UPDATED": "You are on the latest version.",
-        "API_FAIL": "API error:\n{e}",
+        "API_FAIL": "API error:<br>{error}",
         "API_KEY_SAVE_FIRST": "Save your API KEY in the Zordeer settings first.",
         "ALL_INVOCATIONS": "All invocations",
         "ANIMARIUM_PREFIX_PLACEHOLDER": "Empty = animarium_prefix",
@@ -115,6 +115,7 @@ BUILTIN_TRANSLATIONS = {
         "FPS_MANGOHUD": "MangoHUD (DirectX 12 via Vulkan)",
         "GAME_NAME": "Game Name",
         "GAMEMODE": "Use Feral gamemode",
+        "ICON_TOOLBAR_SIZE": "Button size",
         "ICON_WIDTH_CLASSIC": "Icon size (Classic)",
         "ICON_WIDTH_GRID": "Icon size (Grid)",
         "IMAGE_FILTER": "Image Files (*.jpg *.jpeg *.png *.webp);;All Files (*)",
@@ -149,9 +150,6 @@ BUILTIN_TRANSLATIONS = {
         "LAYOUT_MODE_CLASSIC": "Classic",
         "LAYOUT_MODE_GRID": "Grid",
         "LAYOUT_MODE_LIST": "List",
-        "LAYOUT_MODE_CLASSIC_BARE": "Classic (bare)",
-        "LAYOUT_MODE_GRID_BARE": "Grid (bare)",
-        "LAYOUT_MODE_LIST_BARE": "List (bare)",
         "LOAD_HEROES": "Load heroes",
         "LOAD_ICONS": "Load icons",
         "LOAD_VERSIONS": "Load versions",
@@ -163,7 +161,6 @@ BUILTIN_TRANSLATIONS = {
         "MARK_LISTED": "Check listed",
         "MENU_FOLDER": "Menu folder",
         "MODIFY_INVOCATION": "Modify invocation",
-        "MOVE_SHORTCUTS_CONFIRM": "Do you want to move shortcuts from \"{old}\" to \"{new}\"?",
         "MULTIPLE_INVOCATION_EDITOR": "Multiple invocation editor",
         "MULTIPLE_INVOCATION_CREATOR": "Creator of multiple invocations",
         "MULTIPLE_INVOCATION_REMOVER": "Multiple invocation remover",
@@ -210,8 +207,6 @@ BUILTIN_TRANSLATIONS = {
         "RUN_IN_PREFIX_INVOCATION_NAME": "Run in the prefix of: {invocation_name}",
         "RUN_IN_PREFIX_TEMP_FILE_REMOVED": "[Run in prefix] Temporary invocation removed: {temp_file}",
         "RUN_IN_PREFIX_WAITING": "Waiting for the user to stop the current execution",
-        "RUNNER_APPLIED_ALL": "Runner applied to all invocations on the list",
-        "RUNNER_APPLY_ALL_UPDATE_ERROR": "[RunnerApplyAll] Error updating {fname}: {e}",
         "RUNNER_EXISTS_WARNING": "The files for '{name}' exist locally.<br>Do you want to remove them and transfer them again?",
         "RUNNER_REMOVED_SUCCESS": "Runner '{name}' removed successfully!",
         "RUNNER_VERSION": "Runner",
@@ -224,14 +219,15 @@ BUILTIN_TRANSLATIONS = {
         "SELECT": "Select",
         "SELECT_ALL_IN_MULTIPLE_EDIT": "All",
         "SELECT_AT_LEAST_ONE_IMAGE": "Select at least one image.",
-        "SELECT_EXECUTABLE": "Select executable",
-        "SELECTED_EXECUTABLES": "Selected executables",
-        "SELECTED_INVOCATIONS": "Selected Invocations",
         "SELECT_AVAILABLE_RUNNER_CONFIRM": "The selected runner appears to be absent.<br>Save anyway?",
         "SELECT_AVAILABLE_UMU_CONFIRM": "The selected version of umu-launcher appears to be missing.<br>Save anyway?",
+        "SELECT_EXECUTABLE": "Select executable",
+        "SELECT_FOLDER": "Select folder",
         "SELECT_INVOCATION_ART": "Select art",
         "SELECT_INVOCATION_GUI": "Select gui icon",
         "SELECT_PREFIX_TITLE": "Select prefix",
+        "SELECTED_EXECUTABLES": "Selected executables",
+        "SELECTED_INVOCATIONS": "Selected Invocations",
         "SETTINGS_SAVED_RESTART": "Changes saved.<br>Restart Zordeer to apply visual changes.",
         "SGDB_API_KEY_LABEL": "SteamGridDB API Key",
         "SHORTCUTS_MANAGER_TITLE": "Shortcut Manager",
@@ -273,19 +269,20 @@ BUILTIN_TRANSLATIONS = {
         "UMU_DATABASE_LOAD_ERROR": "Error loading UMU database: {error}",
         "UMU_DATABASE_NOT_FOUND": "The UMU database was not found in:<br>\"{path}\"",
         "UMU_DATABASE_WINE_NOT_SUPPORTED": "UMU database is not available for Wine.<br>Use a Proton runner.",
+        "UMU_GLOBAL": "UMU global",
         "UMU_NOT_FOUND": "UMU not found in:<br>{path}",
         "UMU_VERSION": "UMU version",
         "UNMARK_LISTED": "Uncheck listed",
+        "UNAVAILABLE": "Unavailable",
         "UPDATE_ERROR": "Error checking for updates:<br>{error}",
         "UPDATE_SHORTCUTS": "Update shortcuts",
-        "UNAVAILABLE": "Unavailable",
         "USE_ANIMARIUM_PREFIX": "Use animarium_prefix",
         "USE_ANIMARIUM_PREFIX_FOR_ALL": "Use the animarium_prefix on all invocations",
         "USE_AUTO_PREFIX_FOR_ALL": "Set prefixes based on drive_c folder (If exists)",
         "USE_MS_LANGUAGE_CODE": "Use Microsoft language code",
         "USE_ON_ALL": "Use on all",
         "USE_UMU_LAUNCHER": "Use UMU launcher (Proton only)",
-        "USE_UMU_LAUNCHER_TOOLTIP": "Transfers files in the background.<br>The first run may take some time.",
+        "USE_UMU_LAUNCHER_INFO": "Transfers files in the background.<br>The first run may take some time.<br>The 'UMU global' overrides this option.",
         "USING_PYQT6": "Using PyQt6",
         "WINE_NOT_FOUND": "Wine was not found, please check if it is installed",
         "WINECFG_BUTTON": "Winecfg",
@@ -305,7 +302,7 @@ BUILTIN_TRANSLATIONS = {
         "ADD_VARIABLES_BUTTON": "Adicionar variáveis",
         "AFFECTED_INVOCATIONS": "Invocações que serão afetadas",
         "ALREADY_UPDATED": "Você está na versão mais recente.",
-        "API_FAIL": "Erro de API:\n{e}",
+        "API_FAIL": "Erro de API:<br>{error}",
         "API_KEY_SAVE_FIRST": "Salve sua API KEY nas configurações do Zordeer primeiro.",
         "ALL_INVOCATIONS": "Todas as invocações",
         "ANIMARIUM_PREFIX_PLACEHOLDER": "Vazio = animarium_prefix",
@@ -373,6 +370,7 @@ BUILTIN_TRANSLATIONS = {
         "FPS_MANGOHUD": "MangoHUD (DirectX 12 via Vulkan)",
         "GAME_NAME": "Nome do Jogo",
         "GAMEMODE": "Usar Feral gamemode",
+        "ICON_TOOLBAR_SIZE": "Tamanho dos botões",
         "ICON_WIDTH_CLASSIC": "Tamanho do ícone (Clássico)",
         "ICON_WIDTH_GRID": "Tamanho do ícone (Grade)",
         "IMAGE_FILTER": "Arquivos de imagem (*.jpg *.jpeg *.png *.webp);;Todos os arquivos (*)",
@@ -407,9 +405,6 @@ BUILTIN_TRANSLATIONS = {
         "LAYOUT_MODE_CLASSIC": "Clássico",
         "LAYOUT_MODE_GRID": "Grade",
         "LAYOUT_MODE_LIST": "Lista",
-        "LAYOUT_MODE_CLASSIC_BARE": "Clássico (bare)",
-        "LAYOUT_MODE_GRID_BARE": "Grade (bare)",
-        "LAYOUT_MODE_LIST_BARE": "Lista (bare)",
         "LOAD_HEROES": "Carregar heroes",
         "LOAD_ICONS": "Carregar ícones",
         "LOAD_VERSIONS": "Carregar versões",
@@ -421,7 +416,6 @@ BUILTIN_TRANSLATIONS = {
         "MARK_LISTED": "Marcar listados",
         "MENU_FOLDER": "Pasta menu",
         "MODIFY_INVOCATION": "Modificar invocação",
-        "MOVE_SHORTCUTS_CONFIRM": "Deseja mover os atalhos de \"{old}\" para \"{new}\"?",
         "MULTIPLE_INVOCATION_EDITOR": "Editor de multiplas invocações",
         "MULTIPLE_INVOCATION_CREATOR": "Criador de múltiplas invocações",
         "MULTIPLE_INVOCATION_REMOVER": "Removedor de múltiplas invocações",
@@ -468,8 +462,6 @@ BUILTIN_TRANSLATIONS = {
         "RUN_IN_PREFIX_INVOCATION_NAME": "Executar no prefixo da: {invocation_name}",
         "RUN_IN_PREFIX_TEMP_FILE_REMOVED": "[Executar no prefixo] Invocação temporária removida: {temp_file}",
         "RUN_IN_PREFIX_WAITING": "Esperando o usuário parar a execução atual",
-        "RUNNER_APPLIED_ALL": "Runner aplicado a todas as invocações da lista",
-        "RUNNER_APPLY_ALL_UPDATE_ERROR": "[RunnerApplyAll] Erro ao atualizar {fname}: {e}",
         "RUNNER_EXISTS_WARNING": "Os arquivos do '{name}' existem localmente.<br>Deseja removê-los e transferir novamente?",
         "RUNNER_REMOVED_SUCCESS": "Runner '{name}' foi removido com sucesso!",
         "RUNNER_VERSION": "Runner",
@@ -482,9 +474,10 @@ BUILTIN_TRANSLATIONS = {
         "SELECT": "Selecionar",
         "SELECT_ALL_IN_MULTIPLE_EDIT": "Todas",
         "SELECT_AT_LEAST_ONE_IMAGE": "Selecione pelo menos uma imagem.",
-        "SELECT_EXECUTABLE": "Selecionar executável",
         "SELECT_AVAILABLE_RUNNER_CONFIRM": "O runner escolhido parece estar ausente.<br>Salvar mesmo assim?",
         "SELECT_AVAILABLE_UMU_CONFIRM": "A versão escolhida do umu-launcher parece estar ausente.<br>Salvar mesmo assim?",
+        "SELECT_EXECUTABLE": "Selecionar executável",
+        "SELECT_FOLDER": "Selecionar pasta",
         "SELECT_INVOCATION_ART": "Selecionar arte",
         "SELECT_INVOCATION_GUI": "Selecionar ícone gui",
         "SELECT_PREFIX_TITLE": "Selecionar prefixo",
@@ -531,19 +524,20 @@ BUILTIN_TRANSLATIONS = {
         "UMU_DATABASE_LOAD_ERROR": "Erro ao carregar banco de dados UMU: {error}",
         "UMU_DATABASE_NOT_FOUND": "O banco de dados do UMU não foi encontrado em:<br>\"{path}\"",
         "UMU_DATABASE_WINE_NOT_SUPPORTED": "Banco de dados UMU não está disponível para Wine.<br>Use um runner Proton.",
+        "UMU_GLOBAL": "UMU global",
         "UMU_NOT_FOUND": "UMU não encontrado em:<br>{path}",
         "UMU_VERSION": "Versão do UMU",
+        "UNAVAILABLE": "Indisponível",
         "UNMARK_LISTED": "Desmarcar listados",
         "UPDATE_ERROR": "Erro ao verificar atualizações:<br>{error}",
         "UPDATE_SHORTCUTS": "Atualizar atalhos",
-        "UNAVAILABLE": "Indisponível",
         "USE_ANIMARIUM_PREFIX": "Usar o animarium_prefix",
         "USE_ANIMARIUM_PREFIX_FOR_ALL": "Usar o animarium_prefix em todas as invocações",
         "USE_AUTO_PREFIX_FOR_ALL": "Definir prefixos com base na pasta drive_c (Caso exista)",
         "USE_MS_LANGUAGE_CODE": "Usar código de idioma da Microsoft",
         "USE_ON_ALL": "Usar em todas",
         "USE_UMU_LAUNCHER": "Usar UMU launcher (Somente Proton)",
-        "USE_UMU_LAUNCHER_TOOLTIP": "Transfere arquivos em segundo plano.<br>A primeira execução pode demorar.",
+        "USE_UMU_LAUNCHER_INFO": "Transfere arquivos em segundo plano.<br>A primeira execução pode demorar.<br>O 'UMU global' sobrepõe essa opção.",
         "USING_PYQT6": "Usando PyQt6",
         "WINE_NOT_FOUND": "Wine não foi encontrado, verifique se ele está instalado",
         "WINECFG_BUTTON": "Winecfg",
@@ -554,19 +548,24 @@ BUILTIN_TRANSLATIONS = {
     }
 }
 
+if os.environ.get("SNAP"):
+    zordeer_dir: Path = Path(os.environ["SNAP_REAL_HOME"]).joinpath("AppsFiles", "Zordeer")
+else:
+    zordeer_dir: Path = (Path.home() / "AppsFiles" / "Zordeer")
+home_dir = zordeer_dir.parent.parent
+
 # Loads translations from external TOML files.
 def load_external_translations():
     external_translations = {}
     supported_languages = {"English USA": "en_US", "Português Brasil": "pt_BR"}
-    
+
     # Translation folders
     translation_dirs = [
-        Path.home() / "AppsFiles" / "Zordeer" / "translation",
-        Path("/usr/share/Zordeer/translation"),
-        Path(__file__).parent / "translation",
-        Path(sys.argv[0]).parent / "translation"
+        Path(sys.argv[0]).parent / "translation",
+        Path(zordeer_dir) / "translation",
+        Path("/usr/share/Zordeer/translation")
     ]
-    
+
     for translation_folder in translation_dirs:
         if translation_folder.exists():
             for toml_file in translation_folder.glob("zordeer-translation-*.toml"):
@@ -574,19 +573,19 @@ def load_external_translations():
                     lang_code = toml_file.stem.replace("zordeer-translation-", "")
                     with open(toml_file, 'r', encoding='utf-8') as f:
                         lang_data = toml.load(f)
-                    
+
                     # Add to translations
                     external_translations[lang_code] = lang_data
-                    
+
                     # Adds to supported languages
                     lang_name = lang_data.get("language_name", lang_code)
                     supported_languages[lang_name] = lang_code
-                    
+
                     print(f"Loaded translation: {lang_name} ({lang_code})")
-                    
+
                 except Exception as e:
                     print(f"Error loading translation {toml_file}: {e}")
-    
+
     return external_translations, supported_languages
 
 # Load external translations
@@ -596,34 +595,36 @@ EXTERNAL_TRANSLATIONS, SUPPORTED_LANGUAGES = load_external_translations()
 def tr(key, **kwargs):
     # Get the translated string (from external or embedded translations)
     translated_string = None
-    
+
     if LANG in EXTERNAL_TRANSLATIONS:
         translation_dict = EXTERNAL_TRANSLATIONS[LANG]
         translated_string = translation_dict.get(key)
-    
+
     # Fallback to embedded translations if not found in external
     if not translated_string:
         translation_dict = BUILTIN_TRANSLATIONS.get(LANG, BUILTIN_TRANSLATIONS['en_US'])
         translated_string = translation_dict.get(key, BUILTIN_TRANSLATIONS['en_US'].get(key, key))
-    
+
     # If we have a translated string, process special variables and formatting
     if translated_string:
         # Replace special variables
         translated_string = translated_string.replace("{__version__}", __version__)
         translated_string = translated_string.replace("{__creator__}", __creator__)
-        
+
         # Apply formatting with any additional kwargs
         try:
             return translated_string.format(**kwargs)
         except KeyError:
             return translated_string
-    
+
     # If no translation found, return the key itself
     return key
 
 # PyQt6 Imports
 try:
-    from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QListWidget, QPushButton, QMessageBox, QToolBar, QDialog, QGridLayout, QLabel, QLineEdit, QHBoxLayout, QFileDialog, QComboBox, QCheckBox, QListWidgetItem, QStyleFactory, QProgressBar, QButtonGroup, QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit)
+    from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QListWidget, QPushButton, QMessageBox, QToolBar, QDialog, QGridLayout,
+    QLabel, QLineEdit, QHBoxLayout, QFileDialog, QComboBox, QCheckBox, QListWidgetItem, QStyleFactory, QProgressBar, QButtonGroup,
+    QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit)
     from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo
     from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QPalette, QColor, QTextCharFormat, QTextCursor
     from PyQt6.QtNetwork import QLocalServer, QLocalSocket
@@ -632,10 +633,45 @@ except ImportError:
     print(tr("NO_PYQT6_FOUND_ERROR"))
     sys.exit(1)
 
+INVOCATION_LOCALE_OPTIONS = [
+    'English USA (en_US.UTF-8)',
+    'Português Brasil (pt_BR.UTF-8)',
+    'Português Portugal (pt_PT.UTF-8)',
+    'Español España (es_ES.UTF-8)',
+    'Español México (es_MX.UTF-8)',
+    'Français (fr_FR.UTF-8)',
+    'Deutsch (de_DE.UTF-8)',
+    'Italiano (it_IT.UTF-8)',
+    'Русский (ru_RU.UTF-8)',
+    'Українська (uk_UA.UTF-8)',
+    'Polski (pl_PL.UTF-8)',
+    'Česky (cs_CZ.UTF-8)',
+    'Slovenčina (sk_SK.UTF-8)',
+    'Magyar (hu_HU.UTF-8)',
+    'Română (ro_RO.UTF-8)',
+    'Nederlands (nl_NL.UTF-8)',
+    'Svenska (sv_SE.UTF-8)',
+    'Norsk Bokmål (nb_NO.UTF-8)',
+    'Dansk (da_DK.UTF-8)',
+    'Suomi (fi_FI.UTF-8)',
+    'Ελληνικά (el_GR.UTF-8)',
+    'Български (bg_BG.UTF-8)',
+    '日本語 (ja_JP.UTF-8)',
+    '한국어 (ko_KR.UTF-8)',
+    '简体中文 (zh_CN.UTF-8)',
+    '繁體中文 (zh_TW.UTF-8)',
+    'العربية (ar_SA.UTF-8)',
+    'فارسی (fa_IR.UTF-8)',
+    'Türkçe (tr_TR.UTF-8)',
+    'हिन्दी (hi_IN.UTF-8)',
+    'ไทย (th_TH.UTF-8)',
+    'עברית (he_IL.UTF-8)',
+]
+
 # Zordeer settings (TOML)
 # $HOME/AppsFiles/Zordeer/config/zordeer-settings.toml
-CONFIG_DIR = Path.home() / "AppsFiles" / "Zordeer" / "config"
-SETTINGS_PATH = CONFIG_DIR / "zordeer-settings.toml"
+zordeer_config_dir = Path(zordeer_dir) / "config"
+zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
 
 def detect_default_settings() -> dict:
     """Provides default settings for first-time creation."""
@@ -647,7 +683,9 @@ def detect_default_settings() -> dict:
             "icon_width_classic": 420,
             "icon_width_grid": 300,
             "toolbar_position": "top",
+            "toolbar_icon_size": 32,
             "search_bar_visible": False,
+            "toolbar_visible": True,
         },
         "window": {
             "isMaximized": "",
@@ -667,6 +705,7 @@ def detect_default_settings() -> dict:
             "default_runner": "indefinite",
             "umu_version": "indefinite",
             "sgdb_apikey": "",
+            "umu_global": False,
         }
     }
 
@@ -675,7 +714,7 @@ def load_settings() -> dict:
     defaults = detect_default_settings()
 
     try:
-        with open(SETTINGS_PATH, "r", encoding="utf-8") as f:
+        with open(zordeer_settings_file, "r", encoding="utf-8") as f:
             data = toml.load(f)
     except Exception:
         # First creation: save default settings
@@ -712,8 +751,8 @@ def load_settings() -> dict:
 
 def save_settings(data: dict) -> None:
     """Saves settings in TOML."""
-    CONFIG_DIR.mkdir(parents=True, exist_ok=True)
-    with open(SETTINGS_PATH, "w", encoding="utf-8") as f:
+    zordeer_config_dir.mkdir(parents=True, exist_ok=True)
+    with open(zordeer_settings_file, "w", encoding="utf-8") as f:
         toml.dump(data, f)
 
 class SettingsDialog(QDialog):
@@ -757,14 +796,11 @@ class SettingsDialog(QDialog):
         self.layout_mode_combo = QComboBox()
         self.layout_mode_combo.addItems([
             tr("LAYOUT_MODE_CLASSIC"),
-            tr("LAYOUT_MODE_CLASSIC_BARE"),
             tr("LAYOUT_MODE_GRID"),
-            tr("LAYOUT_MODE_GRID_BARE"),
             tr("LAYOUT_MODE_LIST"),
-            tr("LAYOUT_MODE_LIST_BARE")
         ])
         saved_layout_mode = self.settings["design"].get("layout_mode", "classic")
-        index_map = {"classic": 0, "classic-bare": 1, "grid": 2, "grid-bare": 3, "list": 4, "list-bare": 5}
+        index_map = {"classic": 0, "grid": 1, "list": 2}
         self.layout_mode_combo.setCurrentIndex(index_map.get(saved_layout_mode, 0))
         layout.addWidget(layout_mode_label, 2, 0)
         layout.addWidget(self.layout_mode_combo, 2, 1)
@@ -785,6 +821,14 @@ class SettingsDialog(QDialog):
         layout.addWidget(grid_width_label, 4, 0)
         layout.addWidget(self.grid_width_input, 4, 1)
 
+        # Toolbar icon size
+        toolbar_icon_size_label = QLabel(tr("ICON_TOOLBAR_SIZE"))
+        self.toolbar_icon_size_input = QSpinBox()
+        self.toolbar_icon_size_input.setRange(16, 128)
+        self.toolbar_icon_size_input.setValue(self.settings["design"].get("toolbar_icon_size", 32))
+        layout.addWidget(toolbar_icon_size_label, 5, 0)
+        layout.addWidget(self.toolbar_icon_size_input, 5, 1)
+
         # Default Runner Choice
         runner_label = QLabel(tr("DEFAULT_RUNNER"))
         self.runner_combo = QComboBox()
@@ -801,8 +845,8 @@ class SettingsDialog(QDialog):
         else:
             # If you didn't find anything, use a placeholder.
             self.runner_combo.setCurrentText(tr("INDEFINITE"))
-        layout.addWidget(runner_label, 5, 0)
-        layout.addWidget(self.runner_combo, 5, 1)
+        layout.addWidget(runner_label, 6, 0)
+        layout.addWidget(self.runner_combo, 6, 1)
 
         # UMU Launcher Choice
         umu_label = QLabel(tr("UMU_VERSION"))
@@ -820,21 +864,26 @@ class SettingsDialog(QDialog):
         else:
             # If you didn't find anything, use a placeholder.
             self.umu_combo.setCurrentText(tr("INDEFINITE"))
-        layout.addWidget(umu_label, 6, 0)
-        layout.addWidget(self.umu_combo, 6, 1)
+        layout.addWidget(umu_label, 7, 0)
+        layout.addWidget(self.umu_combo, 7, 1)
 
         # SGDB API Key
         api_label = QLabel(tr("SGDB_API_KEY_LABEL"))
         self.api_input = QLineEdit()
         self.api_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.api_input.setText(self.settings["other"].get("sgdb_apikey", ""))
-        layout.addWidget(api_label, 7, 0)
-        layout.addWidget(self.api_input, 7, 1)
+        layout.addWidget(api_label, 8, 0)
+        layout.addWidget(self.api_input, 8, 1)
+
+        # Umu global
+        self.umu_global_checkbox = QCheckBox(tr("UMU_GLOBAL"))
+        self.umu_global_checkbox.setChecked(self.settings["other"].get("umu_global", False))
+        layout.addWidget(self.umu_global_checkbox, 9, 0)
 
         # Save button
         save_btn = QPushButton(tr("SAVE_BUTTON"))
         save_btn.clicked.connect(self.save_and_close)
-        layout.addWidget(save_btn, 8, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(save_btn, 10, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.setLayout(layout)
 
@@ -880,7 +929,8 @@ class SettingsDialog(QDialog):
         self.settings["design"]["qt_style"] = self.style_combo.currentText()
         selected_index = self.lang_combo.currentIndex()
         self.settings["design"]["language"] = list(SUPPORTED_LANGUAGES.values())[selected_index]
-        self.settings["design"]["layout_mode"] = ["classic", "classic-bare", "grid", "grid-bare", "list", "list-bare"][self.layout_mode_combo.currentIndex()]
+        self.settings["design"]["layout_mode"] = ["classic", "grid", "list"][self.layout_mode_combo.currentIndex()]
+        self.settings["design"]["toolbar_icon_size"] = self.toolbar_icon_size_input.value()
         if selected_runner == tr("INDEFINITE"):
             self.settings["other"]["default_runner"] = "indefinite"
         else:
@@ -895,12 +945,14 @@ class SettingsDialog(QDialog):
         self.settings["design"]["icon_width_classic"] = self.classic_width_input.value()
         self.settings["design"]["icon_width_grid"] = self.grid_width_input.value()
 
+        self.settings["other"]["umu_global"] = self.umu_global_checkbox.isChecked()
+
         save_settings(self.settings)
         QMessageBox.information(self, tr("APP_NAME"), tr("SETTINGS_SAVED_RESTART"))
         self.accept()
 
     def populate_runners_settings(self):
-        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runner"
+        runners_path = Path(zordeer_dir) / "runner"
         runners_path.mkdir(parents=True, exist_ok=True)
         available_runners = sorted([d.name for d in runners_path.iterdir() if d.is_dir()], reverse=True)
 
@@ -921,12 +973,12 @@ class SettingsDialog(QDialog):
         self.runner_combo.addItems(items)
 
     def populate_umu_versions(self):
-        umu_path = Path.home() / "AppsFiles" / "Zordeer" / "umu-launcher"
+        umu_path = Path(zordeer_dir) / "umu-launcher"
         umu_path.mkdir(parents=True, exist_ok=True)
-        
+
         # Check if each folder has the umu-run file
         available_umu = sorted([
-            d.name for d in umu_path.iterdir() 
+            d.name for d in umu_path.iterdir()
             if d.is_dir() and (d / "umu-run").exists()
         ], reverse=True)
 
@@ -984,11 +1036,11 @@ class TransferWorker(QThread):
 
             self.message.emit(tr("EXTRACTING", name=Path(self.url).name))
 
-            if "umu" in self.runner_name.lower() or "UMU" in self.runner_name:
+            if "umu-launcher" in self.runner_name.lower():
                 base_dir = self.runners_dir.parent / "umu-launcher"
             else:
                 base_dir = self.runners_dir
-            
+
             base_dir.mkdir(parents=True, exist_ok=True)
             runner_destination_path = base_dir / self.runner_name
             initial_files = set(base_dir.iterdir())
@@ -1051,7 +1103,7 @@ class RunnerTransferDialog(QDialog):
         # Runner selection layout
         selection_layout = QHBoxLayout()
         self.runner_combo = QComboBox()
-        self.runner_combo.addItems(["Proton-GE", "Proton-Sarek", "Proton-EM", "Proton-CachyOS", "UMU-launcher"])
+        self.runner_combo.addItems(["Proton-GE", "Proton-Sarek", "Proton-EM", "Proton-CachyOS", "UMU-launcher", "UMU-Proton"])
         selection_layout.addWidget(self.runner_combo)
         main_layout.addLayout(selection_layout)
 
@@ -1106,6 +1158,7 @@ class RunnerTransferDialog(QDialog):
             "Proton-EM": "https://api.github.com/repos/Etaash-mathamsetty/Proton/releases",
             "Proton-CachyOS": "https://api.github.com/repos/CachyOS/proton-cachyos/releases",
             "UMU-launcher": "https://api.github.com/repos/Open-Wine-Components/umu-launcher/releases",
+            "UMU-Proton": "https://api.github.com/repos/Open-Wine-Components/umu-proton/releases",
         }
 
     def open_runner_repo(self):
@@ -1116,11 +1169,11 @@ class RunnerTransferDialog(QDialog):
             "Proton-EM": "https://github.com/Etaash-mathamsetty/Proton",
             "Proton-CachyOS": "https://github.com/CachyOS/proton-cachyos",
             "UMU-launcher": "https://github.com/Open-Wine-Components/umu-launcher",
+            "UMU-Proton": "https://github.com/Open-Wine-Components/umu-proton",
         }
         url = urls.get(selected_runner)
         if url:
-            import webbrowser
-            webbrowser.open(url)
+            subprocess.Popen(['xdg-open', url])
 
     def closeEvent(self, event):
         if hasattr(self, "worker") and self.worker.isRunning() and not self.worker.finished_transfer:
@@ -1195,19 +1248,16 @@ class RunnerTransferDialog(QDialog):
 
     def start_transfer(self):
         checked = self.button_group.checkedButton()
-        if not checked:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_VERSION_SELECTED_ERROR"))
-            return
 
         item_data = checked.property("runner_data")
         tag_name = item_data['tag_name']
         url = item_data['url']
 
         selected_runner = self.runner_combo.currentText()
-        
+
         if selected_runner == "UMU-launcher":
             runner_folder_name = f"umu-{tag_name}"
-            base_dir = Path.home() / "AppsFiles" / "Zordeer" / "umu-launcher"
+            base_dir = Path(zordeer_dir) / "umu-launcher"
         else:
             formatted_tag = tag_name.replace('GE-Proton-', '').replace('GE-Proton', '')
             if selected_runner == "Proton-GE":
@@ -1215,7 +1265,7 @@ class RunnerTransferDialog(QDialog):
             else:
                 file_name = Path(url).name
                 runner_folder_name = file_name.replace(".tar.gz", "").replace(".tar.xz", "")
-            base_dir = Path.home() / "AppsFiles" / "Zordeer" / "runner"
+            base_dir = Path(zordeer_dir) / "runner"
 
         runner_path = base_dir / runner_folder_name
 
@@ -1239,48 +1289,49 @@ class RunnerTransferDialog(QDialog):
         self.setEnabled(False)
         self.progress_bar.setValue(0)
 
+        def handle_transfer_finished(msg):
+            self.progress_bar.setValue(100)
+            self.setEnabled(True)
+            QMessageBox.information(self, tr("APP_NAME"), msg)
+            self.progress_bar.setValue(0)
+        
+        def handle_transfer_error(msg):
+            QMessageBox.critical(self, tr("APP_NAME"), msg)
+            self.setEnabled(True)
+        
+        def print_message(msg):
+            print(msg)
+
         self.worker = TransferWorker(url, runner_folder_name, base_dir)
         self.worker.progress.connect(self.progress_bar.setValue)
-        self.worker.message.connect(lambda msg: print(msg))
-        self.worker.finished.connect(
-            lambda msg: [
-                self.progress_bar.setValue(100),
-                self.setEnabled(True),
-                QMessageBox.information(self, tr("APP_NAME"), msg),
-                self.progress_bar.setValue(0)
-            ]
-        )
-        self.worker.error.connect(
-            lambda msg: [
-                QMessageBox.critical(self, tr("APP_NAME"), msg),
-                self.setEnabled(True)
-            ]
-        )
+        self.worker.message.connect(print_message)
+        self.worker.finished.connect(handle_transfer_finished)
+        self.worker.error.connect(handle_transfer_error)
         self.worker.start()
 
 class AddInvocationDialog(QDialog):
     # Defining a custom signal that doesn't need arguments
     invocation_saved = pyqtSignal()
-    
+
     def __init__(self, parent=None, invocation_data=None):
         super().__init__(parent)
         self.DEFAULT_PREFIX_NAME = "animarium_prefix"
         self.invocation_data = invocation_data
-        
+
         if self.invocation_data:
             self.setWindowTitle(tr("MODIFY_INVOCATION"))
         else:
             self.setWindowTitle(tr("CREATE_INVOCATION"))
-            
+
         self.resize(600, 400)
-        
+
         self.main_layout = QGridLayout(self)
-        
+
         self.name_label = QLabel(tr("INVOCATION_NAME"))
         self.name_input = QLineEdit()
 
         # Only connect update_prefix_path if it is "Add Invocation"
-        if not self.invocation_data:  
+        if not self.invocation_data:
             self.name_input.textChanged.connect(self.update_prefix_path)
 
         self.main_layout.addWidget(self.name_label, 0, 0)
@@ -1296,7 +1347,7 @@ class AddInvocationDialog(QDialog):
         self.exec_path_input = QLineEdit()
         self.exec_button = QPushButton(tr("BROWSE_BUTTON"))
         self.exec_button.clicked.connect(self.select_executable)
-        
+
         self.main_layout.addWidget(self.exec_path_label, 2, 0)
         self.main_layout.addWidget(self.exec_path_input, 2, 1)
         self.main_layout.addWidget(self.exec_button, 2, 2)
@@ -1306,7 +1357,7 @@ class AddInvocationDialog(QDialog):
         self.prefix_path_input.setPlaceholderText(tr("ANIMARIUM_PREFIX_PLACEHOLDER"))
         self.prefix_button = QPushButton(tr("BROWSE_BUTTON"))
         self.prefix_button.clicked.connect(self.select_prefix)
-        
+
         self.main_layout.addWidget(self.prefix_path_label, 3, 0)
         self.main_layout.addWidget(self.prefix_path_input, 3, 1)
         self.main_layout.addWidget(self.prefix_button, 3, 2)
@@ -1333,41 +1384,7 @@ class AddInvocationDialog(QDialog):
 
         self.language_label = QLabel(tr("INVOCATION_LANGUAGE"))
         self.language_input = QComboBox()
-        self.language_input.addItems([
-            tr("PLACEHOLDER_FOR_LANGUAGE"),
-            'English USA (en_US.UTF-8)',
-            'Português Brasil (pt_BR.UTF-8)',
-            'Português Portugal (pt_PT.UTF-8)',
-            'Español España (es_ES.UTF-8)',
-            'Español México (es_MX.UTF-8)',
-            'Français (fr_FR.UTF-8)',
-            'Deutsch (de_DE.UTF-8)',
-            'Italiano (it_IT.UTF-8)',
-            'Русский (ru_RU.UTF-8)',
-            'Українська (uk_UA.UTF-8)',
-            'Polski (pl_PL.UTF-8)',
-            'Česky (cs_CZ.UTF-8)',
-            'Slovenčina (sk_SK.UTF-8)',
-            'Magyar (hu_HU.UTF-8)',
-            'Română (ro_RO.UTF-8)',
-            'Nederlands (nl_NL.UTF-8)',
-            'Svenska (sv_SE.UTF-8)',
-            'Norsk Bokmål (nb_NO.UTF-8)',
-            'Dansk (da_DK.UTF-8)',
-            'Suomi (fi_FI.UTF-8)',
-            'Ελληνικά (el_GR.UTF-8)',
-            'Български (bg_BG.UTF-8)',
-            '日本語 (ja_JP.UTF-8)',
-            '한국어 (ko_KR.UTF-8)',
-            '简体中文 (zh_CN.UTF-8)',
-            '繁體中文 (zh_TW.UTF-8)',
-            'العربية (ar_SA.UTF-8)',
-            'فارسی (fa_IR.UTF-8)',
-            'Türkçe (tr_TR.UTF-8)',
-            'हिन्दी (hi_IN.UTF-8)',
-            'ไทย (th_TH.UTF-8)',
-            'עברית (he_IL.UTF-8)',
-        ])
+        self.language_input.addItems([tr("PLACEHOLDER_FOR_LANGUAGE")] + INVOCATION_LOCALE_OPTIONS)
         self.main_layout.addWidget(self.language_label, 6, 0)
         self.main_layout.addWidget(self.language_input, 6, 1, 1, 2)
 
@@ -1386,14 +1403,19 @@ class AddInvocationDialog(QDialog):
 
         self.umu_checkbox = QCheckBox(tr("USE_UMU_LAUNCHER"))
         self.umu_checkbox.setChecked(False)
-        self.umu_checkbox.setToolTip(tr("USE_UMU_LAUNCHER_TOOLTIP"))
-        self.umu_checkbox.stateChanged.connect(self.toggle_umu_button)
         self.main_layout.addWidget(self.umu_checkbox, 10, 0, 1, 3)
+
+        self.umu_buttons_layout = QHBoxLayout()
+
+        self.umu_info_button = QPushButton()
+        self.umu_info_button.setIcon(QIcon.fromTheme("help-about"))
+        self.umu_info_button.clicked.connect(self.show_umu_info)
+        self.umu_buttons_layout.addWidget(self.umu_info_button)
 
         self.umu_search_button = QPushButton(tr("UMU_DATABASE_BUTTON"))
         self.umu_search_button.clicked.connect(self.open_umu_search)
-        self.umu_search_button.setEnabled(False)
-        self.main_layout.addWidget(self.umu_search_button, 10, 2)
+        self.umu_buttons_layout.addWidget(self.umu_search_button)
+        self.main_layout.addLayout(self.umu_buttons_layout, 10, 2)
 
         self.fps_layout = QHBoxLayout()
         self.show_fps_checkbox = QCheckBox(tr("SHOW_FPS_OPTION"))
@@ -1418,14 +1440,14 @@ class AddInvocationDialog(QDialog):
         self.invocation_args_input = QLineEdit()
         self.main_layout.addWidget(self.invocation_args_label, 13, 0)
         self.main_layout.addWidget(self.invocation_args_input, 13, 1, 1, 2)
-        
+
         self.buttons_layout = QHBoxLayout()
-        
+
         self.remove_invocation_button = QPushButton(tr("REMOVE"))
-        
+
         self.save_button = QPushButton(tr("SAVE_BUTTON"))
         self.save_button.clicked.connect(self.save_and_accept)
-        
+
         # Add delete buttons only if the dialog is for editing
         if self.invocation_data:
             # Remove button
@@ -1438,14 +1460,17 @@ class AddInvocationDialog(QDialog):
 
         self.buttons_layout.addStretch()
         self.buttons_layout.addWidget(self.save_button)
-        
+
         self.main_layout.addLayout(self.buttons_layout, 14, 0, 1, 3)
-        
+
         if self.invocation_data:
             self.load_invocation_data()
 
-    def toggle_umu_button(self, state):
-        self.umu_search_button.setEnabled(self.umu_checkbox.isChecked())
+    def show_umu_info(self):
+        QMessageBox.information(
+            self,
+            tr("APP_NAME"),
+            tr("USE_UMU_LAUNCHER_INFO"))
 
     def open_umu_search(self):
         current_env_vars = self.env_vars_input.text()
@@ -1454,7 +1479,7 @@ class AddInvocationDialog(QDialog):
         runner_name = self.runner_input.currentText().strip()
         if runner_name == tr("PLACEHOLDER_FOR_RUNNER"):
             runner_name = ""
-        
+
         dialog = UMUGameSearchDialog(self, runner_name, current_env_vars)
         if dialog.exec() == QDialog.DialogCode.Accepted:
             self.env_vars_input.setText(dialog.selected_env_vars)
@@ -1475,17 +1500,17 @@ class AddInvocationDialog(QDialog):
         self.prefix_path_input.setText(self.invocation_data.get('prefix_path', ''))
         self.invocation_art_input.setText(self.invocation_data.get('art_path', ''))
         self.invocation_gui_input.setText(self.invocation_data.get('gui_path', ''))
-        
+
         env_vars_text = self.invocation_data.get('env_vars', '').strip()
         self.env_vars_input.setText(env_vars_text)
 
         self.invocation_args_input.setText(self.invocation_data.get('invocation_args', ''))
-        
+
         runner = self.invocation_data.get('runner', '')
         index_runner = self.runner_input.findText(runner)
         if index_runner != -1:
             self.runner_input.setCurrentIndex(index_runner)
-        
+
         # Fix: Search for the full language string
         language = self.invocation_data.get('language', '')
         index_lang = self.language_input.findText(language)
@@ -1494,10 +1519,10 @@ class AddInvocationDialog(QDialog):
 
         use_ms_language_code = self.invocation_data.get("use_ms_language_code", False)
         self.ms_language_code_checkbox.setChecked(use_ms_language_code)
-            
+
         force_opengl = self.invocation_data.get('force_opengl', False)
         self.force_opengl_checkbox.setChecked(force_opengl)
-        
+
         use_gamemode = self.invocation_data.get('use_gamemode', True)
         self.gamemode_checkbox.setChecked(use_gamemode)
 
@@ -1507,7 +1532,7 @@ class AddInvocationDialog(QDialog):
         show_fps = self.invocation_data.get('show_fps', False)
         self.show_fps_checkbox.setChecked(show_fps)
         self.update_fps_hud_state(Qt.CheckState.Checked if show_fps else Qt.CheckState.Unchecked)
-        
+
         fps_hud_type = self.invocation_data.get('fps_hud_type', '')
         index_hud = self.fps_hud_combo.findData(fps_hud_type)  # Search by "id"
         if index_hud != -1:
@@ -1517,12 +1542,12 @@ class AddInvocationDialog(QDialog):
         """Generates a default prefix path based on the invocation name."""
         invocation_dir = name.replace(" ", "_").lower()
         if invocation_dir:
-            default_path = Path.home() / "AppsFiles" / "Zordeer" / "invocation" / invocation_dir
+            default_path = Path(zordeer_dir) / "invocation" / invocation_dir
             self.prefix_path_input.setText(str(default_path))
 
     def populate_runners(self):
         """Lists the available runner options and adds a warning if the runner chosen for the invocation is no longer available."""
-        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runner"
+        runners_path = Path(zordeer_dir) / "runner"
         runners_path.mkdir(parents=True, exist_ok=True)
 
         available_runners = sorted([d.name for d in runners_path.iterdir() if d.is_dir()], reverse=True)
@@ -1557,7 +1582,7 @@ class AddInvocationDialog(QDialog):
         # Paths in order of priority
         drive_c = Path(self.prefix_path_input.text().strip()) / "drive_c"
         prefix = Path(self.prefix_path_input.text().strip())
-        invocations = Path(self.parent().zordeer_dir) / "invocation"
+        invocations = Path(zordeer_dir) / "invocation"
 
         # Choose the first one that exists
         start_dir = drive_c if drive_c.exists() else prefix if prefix.exists() else invocations
@@ -1573,7 +1598,7 @@ class AddInvocationDialog(QDialog):
             self.exec_path_input.setText(file_path)
 
     def select_prefix(self):
-        invocations_dir = Path(self.parent().zordeer_dir) / "invocation"
+        invocations_dir = Path(zordeer_dir) / "invocation"
         invocations_dir.mkdir(parents=True, exist_ok=True)
 
         dir_path = QFileDialog.getExistingDirectory(
@@ -1585,7 +1610,7 @@ class AddInvocationDialog(QDialog):
             self.prefix_path_input.setText(dir_path)
 
     def select_invocation_art(self):
-        heroes_dir = Path(self.parent().zordeer_dir) / "sgdb" / "heroes"
+        heroes_dir = Path(zordeer_dir) / "sgdb" / "heroes"
         heroes_dir.mkdir(parents=True, exist_ok=True)
 
         file_path, _ = QFileDialog.getOpenFileName(
@@ -1598,7 +1623,7 @@ class AddInvocationDialog(QDialog):
             self.invocation_art_input.setText(file_path)
 
     def select_invocation_gui(self):
-        icons_dir = Path(self.parent().zordeer_dir) / "sgdb" / "icons"
+        icons_dir = Path(zordeer_dir) / "sgdb" / "icons"
         icons_dir.mkdir(parents=True, exist_ok=True)
 
         file_path, _ = QFileDialog.getOpenFileName(
@@ -1615,13 +1640,13 @@ class AddInvocationDialog(QDialog):
         selected_runner = self.runner_input.currentText()
         if selected_runner == tr("PLACEHOLDER_FOR_RUNNER"):
             selected_runner = ""
-        
+
         selected_lang = self.language_input.currentText()
         if selected_lang == tr("PLACEHOLDER_FOR_LANGUAGE"):
             selected_lang = ""
-            
+
         env_vars_text = self.env_vars_input.text().strip()
-        
+
         force_opengl = self.force_opengl_checkbox.isChecked()
         use_gamemode = self.gamemode_checkbox.isChecked()
         use_umu = self.umu_checkbox.isChecked()
@@ -1631,7 +1656,7 @@ class AddInvocationDialog(QDialog):
 
         prefix_text = self.prefix_path_input.text().strip()
         if not prefix_text:  # If empty, use default
-            prefix_text = str(Path.home() / "AppsFiles" / "Zordeer" / "invocation" / self.DEFAULT_PREFIX_NAME)
+            prefix_text = str(Path(zordeer_dir) / "invocation" / self.DEFAULT_PREFIX_NAME)
 
         art_path = self.invocation_art_input.text().strip()
         gui_path = self.invocation_gui_input.text().strip()
@@ -1683,12 +1708,10 @@ class AddInvocationDialog(QDialog):
                 except Exception:
                     pass
 
-            config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
-            art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
-            gui_dir = Path.home() / "AppsFiles" / "Zordeer" / "art" / "gui"
-            
+            art_dir = Path(zordeer_dir) / "art"
+            gui_dir = Path(zordeer_dir) / "art" / "gui"
+
             try:
-                config_dir.mkdir(parents=True, exist_ok=True)
                 art_dir.mkdir(parents=True, exist_ok=True)
                 gui_dir.mkdir(parents=True, exist_ok=True)
             except Exception:
@@ -1696,7 +1719,7 @@ class AddInvocationDialog(QDialog):
 
             # Normalize name
             safe_invocation_name = invocation_data["name"].replace(" ", "_").lower()
-            invocation_file_path = config_dir / f"invocation-info-{safe_invocation_name}.toml"
+            invocation_file_path = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
 
             # Check for duplicate invocation name
             if (
@@ -1728,7 +1751,7 @@ class AddInvocationDialog(QDialog):
                                     old_file.unlink()
                                 except Exception:
                                     pass
-                    
+
                     # Copy new image only if it's not already in the art_dir
                     if art_path.parent != art_dir:
                         art_extension = art_path.suffix.lower()
@@ -1774,7 +1797,7 @@ class AddInvocationDialog(QDialog):
                                     old_file.unlink()
                                 except Exception:
                                     pass
-                    
+
                     # Copy new image only if it's not already in the gui_dir
                     if gui_path.parent != gui_dir:
                         gui_extension = gui_path.suffix.lower()
@@ -1817,8 +1840,8 @@ class AddInvocationDialog(QDialog):
                     if old_prefix_path.exists() and old_prefix_path.name.lower() == old_safe_name:
                         used_by_other = False
                         # Check if any other invocation is using the same prefix folder
-                        for f in config_dir.glob("invocation-info-*.toml"):
-                            old_inv_file = config_dir / f"invocation-info-{old_safe_name}.toml"
+                        for f in zordeer_config_dir.glob("invocation-info-*.toml"):
+                            old_inv_file = zordeer_config_dir / f"invocation-info-{old_safe_name}.toml"
                             if f == old_inv_file:
                                 continue  # Skip the current invocation file
                             try:
@@ -1904,7 +1927,7 @@ class AddInvocationDialog(QDialog):
                 old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
                 new_safe_name = safe_invocation_name
                 if old_safe_name != new_safe_name:
-                    old_invocation_file_path = config_dir / f"invocation-info-{old_safe_name}.toml"
+                    old_invocation_file_path = zordeer_config_dir / f"invocation-info-{old_safe_name}.toml"
                     if old_invocation_file_path.exists():
                         old_invocation_file_path.unlink()
 
@@ -1935,9 +1958,8 @@ class AddInvocationDialog(QDialog):
             return
 
         # Path to the TOML file
-        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
         safe_name = invocation_name.replace(" ", "_").lower()
-        invocation_file = config_dir / f"invocation-info-{safe_name}.toml"
+        invocation_file = zordeer_config_dir / f"invocation-info-{safe_name}.toml"
 
         if not invocation_file.exists():
             QMessageBox.critical(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR"))
@@ -1952,7 +1974,7 @@ class AddInvocationDialog(QDialog):
 
         # Checks if the prefix is ​​being used by other invocations
         if prefix_path:
-            for f in config_dir.glob("invocation-info-*.toml"):
+            for f in zordeer_config_dir.glob("invocation-info-*.toml"):
                 if f == invocation_file:
                     continue
                 try:
@@ -2032,8 +2054,8 @@ class AddInvocationDialog(QDialog):
                 if prefix_path_obj.exists() and prefix_path_obj.is_dir():
                     try:
                         shutil.rmtree(prefix_path_obj)
-                    except Exception as e:
-                        QMessageBox.warning(self, tr("APP_NAME"), tr("DELETE_DATA_ERROR", error=str(e)))
+                    except Exception:
+                        pass
 
         # Remove artwork if it exists
         art = invocation_data.get('art_path')
@@ -2066,22 +2088,37 @@ class AddInvocationDialog(QDialog):
             return
 
         selected_runner = self.runner_input.currentText().strip()
-        runner_name = selected_runner
+
+        # Avoid problems with unavailable runners.
+        unavailable_text = f" ({tr("UNAVAILABLE")})"
+        if unavailable_text in selected_runner:
+            selected_runner = selected_runner.replace(unavailable_text, "")
+
+        # Default runner
+        if selected_runner == tr("PLACEHOLDER_FOR_RUNNER") or selected_runner == "PLACEHOLDER_FOR_RUNNER":
+            runner_name = load_settings()["other"].get("default_runner", "").strip()
+
+            if not runner_name or runner_name.lower() == "indefinite":
+                QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_RUNNER_INDEFINITE"))
+                return
+        else:
+            runner_name = selected_runner
 
         if runner_name.lower() != "wine":
-            # Proton path
-            runners_path = Path(self.parent().zordeer_dir) / "runner"
+            runners_path = Path(zordeer_dir) / "runner"
             proton_script = runners_path / runner_name / "proton"
+
+            # Warning if the Proton runner does not exist
             if not proton_script.exists():
-                default_runner = load_settings().get("default_runner", "Wine")
-                runner_name = default_runner
-                if runner_name.lower() != "wine":
-                    proton_script = runners_path / runner_name / "proton"
-                    if not proton_script.exists():
-                        runner_name = "Wine"
+                QMessageBox.critical(
+                    self,
+                    tr("APP_NAME"),
+                    tr("ERROR_RUNNER", path=str(proton_script.parent)))
+                return
 
         env = os.environ.copy()
 
+        # Warns if the Wine runner does not exist, and runs winecfg in the selected runner.
         if runner_name.lower() == "wine":
             wine_path = shutil.which("wine")
             if not wine_path:
@@ -2092,7 +2129,7 @@ class AddInvocationDialog(QDialog):
         else:
             cmd = [str(proton_script), "run", "winecfg"]
             env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
-            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(Path.home() / "AppsFiles" / "Zordeer" / ".steam" / "steam")
+            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(Path(zordeer_dir) / ".steam" / "steam")
             env["STEAM_EXTRA_COMPAT_TOOLS_PATHS"] = str(proton_script.parent)
 
         subprocess.Popen(cmd, env=env)
@@ -2104,33 +2141,33 @@ class UMUGameSearchDialog(QDialog):
         self.current_env_vars = current_env_vars
         self.setWindowTitle(tr("UMU_DATABASE"))
         self.resize(500, 300)
-        
+
         self.main_layout = QVBoxLayout(self)
-        
+
         # Search bar
         self.search_input = QLineEdit()
         self.search_input.setPlaceholderText(tr("SEARCH"))
         self.search_input.textChanged.connect(self.search_games)
         self.main_layout.addWidget(self.search_input)
-        
+
         # Game list
         self.tree_widget = QTreeWidget()
         self.tree_widget.setHeaderLabels([tr("GAME_NAME"), tr("STORE")])
         self.tree_widget.setColumnCount(2)
-        
+
         # Column size
         self.tree_widget.setColumnWidth(0, 350)
         self.tree_widget.setColumnWidth(1, 120)
 
         self.main_layout.addWidget(self.tree_widget)
-        
+
         # Add button
         self.buttons_layout = QHBoxLayout()
         self.add_button = QPushButton(tr("ADD_VARIABLES_BUTTON"))
         self.add_button.clicked.connect(self.add_selected)
         self.buttons_layout.addStretch()
         self.buttons_layout.addWidget(self.add_button)
-        
+
         self.main_layout.addLayout(self.buttons_layout)
 
         self.should_show = self.pre_validate()
@@ -2144,30 +2181,30 @@ class UMUGameSearchDialog(QDialog):
         if not self.runner_name:
             settings = load_settings()
             self.runner_name = settings["other"].get("default_runner", "").strip()
-        
+
         # Verification for runner "indefinite"
         if not self.runner_name or self.runner_name.lower() == "indefinite":
             QMessageBox.warning(self.parent(), tr("APP_NAME"), tr("DEFAULT_RUNNER_INDEFINITE"))
             return False
-        
+
         # Verification for runner "Wine"
         if self.runner_name.lower() == "wine":
             QMessageBox.information(self.parent(), tr("APP_NAME"), tr("UMU_DATABASE_WINE_NOT_SUPPORTED"))
             return False
-        
-        csv_path = Path.home() / "AppsFiles" / "Zordeer" / "runner" / self.runner_name / "protonfixes" / "umu-database.csv"
-        
+
+        csv_path = Path(zordeer_dir) / "runner" / self.runner_name / "protonfixes" / "umu-database.csv"
+
         if not csv_path.exists():
             QMessageBox.warning(self.parent(), tr("APP_NAME"), tr("UMU_DATABASE_NOT_FOUND", path=str(csv_path)))
             return False
-        
+
         # Try loading the data.
         try:
             self.games_data = []
             with open(csv_path, 'r', encoding='utf-8') as f:
                 reader = csv.reader(f)
                 next(reader, None)  # Ignore header "TITLE,STORE,CODENAME,UMU_ID"
-                
+
                 for row in reader:
                     if len(row) >= 4:  # It needs to have a name, store, codename, and UMU_ID.
                         self.games_data.append({
@@ -2210,22 +2247,22 @@ class UMUGameSearchDialog(QDialog):
     def search_games(self):
         if not hasattr(self, 'games_data') or not self.games_data:
             return
-            
+
         search_text = self.search_input.text().lower().strip()
         self.tree_widget.clear()
-        
+
         filtered_games = []
         for game in self.games_data:
             if not search_text or search_text in game['name'].lower():
                 filtered_games.append(game)
-        
+
         # Add filtered games
         for game in filtered_games:
             item = QTreeWidgetItem([game['name'], game['store']])
             item.setData(0, Qt.ItemDataRole.UserRole, game['umu_id'])
             item.setData(1, Qt.ItemDataRole.UserRole, game['store'])
             self.tree_widget.addTopLevelItem(item)
-        
+
         # Selects automatically
         if filtered_games:
             first_item = self.tree_widget.topLevelItem(0)
@@ -2243,19 +2280,19 @@ class UMUGameSearchDialog(QDialog):
             else:
                 QMessageBox.warning(self, tr("APP_NAME"), tr("NO_GAME_SELECTED_ERROR"))
                 return
-        
+
         item = selected_items[0]
         umu_id = item.data(0, Qt.ItemDataRole.UserRole)
         store = item.data(1, Qt.ItemDataRole.UserRole)
-        
+
         if umu_id and store:
             new_vars = f"GAMEID={umu_id} STORE={store}"
-            
+
             if self.current_env_vars.strip():
                 env_vars_text = f"{self.current_env_vars} {new_vars}"
             else:
                 env_vars_text = new_vars
-            
+
             self.selected_env_vars = env_vars_text
             self.accept()
 
@@ -2282,41 +2319,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         # Language and combobox
         language_label = QLabel(tr("INVOCATION_LANGUAGE"))
         self.language_input = QComboBox()
-        self.language_input.addItems([
-            tr("PLACEHOLDER_FOR_LANGUAGE"),
-            'English USA (en_US.UTF-8)',
-            'Português Brasil (pt_BR.UTF-8)',
-            'Português Portugal (pt_PT.UTF-8)',
-            'Español España (es_ES.UTF-8)',
-            'Español México (es_MX.UTF-8)',
-            'Français (fr_FR.UTF-8)',
-            'Deutsch (de_DE.UTF-8)',
-            'Italiano (it_IT.UTF-8)',
-            'Русский (ru_RU.UTF-8)',
-            'Українська (uk_UA.UTF-8)',
-            'Polski (pl_PL.UTF-8)',
-            'Česky (cs_CZ.UTF-8)',
-            'Slovenčina (sk_SK.UTF-8)',
-            'Magyar (hu_HU.UTF-8)',
-            'Română (ro_RO.UTF-8)',
-            'Nederlands (nl_NL.UTF-8)',
-            'Svenska (sv_SE.UTF-8)',
-            'Norsk Bokmål (nb_NO.UTF-8)',
-            'Dansk (da_DK.UTF-8)',
-            'Suomi (fi_FI.UTF-8)',
-            'Ελληνικά (el_GR.UTF-8)',
-            'Български (bg_BG.UTF-8)',
-            '日本語 (ja_JP.UTF-8)',
-            '한국어 (ko_KR.UTF-8)',
-            '简体中文 (zh_CN.UTF-8)',
-            '繁體中文 (zh_TW.UTF-8)',
-            'العربية (ar_SA.UTF-8)',
-            'فارسی (fa_IR.UTF-8)',
-            'Türkçe (tr_TR.UTF-8)',
-            'हिन्दी (hi_IN.UTF-8)',
-            'ไทย (th_TH.UTF-8)',
-            'עברית (he_IL.UTF-8)',
-        ])
+        self.language_input.addItems([tr("PLACEHOLDER_FOR_LANGUAGE")] + INVOCATION_LOCALE_OPTIONS)
         top_grid.addWidget(language_label, 1, 0)
         top_grid.addWidget(self.language_input, 1, 1)
 
@@ -2330,10 +2333,11 @@ class MultipleCreateInvocationsDialog(QDialog):
         self.main_layout.addWidget(self.auto_prefix_cb)
 
         self.animarium_prefix_cb.stateChanged.connect(
-            lambda state: self.auto_prefix_cb.setDisabled(state == Qt.CheckState.Checked.value)
+            partial(QCheckBox.setDisabled, self.auto_prefix_cb)
         )
+
         self.auto_prefix_cb.stateChanged.connect(
-            lambda state: self.animarium_prefix_cb.setDisabled(state == Qt.CheckState.Checked.value)
+            partial(QCheckBox.setDisabled, self.animarium_prefix_cb)
         )
 
         # TreeWidget for multiple invocations
@@ -2372,7 +2376,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         super().keyPressEvent(event)
 
     def populate_runners(self):
-        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runner"
+        runners_path = Path(zordeer_dir) / "runner"
         runners_path.mkdir(parents=True, exist_ok=True)
         runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
 
@@ -2421,21 +2425,21 @@ class MultipleCreateInvocationsDialog(QDialog):
         # Prefix
         prefix_layout = QHBoxLayout()
         prefix_label = QLabel(tr("PREFIX_PATH"))
-        prefix_input = QLineEdit(
-            str(Path.home() / "AppsFiles" / "Zordeer" / "invocation" / Path(path).stem.replace(" ", "_").lower())
-        )
+        prefix_input = QLineEdit(str(Path(zordeer_dir) / "invocation" / Path(path).stem.replace(" ", "_").lower()))
         prefix_button = QPushButton(tr("BROWSE_BUTTON"))
         prefix_layout.addWidget(prefix_label)
         prefix_layout.addWidget(prefix_input)
         prefix_layout.addWidget(prefix_button)
         layout.addLayout(prefix_layout)
 
-        name_input.textChanged.connect(
-            lambda text, inp=prefix_input: inp.setText(
-                str(Path.home() / "AppsFiles" / "Zordeer" / "invocation" / text.replace(" ", "_").lower())
-            )
-        )
-        prefix_button.clicked.connect(lambda _, inp=prefix_input: self.select_prefix_folder(inp))
+        def update_prefix_from_name(text):
+            new_text = text.replace(" ", "_").lower()
+            new_path = Path(zordeer_dir) / "invocation" / new_text
+            prefix_input.setText(str(new_path))
+
+        name_input.textChanged.connect(update_prefix_from_name)
+        prefix_button.clicked.connect(
+            partial(self.select_prefix_folder, prefix_input))
 
         # Checkboxes
         ms_lang_cb = QCheckBox(tr("USE_MS_LANGUAGE_CODE"))
@@ -2466,7 +2470,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         for id, text in fps_hud_options:
             fps_hud_combo.addItem(text, id)
         fps_hud_combo.setEnabled(False)
-        show_fps_cb.stateChanged.connect(lambda s, combo=fps_hud_combo: combo.setEnabled(s))
+        show_fps_cb.stateChanged.connect(partial(QComboBox.setEnabled, fps_hud_combo))
         fps_layout.addWidget(show_fps_cb)
         fps_layout.addWidget(fps_hud_combo)
         layout.addLayout(fps_layout)
@@ -2494,7 +2498,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         dir_path = QFileDialog.getExistingDirectory(
             self,
             tr("SELECT_PREFIX_TITLE"),
-            str(Path.home() / "AppsFiles" / "Zordeer" / "invocation")
+            str(Path(zordeer_dir) / "invocation")
         )
         if dir_path:
             line_edit.setText(dir_path)
@@ -2510,10 +2514,8 @@ class MultipleCreateInvocationsDialog(QDialog):
         if runner == tr("PLACEHOLDER_FOR_RUNNER"):
             runner = ""
 
-        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
-        art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
-        gui_dir = Path.home() / "AppsFiles" / "Zordeer" / "art" / "gui"
-        config_dir.mkdir(parents=True, exist_ok=True)
+        art_dir = Path(zordeer_dir) / "art"
+        gui_dir = Path(zordeer_dir) / "art" / "gui"
         art_dir.mkdir(parents=True, exist_ok=True)
         gui_dir.mkdir(parents=True, exist_ok=True)
 
@@ -2541,7 +2543,7 @@ class MultipleCreateInvocationsDialog(QDialog):
             existing_names.add(safe_name)
 
             # Duplicate in filesystem
-            test_path = config_dir / f"invocation-info-{safe_name}.toml"
+            test_path = zordeer_config_dir / f"invocation-info-{safe_name}.toml"
             if test_path.exists():
                 QMessageBox.warning(
                     self,
@@ -2571,7 +2573,7 @@ class MultipleCreateInvocationsDialog(QDialog):
             item = self.file_list.topLevelItem(i)
             name = item.name_input.text().strip()
             safe_name = name.replace(" ", "_").lower()
-            file_path = config_dir / f"invocation-info-{safe_name}.toml"
+            file_path = zordeer_config_dir / f"invocation-info-{safe_name}.toml"
 
             # Determine prefix
             if self.auto_prefix_cb.isChecked():
@@ -2586,7 +2588,7 @@ class MultipleCreateInvocationsDialog(QDialog):
                     prefix_path = Path(item.prefix_input.text())
                 prefix_path.mkdir(parents=True, exist_ok=True)
             elif self.animarium_prefix_cb.isChecked():
-                prefix_path = Path.home() / "AppsFiles" / "Zordeer" / "invocation" / "animarium_prefix"
+                prefix_path = Path(zordeer_dir) / "invocation" / "animarium_prefix"
                 prefix_path.mkdir(parents=True, exist_ok=True)
             else:
                 prefix_path = Path(item.prefix_input.text())
@@ -2620,10 +2622,8 @@ class MultipleCreateInvocationsDialog(QDialog):
         self.accept()
 
     def save_invocation_data(self, data):
-        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
-        config_dir.mkdir(parents=True, exist_ok=True)
         safe_name = data["name"].replace(" ", "_").lower()
-        file_path = config_dir / f"invocation-info-{safe_name}.toml"
+        file_path = zordeer_config_dir / f"invocation-info-{safe_name}.toml"
         if file_path.exists():
             return
         with open(file_path, 'w', encoding="utf-8") as f:
@@ -2699,7 +2699,6 @@ class MultipleRemoveInvocationDialog(QDialog):
 
     def load_invocations(self):
         """Loads all existing invocations in alphabetical order."""
-        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
         self.invocation_checkboxes.clear()
 
         # Clean layout
@@ -2710,7 +2709,7 @@ class MultipleRemoveInvocationDialog(QDialog):
                 widget.deleteLater()
 
         # Sort files by name (alphabetical)
-        invocation_files = sorted(config_dir.glob("invocation-info-*.toml"), key=lambda p: p.stem.lower())
+        invocation_files = sorted(zordeer_config_dir.glob("invocation-info-*.toml"))
 
         for invocation_file in invocation_files:
             try:
@@ -2753,9 +2752,8 @@ class MultipleRemoveInvocationDialog(QDialog):
         if msg.exec() != QMessageBox.StandardButton.Yes:
             return
 
-        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
-        art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
-        gui_dir = Path.home() / "AppsFiles" / "Zordeer" / "art" / "gui"
+        art_dir = Path(zordeer_dir) / "art"
+        gui_dir = Path(zordeer_dir) / "art" / "gui"
 
         # Checking prefixes in use
         prefix_usages = {}
@@ -2769,7 +2767,7 @@ class MultipleRemoveInvocationDialog(QDialog):
 
                 selected_using = []
                 affected_using = []
-                for f in config_dir.glob("invocation-info-*.toml"):
+                for f in zordeer_config_dir.glob("invocation-info-*.toml"):
                     try:
                         with open(f, encoding="utf-8") as toml_file:
                             data = toml.load(toml_file)
@@ -2883,7 +2881,7 @@ class MultipleRemoveInvocationDialog(QDialog):
         self.load_invocations()
         if self.parent_ref:
             self.parent_ref.load_invocations()
-        
+
         self.accept()
 
 class MultipleEditInvocationDialog(QDialog):
@@ -3004,43 +3002,10 @@ class MultipleEditInvocationDialog(QDialog):
         # Language
         self.lang_label = QLabel(tr("INVOCATION_LANGUAGE"))
         self.lang_combo = QComboBox()
-        self.lang_combo.addItem(tr("PLACEHOLDER_FOR_LANGUAGE"))
-        for lang in [
-            'English USA (en_US.UTF-8)',
-            'Português Brasil (pt_BR.UTF-8)',
-            'Português Portugal (pt_PT.UTF-8)',
-            'Español España (es_ES.UTF-8)',
-            'Español México (es_MX.UTF-8)',
-            'Français (fr_FR.UTF-8)',
-            'Deutsch (de_DE.UTF-8)',
-            'Italiano (it_IT.UTF-8)',
-            'Русский (ru_RU.UTF-8)',
-            'Українська (uk_UA.UTF-8)',
-            'Polski (pl_PL.UTF-8)',
-            'Česky (cs_CZ.UTF-8)',
-            'Slovenčina (sk_SK.UTF-8)',
-            'Magyar (hu_HU.UTF-8)',
-            'Română (ro_RO.UTF-8)',
-            'Nederlands (nl_NL.UTF-8)',
-            'Svenska (sv_SE.UTF-8)',
-            'Norsk Bokmål (nb_NO.UTF-8)',
-            'Dansk (da_DK.UTF-8)',
-            'Suomi (fi_FI.UTF-8)',
-            'Ελληνικά (el_GR.UTF-8)',
-            'Български (bg_BG.UTF-8)',
-            '日本語 (ja_JP.UTF-8)',
-            '한국어 (ko_KR.UTF-8)',
-            '简体中文 (zh_CN.UTF-8)',
-            '繁體中文 (zh_TW.UTF-8)',
-            'العربية (ar_SA.UTF-8)',
-            'فارسی (fa_IR.UTF-8)',
-            'Türkçe (tr_TR.UTF-8)',
-            'हिन्दी (hi_IN.UTF-8)',
-            'ไทย (th_TH.UTF-8)',
-            'עברית (he_IL.UTF-8)',
-        ]:
-            self.lang_combo.addItem(lang)
-        self.lang_combo.insertItem(0, tr("DO_NOT_CHANGE"))
+        self.lang_combo.addItems([
+            tr("DO_NOT_CHANGE"),
+            tr("PLACEHOLDER_FOR_LANGUAGE")
+        ] + INVOCATION_LOCALE_OPTIONS)
         self.lang_combo.setCurrentIndex(0)
         right_layout.addWidget(self.lang_label, row, 0)
         right_layout.addWidget(self.lang_combo, row, 1, 1, 2)
@@ -3076,7 +3041,7 @@ class MultipleEditInvocationDialog(QDialog):
         self.show_fps_checkbox.setTristate(True)
         self.show_fps_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         self.fps_hud_combo = QComboBox()
-        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")), 
+        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")),
                                 ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")),
                                 ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))]
         for id, text in self.fps_hud_options:
@@ -3151,7 +3116,7 @@ class MultipleEditInvocationDialog(QDialog):
             return
 
         self.invocation_info_viewer = InvocationInfoViewerDialog(self.parent_ref.zordeer_dir, self, multiple_edit_dialog=self)
-        self.invocation_info_viewer.finished.connect(lambda _: setattr(self, "invocation_info_viewer", None))
+        self.invocation_info_viewer.finished.connect(partial(setattr, self, "invocation_info_viewer", None))
         self.invocation_info_viewer.show()
 
     def keyPressEvent(self, event):
@@ -3211,7 +3176,7 @@ class MultipleEditInvocationDialog(QDialog):
         self.runner_filter.blockSignals(False)
 
     def populate_runners(self):
-        runners_path = Path.home() / "AppsFiles" / "Zordeer" / "runner"
+        runners_path = Path(zordeer_dir) / "runner"
         runners_path.mkdir(parents=True, exist_ok=True)
         runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
 
@@ -3230,7 +3195,7 @@ class MultipleEditInvocationDialog(QDialog):
         self.fps_hud_combo.setEnabled(Qt.CheckState(state) == Qt.CheckState.Checked)
 
     def select_executable(self):
-        invocations_dir = Path.home() / "AppsFiles" / "Zordeer" / "invocation"
+        invocations_dir = Path(zordeer_dir) / "invocation"
         invocations_dir.mkdir(parents=True, exist_ok=True)
 
         file_path, _ = QFileDialog.getOpenFileName(
@@ -3244,7 +3209,7 @@ class MultipleEditInvocationDialog(QDialog):
             self.exec_input.setText(file_path)
 
     def select_prefix(self):
-        invocations_dir = Path.home() / "AppsFiles" / "Zordeer" / "invocation"
+        invocations_dir = Path(zordeer_dir) / "invocation"
         invocations_dir.mkdir(parents=True, exist_ok=True)
 
         dir_path = QFileDialog.getExistingDirectory(
@@ -3256,7 +3221,7 @@ class MultipleEditInvocationDialog(QDialog):
             self.prefix_input.setText(dir_path)
 
     def select_invocation_art(self):
-        heroes_dir = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "heroes"
+        heroes_dir = Path(zordeer_dir) / "sgdb" / "heroes"
         heroes_dir.mkdir(parents=True, exist_ok=True)
 
         file_path, _ = QFileDialog.getOpenFileName(
@@ -3269,7 +3234,7 @@ class MultipleEditInvocationDialog(QDialog):
             self.art_input.setText(file_path)
 
     def select_invocation_gui(self):
-        icons_dir = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "icons"
+        icons_dir = Path(zordeer_dir) / "sgdb" / "icons"
         icons_dir.mkdir(parents=True, exist_ok=True)
 
         file_path, _ = QFileDialog.getOpenFileName(
@@ -3282,14 +3247,13 @@ class MultipleEditInvocationDialog(QDialog):
             self.gui_input.setText(file_path)
 
     def load_invocations(self):
-        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
         self.invocation_checkboxes.clear()
         while self.scroll_layout.count():
             item = self.scroll_layout.takeAt(0)
             widget = item.widget()
             if widget:
                 widget.deleteLater()
-        invocation_files = sorted(config_dir.glob("invocation-info-*.toml"), key=lambda p: p.stem.lower())
+        invocation_files = sorted(zordeer_config_dir.glob("invocation-info-*.toml"))
         for invocation_file in invocation_files:
             try:
                 with open(invocation_file, encoding="utf-8") as f:
@@ -3386,7 +3350,7 @@ class MultipleEditInvocationDialog(QDialog):
             if prefix_text != tr("DO_NOT_CHANGE"):
                 if prefix_text == "":
                     # Uses the standard prefix animarium_prefix
-                    prefix_path = Path.home() / "AppsFiles" / "Zordeer" / "invocation" / "animarium_prefix"
+                    prefix_path = Path(zordeer_dir) / "invocation" / "animarium_prefix"
                     prefix_path.mkdir(parents=True, exist_ok=True)
                     data["prefix_path"] = str(prefix_path)
                 else:
@@ -3417,7 +3381,7 @@ class MultipleEditInvocationDialog(QDialog):
                                 except Exception:
                                     pass
 
-                        art_dir = Path.home() / "AppsFiles" / "Zordeer" / "art"
+                        art_dir = Path(zordeer_dir) / "art"
                         art_dir.mkdir(parents=True, exist_ok=True)
                         ext = art_path.suffix.lower()
                         new_art_path = art_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
@@ -3452,7 +3416,7 @@ class MultipleEditInvocationDialog(QDialog):
                                 except Exception:
                                     pass
 
-                        gui_dir = Path.home() / "AppsFiles" / "Zordeer" / "art" / "gui"
+                        gui_dir = Path(zordeer_dir) / "art" / "gui"
                         gui_dir.mkdir(parents=True, exist_ok=True)
                         ext = gui_path.suffix.lower()
                         new_gui_path = gui_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
@@ -3465,7 +3429,7 @@ class MultipleEditInvocationDialog(QDialog):
             # Language
             lang = self.lang_combo.currentText()
             if lang != tr("DO_NOT_CHANGE"):
-                data["language"] = lang
+                data["language"] = "" if lang == tr("PLACEHOLDER_FOR_LANGUAGE") else lang
 
             # Checkboxes
             def apply_checkbox(cb_widget, key):
@@ -3521,11 +3485,9 @@ class InvocationInfoViewerDialog(QDialog):
         self.setWindowTitle(tr("INVOCATION_INFO_VIEWER_TITLE"))
         self.setAttribute(Qt.WidgetAttribute.WA_DeleteOnClose, True)
         if parent is not None:
-            self.destroyed.connect(lambda: setattr(parent, "invocation_info_viewer", None))
+            self.destroyed.connect(partial(setattr, parent, "invocation_info_viewer", None))
         self.resize(580, 480)
 
-        # Zordeer Directory
-        self.zordeer_dir = Path(zordeer_dir) if zordeer_dir else Path.home() / "AppsFiles" / "Zordeer"
         self.invocations = self.load_invocations()
 
         # Left widget: Search, combobox, list
@@ -3542,9 +3504,7 @@ class InvocationInfoViewerDialog(QDialog):
         # Combobox for search
         self.search_mode_combo = QComboBox()
         self.search_mode_combo.addItems([tr("NAME"), tr("CONTENT")])
-        self.search_mode_combo.currentIndexChanged.connect(
-            lambda _: self.filter_invocations(self.search_box.text())
-        )
+        self.search_mode_combo.currentIndexChanged.connect(self.update_filter_from_combo)
         left_layout.addWidget(self.search_mode_combo)
 
         # Scroll area for radio buttons
@@ -3606,6 +3566,10 @@ class InvocationInfoViewerDialog(QDialog):
         self.radio_buttons = []
         self.create_invocation_buttons()
 
+    def update_filter_from_combo(self):
+        current_text = self.search_box.text()
+        self.filter_invocations(current_text)
+
     # In the MultipleEditInvocationDialog, mark all the innovations that are visible
     def mark_listed(self):
         if not getattr(self, "multiple_edit_dialog", None):
@@ -3646,12 +3610,11 @@ class InvocationInfoViewerDialog(QDialog):
 
     # Loads the available TOML files.
     def load_invocations(self) -> list[dict]:
-        config_dir = self.zordeer_dir / "config"
         invocations = []
-        if not config_dir.exists():
+        if not zordeer_config_dir.exists():
             return invocations
 
-        for file in config_dir.glob("invocation-info-*.toml"):
+        for file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 with open(file, "r", encoding="utf-8") as f:
                     inv = toml.load(f)
@@ -3663,15 +3626,20 @@ class InvocationInfoViewerDialog(QDialog):
 
     # Create radio buttons
     def create_invocation_buttons(self):
-        # Sort alphabetically
-        self.invocations.sort(
-            key=lambda i: (i.get("name") or i.get("display_name") or i.get("id") or "").lower()
-        )
+        # Sort alphabetically by filename (invocation-info-)
+        def get_filename_sort_key(invocation):
+            filename = invocation.get("__filename", "")
+            return Path(filename).stem.lower()
+        
+        self.invocations.sort(key=get_filename_sort_key)
 
         first_rb = None
         for inv in self.invocations:
             filename = inv.get("__filename", "")
-            display_name = inv.get("name") or inv.get("display_name") or inv.get("id")
+            
+            # Displays the content of the name field.
+            display_name = inv.get("name")
+            
             rb = QRadioButton(display_name)
             rb.setProperty("invocation_filename", filename)
             self.button_group.addButton(rb)
@@ -3700,7 +3668,7 @@ class InvocationInfoViewerDialog(QDialog):
             if search_mode == tr("NAME"):
                 match = text in rb.text().lower()
             else:  # Content
-                file_path = self.zordeer_dir / "config" / filename
+                file_path = zordeer_dir / "config" / filename
                 if file_path.exists():
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
@@ -3738,7 +3706,7 @@ class InvocationInfoViewerDialog(QDialog):
 
     # Display information by reading the TOML.
     def show_invocation_info_from_file(self, filename: str):
-        file_path = self.zordeer_dir / "config" / filename
+        file_path = zordeer_dir / "config" / filename
         if not file_path.exists():
             self.text_box.clear()
             return
@@ -3838,10 +3806,7 @@ class RunInPrefix(QDialog):
         self._has_printed_waiting_message = False
 
         # Preventive cleanup: delete old leftovers
-        config_dir = Path(self.parent.zordeer_dir) / "config"
-        config_dir.mkdir(parents=True, exist_ok=True)
-
-        for fname in config_dir.iterdir():
+        for fname in zordeer_config_dir.iterdir():
             if fname.name.endswith("_ztffrip.toml"):
                 try:
                     fname.unlink()
@@ -3919,8 +3884,8 @@ class RunInPrefix(QDialog):
 
         # TOML paths
         self.safe_invocation = self.invocation_name.replace(" ", "_").lower()
-        self.real_toml_path = config_dir / f"invocation-info-{self.safe_invocation}.toml"
-        self.temp_toml_path = config_dir / f"invocation-info-{self.safe_invocation}_ztffrip.toml"
+        self.real_toml_path = zordeer_config_dir / f"invocation-info-{self.safe_invocation}.toml"
+        self.temp_toml_path = zordeer_config_dir / f"invocation-info-{self.safe_invocation}_ztffrip.toml"
 
         # Backup of the original TOML in memory (loaded in start_execution)
         self._original_toml = None
@@ -4006,8 +3971,7 @@ class RunInPrefix(QDialog):
 
         # Temporary name/file (derived from the original safe name)
         temp_safe_name = f"{self.safe_invocation}_ztffrip".lower()
-        config_dir = Path(self.parent.zordeer_dir) / "config"
-        self.temp_toml_path = str(config_dir / f"invocation-info-{temp_safe_name}.toml")
+        self.temp_toml_path = str(zordeer_config_dir / f"invocation-info-{temp_safe_name}.toml")
 
         # Clone original and set the exe to run
         mod = dict(self._original_toml)
@@ -4130,10 +4094,6 @@ class ShortcutManager(QDialog):
         self.setWindowTitle(tr("SHORTCUTS_MANAGER_TITLE"))
         self.resize(340, 400)
 
-        # Zordeer base directory
-        self.zordeer_dir = Path.home() / "AppsFiles" / "Zordeer"
-        self.CONFIG_DIR = self.zordeer_dir / "config"
-
         # Load invocations and shortcuts info
         self.invocations = self.load_invocations()
         self.shortcut_manager_info = self.load_shortcut_manager_info()
@@ -4183,32 +4143,39 @@ class ShortcutManager(QDialog):
         self.own_category_cb = QCheckBox(tr("OWN_CATEGORY"))
         own_category_checked = self.shortcut_manager_info.get("own_category", False)
         menu_dir_str = self.shortcut_manager_info.get("menu_dir", "")
-        
+
         # Uncheck and disable if menu_dir does not contain /.local/share/applications
         if "/.local/share/applications" not in menu_dir_str:
             own_category_checked = False
             self.own_category_cb.setEnabled(False)
-        
+
         self.own_category_cb.setChecked(own_category_checked)
         main_layout.addWidget(self.own_category_cb)
 
         # Folder selection
         grid = QGridLayout()
-        self.desktop_dir_input = QLineEdit(self.shortcut_manager_info.get("desktop_dir", ""))
-        self.desktop_dir_input.setReadOnly(True)
-        desktop_browse = QPushButton(tr("BROWSE_BUTTON"))
-        desktop_browse.clicked.connect(lambda: self.browse_folder(self.desktop_dir_input))
-        grid.addWidget(QLabel(tr("DESKTOP_FOLDER")), 0, 0)
-        grid.addWidget(self.desktop_dir_input, 0, 1)
-        grid.addWidget(desktop_browse, 0, 2)
 
+        # Desktop section
+        grid.addWidget(QLabel(tr("DESKTOP_FOLDER")), 0, 0)
+        self.desktop_dir_input = QLineEdit(self.shortcut_manager_info.get("desktop_dir", ""))
+        grid.addWidget(self.desktop_dir_input, 1, 0, 1, 3)
+
+        desktop_buttons = QHBoxLayout()
+        desktop_browse = QPushButton(tr("BROWSE_BUTTON"))
+        desktop_browse.clicked.connect(partial(self.browse_folder, self.desktop_dir_input))
+        desktop_buttons.addWidget(desktop_browse)
+        grid.addLayout(desktop_buttons, 2, 0, 1, 3)
+
+        # Menu section  
+        grid.addWidget(QLabel(tr("MENU_FOLDER")), 3, 0)
         self.menu_dir_input = QLineEdit(self.shortcut_manager_info.get("menu_dir", ""))
-        self.menu_dir_input.setReadOnly(True)
+        grid.addWidget(self.menu_dir_input, 4, 0, 1, 3)
+
+        menu_buttons = QHBoxLayout()
         menu_browse = QPushButton(tr("BROWSE_BUTTON"))
-        menu_browse.clicked.connect(lambda: self.browse_folder(self.menu_dir_input))
-        grid.addWidget(QLabel(tr("MENU_FOLDER")), 1, 0)
-        grid.addWidget(self.menu_dir_input, 1, 1)
-        grid.addWidget(menu_browse, 1, 2)
+        menu_browse.clicked.connect(partial(self.browse_folder, self.menu_dir_input))
+        menu_buttons.addWidget(menu_browse)
+        grid.addLayout(menu_buttons, 5, 0, 1, 3)
 
         grid.setContentsMargins(0, 0, 0, 0)
 
@@ -4220,7 +4187,7 @@ class ShortcutManager(QDialog):
         # Show locations and update button
         buttons_layout = QHBoxLayout()
         self.locations_btn = QPushButton(tr("SHORTCUTS_PATHS"))
-        self.locations_btn.clicked.connect(lambda: self.locations_widget.setVisible(not self.locations_widget.isVisible()))
+        self.locations_btn.clicked.connect(self.toggle_locations)
         buttons_layout.addWidget(self.locations_btn)
         buttons_layout.addStretch()
         self.update_shortcuts = QPushButton(tr("UPDATE_SHORTCUTS"))
@@ -4232,6 +4199,9 @@ class ShortcutManager(QDialog):
         self.view_combo.setCurrentIndex(1)
         self.update_list_view()
         self.view_combo.setCurrentIndex(0)
+
+    def toggle_locations(self):
+        self.locations_widget.setVisible(not self.locations_widget.isVisible())
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
@@ -4275,12 +4245,12 @@ class ShortcutManager(QDialog):
         # Current folder and existing desktops
         folder_path = Path(self.shortcut_manager_info.get(f"{self.current_view}_dir", ""))
         existing_desktops = set()
-        
+
         if folder_path.exists():
-            safe_to_display = {data["safe_invocation_name"]: name 
-                              for name, data in self.invocations.items() 
+            safe_to_display = {data["safe_invocation_name"]: name
+                              for name, data in self.invocations.items()
                               if "safe_invocation_name" in data}
-            
+
             for f in folder_path.glob("invocation-*.desktop"):
                 if self.is_zordeer_desktop(f):
                     safe_name = f.stem.replace("invocation-", "")
@@ -4315,9 +4285,9 @@ class ShortcutManager(QDialog):
     # Loading and saving
     def load_invocations(self) -> dict:
         invs = {}
-        if not self.CONFIG_DIR.exists():
+        if not zordeer_config_dir.exists():
             return invs
-        for f in self.CONFIG_DIR.glob("invocation-info-*.toml"):
+        for f in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 content = f.read_text(encoding="utf-8")
                 data = toml.loads(content)
@@ -4335,13 +4305,17 @@ class ShortcutManager(QDialog):
         settings = load_settings()
         shortcut_section = settings.get("shortcut", {})
 
-        # Get values or use defaults
+        # Get values from config or empty strings
+        desktop_dir = shortcut_section.get("desktop_dir", "")
+        menu_dir = shortcut_section.get("menu_dir", "")
+        
+        zordeer_command = shortcut_section.get("zordeer_command", "zordeer")
+        own_category = shortcut_section.get("own_category", False)
 
-        # Determine desktop_dir from XDG user dirs
-        desktop_dir = shortcut_section.get("desktop_dir")
+        # If desktop_dir is empty in config, calculate default
         if not desktop_dir:
-            desktop_dir = Path.home() / "Desktop"  # fallback
-            user_dirs_file = Path.home() / ".config" / "user-dirs.dirs"
+            desktop_dir = home_dir / "Desktop"  # fallback
+            user_dirs_file = home_dir / ".config" / "user-dirs.dirs"
             if user_dirs_file.exists():
                 try:
                     with open(user_dirs_file, encoding="utf-8") as f:
@@ -4349,19 +4323,15 @@ class ShortcutManager(QDialog):
                             line = line.strip()
                             if line.startswith("XDG_DESKTOP_DIR"):
                                 path = line.split("=", 1)[1].strip().strip('"')
-                                path = path.replace("$HOME", str(Path.home()))
+                                path = path.replace("$HOME", str(home_dir))
                                 desktop_dir = Path(path)
                                 break
                 except Exception:
                     pass
 
-        # Determine menu_dir
-        menu_dir = shortcut_section.get("menu_dir") or str(
-            Path.home() / ".local" / "share" / "applications")
-
-        zordeer_command = shortcut_section.get("zordeer_command") or "zordeer"
-
-        own_category = shortcut_section.get("own_category", False)
+        # If menu_dir is empty in config, use default
+        if not menu_dir:
+            menu_dir = str(home_dir / ".local" / "share" / "applications")
 
         # Processed settings for shortcut manager
         info = {
@@ -4372,15 +4342,6 @@ class ShortcutManager(QDialog):
             "menu_file": shortcut_section.get("menu_file", ""),
             "directory_file": shortcut_section.get("directory_file", "")
         }
-
-        # Save defaults only if fields are empty
-        if not shortcut_section.get("desktop_dir", "") or not shortcut_section.get("menu_dir", ""):
-            settings.setdefault("shortcut", {})
-            if not shortcut_section.get("desktop_dir", ""):
-                settings["shortcut"]["desktop_dir"] = str(desktop_dir)
-            if not shortcut_section.get("menu_dir", ""):
-                settings["shortcut"]["menu_dir"] = str(menu_dir)
-            save_settings(settings)
 
         return info
 
@@ -4397,99 +4358,31 @@ class ShortcutManager(QDialog):
 
     # Folder browsing
     def browse_folder(self, line_edit: QLineEdit):
-        folder = QFileDialog.getExistingDirectory(self, tr("CHOOSE_FOLDER"), line_edit.text())
+        if line_edit == self.desktop_dir_input:
+            initial_dir = str(home_dir)
+        else:
+            initial_dir = str(home_dir / ".local" / "share" / "applications")
+        
+        folder = QFileDialog.getExistingDirectory(self, tr("SELECT_FOLDER"), initial_dir)
         if not folder:
             return
 
-        old_folder = Path(line_edit.text())
         new_folder = Path(folder)
-
-        if old_folder.exists() and old_folder != new_folder:
-            # Find the Zordeer .desktop file in the old folder.
-            zordeer_desktops = []
-            for f in old_folder.glob("*.desktop"):
-                try:
-                    content = f.read_text(encoding="utf-8")
-                    if self.is_zordeer_desktop(f):
-                        zordeer_desktops.append(f)
-                except Exception:
-                    continue
-
-            # Only ask if there is one.
-            if zordeer_desktops:
-                reply = QMessageBox.question(
-                    self,
-                    tr("APP_NAME"),
-                    tr("MOVE_SHORTCUTS_CONFIRM", old=str(old_folder), new=str(new_folder)),
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                )
-                if reply == QMessageBox.StandardButton.Yes:
-                    new_folder.mkdir(parents=True, exist_ok=True)
-                    for f in zordeer_desktops:
-                        try:
-                            f.rename(new_folder / f.name)
-                        except Exception as e:
-                            print(tr("ERROR_MOVING_SHORTCUTS", file=f, error=e))
-
-        # Update the line_edit and shortcut manager info.
         line_edit.setText(str(new_folder))
+
         if line_edit == self.menu_dir_input:
-            self.shortcut_manager_info["menu_dir"] = str(new_folder)
-            view_key = "menu"
-            
-            # Update checkbox based on menu_dir
             if "/.local/share/applications" not in str(new_folder):
                 self.own_category_cb.setChecked(False)
                 self.own_category_cb.setEnabled(False)
             else:
                 self.own_category_cb.setEnabled(True)
-        elif line_edit == self.desktop_dir_input:
-            self.shortcut_manager_info["desktop_dir"] = str(new_folder)
-            view_key = "desktop"
-
-        self.save_shortcut_manager_info()
-
-        # Update the checkboxes according to the new folder.
-        folder_path = new_folder
-        existing_desktops = set()
-        
-        if folder_path.exists():
-            safe_to_display = {data["safe_invocation_name"]: name 
-                              for name, data in self.invocations.items() 
-                              if "safe_invocation_name" in data}
-            
-            for f in folder_path.glob("invocation-*.desktop"):
-                if self.is_zordeer_desktop(f):
-                    safe_name = f.stem.replace("invocation-", "")
-                    if safe_name in safe_to_display:
-                        existing_desktops.add(safe_to_display[safe_name])
-
-        # Update existing checkboxes
-        for name, cb in self.checkbox_widgets[view_key].items():
-            cb.setChecked(name in existing_desktops)
-
-        # Reapply filter
-        while self.scroll_layout.count():
-            item = self.scroll_layout.takeAt(0)
-            if item.widget():
-                item.widget().setParent(None)
-
-        text = self.search_bar.text().lower()
-        for name, cb in self.checkbox_widgets[view_key].items():
-            if text in name.lower():
-                self.scroll_layout.addWidget(cb)
-                cb.show()
-            else:
-                cb.hide()
-
-        self.scroll_layout.addStretch()
 
     # Save and create .desktop
 
     def remove_all_zordeer_desktops(self, folder: Path):
         if not folder.exists():
             return
-        
+
         for f in folder.glob("invocation-*.desktop"):
             try:
                 if self.is_zordeer_desktop(f):
@@ -4521,6 +4414,12 @@ class ShortcutManager(QDialog):
             )
             return
 
+        old_desktop_dir = Path(self.shortcut_manager_info.get("desktop_dir", ""))
+        old_menu_dir = Path(self.shortcut_manager_info.get("menu_dir", ""))
+        
+        self.remove_all_zordeer_desktops(old_desktop_dir)
+        self.remove_all_zordeer_desktops(old_menu_dir)
+
         self.shortcut_manager_info["menu_dir"] = str(menu_dir)
         self.shortcut_manager_info["desktop_dir"] = str(desktop_dir)
         self.shortcut_manager_info["own_category"] = self.own_category_cb.isChecked()
@@ -4529,13 +4428,13 @@ class ShortcutManager(QDialog):
         if not self.own_category_cb.isChecked():
             saved_menu_file = self.shortcut_manager_info.get("menu_file", "")
             saved_directory_file = self.shortcut_manager_info.get("directory_file", "")
-            
+
             if saved_menu_file and Path(saved_menu_file).exists():
                 Path(saved_menu_file).unlink()
-            
+
             if saved_directory_file and Path(saved_directory_file).exists():
                 Path(saved_directory_file).unlink()
-            
+
             self.shortcut_manager_info["menu_file"] = ""
             self.shortcut_manager_info["directory_file"] = ""
 
@@ -4552,7 +4451,7 @@ class ShortcutManager(QDialog):
             directory_dir = home_path / ".local" / "share" / "desktop-directories"
             menu_dir_path.mkdir(parents=True, exist_ok=True)
             directory_dir.mkdir(parents=True, exist_ok=True)
-            
+
             # Create Zordeer.menu
             menu_content = "\n".join([
                 "<Menu>",
@@ -4568,7 +4467,7 @@ class ShortcutManager(QDialog):
             ])
             menu_file_path = menu_dir_path / "Zordeer.menu"
             menu_file_path.write_text(menu_content, encoding="utf-8")
-            
+
             # Create Zordeer.directory
             directory_content = "\n".join([
                 "[Desktop Entry]",
@@ -4577,11 +4476,11 @@ class ShortcutManager(QDialog):
             ])
             directory_file_path = directory_dir / "Zordeer.directory"
             directory_file_path.write_text(directory_content, encoding="utf-8")
-            
+
             # Save the file paths for menu_file and directory_file.
             self.shortcut_manager_info["menu_file"] = str(menu_file_path)
             self.shortcut_manager_info["directory_file"] = str(directory_file_path)
-            
+
             # Save again with the paths
             self.save_shortcut_manager_info()
 
@@ -4625,7 +4524,7 @@ class ShortcutManager(QDialog):
             f"Icon={gui_path}",
             "StartupWMClass=zordeer",
             f"Categories={categories}",
-            "Keywords=gaming;proton;wine;invocation;",
+            "Keywords=gaming;invocation;",
             "Terminal=false",
             "Type=Application"
         ]
@@ -4655,7 +4554,7 @@ class Zordeer(QMainWindow):
         self.setWindowTitle(tr("APP_NAME"))
         self.setMinimumSize(300, 160)
         self.invocation_process = None
-        
+
         # Add the icon to the main window
         local_icons = ['zordeer.svg', 'Zordeer.svg', '/snap/zordeer/current/animarium/zordeer.svg']
 
@@ -4672,7 +4571,6 @@ class Zordeer(QMainWindow):
                     self.setWindowIcon(icon)
                     break
 
-        self.zordeer_dir = Path.home() / "AppsFiles" / "Zordeer"
         self.setup_directories()
 
         # Clean temporary extra TOML files
@@ -4682,6 +4580,8 @@ class Zordeer(QMainWindow):
         self.toolbar = QToolBar()
         self.toolbar.setMovable(True)
         self.toolbar.setFloatable(False)
+
+        self.toolbar.setVisible(settings["design"].get("toolbar_visible", True))
 
         toolbar_position = settings["design"].get("toolbar_position", "top")
 
@@ -4704,12 +4604,12 @@ class Zordeer(QMainWindow):
 
         # Open executable folder
         self.open_exe_path_action = QAction(tr("OPEN_EXEC_PATH"), self)
-        self.open_exe_path_action.triggered.connect(lambda: self.open_path(self.get_selected_invocation(), chosen_path="exe"))
+        self.open_exe_path_action.triggered.connect(partial(self.open_path, None, "exe"))
         self.invocation_menu.addAction(self.open_exe_path_action)
 
         # Open prefix folder
         self.open_prefix_path_action = QAction(tr("OPEN_PREFIX_PATH"), self)
-        self.open_prefix_path_action.triggered.connect(lambda: self.open_path(self.get_selected_invocation(), chosen_path="prefix"))
+        self.open_prefix_path_action.triggered.connect(partial(self.open_path, None, "prefix"))
         self.invocation_menu.addAction(self.open_prefix_path_action)
 
         # Run in prefix
@@ -4757,7 +4657,8 @@ class Zordeer(QMainWindow):
         self.extras_menu.addAction(self.about_action)
 
         # Increase the size of icons
-        self.toolbar.setIconSize(QSize(32, 32))
+        toolbar_icon_size = settings["design"].get("toolbar_icon_size", 32)
+        self.toolbar.setIconSize(QSize(toolbar_icon_size, toolbar_icon_size))
 
         self.run_action = QAction(QIcon.fromTheme("media-playback-start"), tr("START_INVOCATION"), self)
         self.run_action.triggered.connect(self.start_selected_invocation)
@@ -4788,6 +4689,12 @@ class Zordeer(QMainWindow):
         self.main_layout = QVBoxLayout()
         self.central_widget.setLayout(self.main_layout)
 
+        if not settings["design"].get("toolbar_visible", True):
+            self.central_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            self.central_widget.customContextMenuRequested.connect(self.show_global_context_menu)
+
+        self.toolbar.visibilityChanged.connect(self.save_toolbar_visibility)
+
         self.invocation_list_widget = QListWidget()
         self.invocation_list_widget.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
 
@@ -4799,11 +4706,11 @@ class Zordeer(QMainWindow):
         icon_width_classic = settings["design"].get("icon_width_classic", 420)
         icon_width_grid = settings["design"].get("icon_width_grid", 300)
 
-        if layout_mode in ("list", "list-bare"):
+        if layout_mode in ("list"):
             self.invocation_list_widget.setViewMode(QListWidget.ViewMode.ListMode)
             self.invocation_list_widget.setMovement(QListWidget.Movement.Static)
             self.invocation_list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
-        elif layout_mode in ("grid", "grid-bare"):
+        elif layout_mode in ("grid"):
             self.invocation_list_widget.setViewMode(QListWidget.ViewMode.IconMode)
             self.invocation_list_widget.setFlow(QListView.Flow.LeftToRight)
             self.invocation_list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
@@ -4814,7 +4721,7 @@ class Zordeer(QMainWindow):
             self.invocation_list_widget.setIconSize(QSize(icon_width, icon_height))
             self.invocation_list_widget.setGridSize(QSize(grid_width, grid_height))
             self.invocation_list_widget.setMovement(QListWidget.Movement.Static)
-        elif layout_mode in ("classic", "classic-bare"):
+        elif layout_mode in ("classic"):
             self.invocation_list_widget.setViewMode(QListWidget.ViewMode.ListMode)
             self.invocation_list_widget.setMovement(QListWidget.Movement.Static)
             self.invocation_list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
@@ -4849,26 +4756,6 @@ class Zordeer(QMainWindow):
         self.global_context_menu.addAction(self.edit_invocation_action)
         self.global_context_menu.addAction(self.search_action)
         self.global_context_menu.addSeparator()
-        # Submenu INVOCATION
-        self.invocation_submenu_context = QMenu(tr("INVOCATION"), self.global_context_menu)
-        self.invocation_submenu_context.addAction(self.open_exe_path_action)
-        self.invocation_submenu_context.addAction(self.open_prefix_path_action)
-        self.invocation_submenu_context.addAction(self.run_in_prefix_action)
-        self.global_context_menu.addMenu(self.invocation_submenu_context)
-        # Submenu TRANSFER
-        self.transfer_submenu_context = QMenu(tr("TRANSFER"), self.global_context_menu)
-        self.transfer_submenu_context.addAction(self.transfer_runners_menu)
-        self.transfer_submenu_context.addAction(self.transfer_arts_menu)
-        self.global_context_menu.addMenu(self.transfer_submenu_context)
-        # Submenu EXTRAS
-        self.extras_submenu_context = QMenu(tr("EXTRAS"), self.global_context_menu)
-        self.extras_submenu_context.addAction(self.multiple_create_action)
-        self.extras_submenu_context.addAction(self.multiple_remove_invocations_action)
-        self.extras_submenu_context.addAction(self.multiple_edit_invocations_action)
-        self.extras_submenu_context.addAction(self.shortcut_manager_action)
-        self.extras_submenu_context.addAction(self.settings_action)
-        self.extras_submenu_context.addAction(self.about_action)
-        self.global_context_menu.addMenu(self.extras_submenu_context)
 
         # ===== System Tray Icon =====
         self.tray_icon = QSystemTrayIcon(self)
@@ -4902,20 +4789,6 @@ class Zordeer(QMainWindow):
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
 
-        # Bare mode (Without toolbar and menubar, using context menu)
-        is_bare = layout_mode in ("classic-bare", "grid-bare", "list-bare")
-        self.menu_bar.setVisible(not is_bare)
-        self.toolbar.setVisible(not is_bare)
-        if is_bare:
-            self.central_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
-            self.central_widget.customContextMenuRequested.connect(self.show_global_context_menu)
-        else:
-            self.central_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
-            try:
-                self.central_widget.customContextMenuRequested.disconnect(self.show_global_context_menu)
-            except Exception:
-                pass
-
         start_minimized = settings["window"].get("start_minimized", False)
         if start_minimized:
             self.hide()
@@ -4930,10 +4803,19 @@ class Zordeer(QMainWindow):
         self.transfer_successful = False
 
     def show_global_context_menu(self, pos):
-        layout_mode = load_settings()["design"].get("layout_mode", "classic")
-        if layout_mode in ("classic-bare", "grid-bare", "list-bare"):
-            global_pos = self.central_widget.mapToGlobal(pos)
-            self.global_context_menu.popup(global_pos)
+        global_pos = self.central_widget.mapToGlobal(pos)
+        self.global_context_menu.popup(global_pos)
+
+    def save_toolbar_visibility(self, visible):
+        settings = load_settings()
+        settings["design"]["toolbar_visible"] = visible
+        save_settings(settings)
+
+        if not visible:
+            self.central_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
+            self.central_widget.customContextMenuRequested.connect(self.show_global_context_menu)
+        else:
+            self.central_widget.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
 
     def toggle_search_bar(self):
         visible = not self.search_bar.isVisible()
@@ -4973,6 +4855,7 @@ class Zordeer(QMainWindow):
     def closeEvent(self, event):
         settings = load_settings()
         settings["design"]["search_bar_visible"] = self.search_bar.isVisible()
+        settings["design"]["toolbar_visible"] = self.toolbar.isVisible()
         area = self.toolBarArea(self.toolbar)
         if area == Qt.ToolBarArea.TopToolBarArea:
             settings["design"]["toolbar_position"] = "top"
@@ -5022,9 +4905,6 @@ class Zordeer(QMainWindow):
             if first_visible_item:
                 self.invocation_list_widget.setCurrentItem(first_visible_item)
 
-        # Remove context menus
-        self.setContextMenuPolicy(Qt.ContextMenuPolicy.NoContextMenu)
-
     def stop_execution(self):
         self.setWindowTitle(tr("APP_NAME"))
 
@@ -5060,7 +4940,7 @@ class Zordeer(QMainWindow):
             self.last_executable = None
 
         # Unmount/eject mounted ISO, if present
-        mounted_iso_info = Path.home() / "AppsFiles" / "Zordeer" / "config" / "mounted_iso_info.toml"
+        mounted_iso_info = Path(zordeer_dir) / "config" / "mounted_iso_info.toml"
 
         if mounted_iso_info.exists():
             try:
@@ -5101,12 +4981,13 @@ class Zordeer(QMainWindow):
 
     def setup_directories(self):
         """Creates the main Zordeer directory structure using pathlib with real folder names."""
-        base = Path(self.zordeer_dir)
+        base = Path(zordeer_dir)
         subdirs = [
             base / "invocation",
             base / "runner",
             base / "config",
-            base / "art"
+            base / "art",
+            base / "umu-launcher"
         ]
 
         for subdir in subdirs:
@@ -5126,28 +5007,25 @@ class Zordeer(QMainWindow):
 
         self.invocation_list_widget.clear()
 
-        config_dir = Path(self.zordeer_dir) / "config"
-        if not config_dir.exists():
+        if not zordeer_config_dir.exists():
             return
 
-        invocations = []
-        for file_path in config_dir.glob("invocation-info-*.toml"):
-            try:
-                with file_path.open('r', encoding='utf-8') as f:
-                    invocation_data = toml.load(f)
-                    invocations.append((invocation_data, file_path))
-            except (IOError, toml.TomlDecodeError) as e:
-                print(tr("ERROR_LOADING_FILE", file=file_path, error=e))
-
-        invocations.sort(key=lambda g: g[0].get('name', '').casefold())
-
+        invocation_files = sorted(zordeer_config_dir.glob("invocation-info-*.toml"))
+        
         restored_selection_item = None
-        for invocation_data, file_path in invocations:
-            item = self.add_invocation_to_list(invocation_data)
-            item.setData(Qt.ItemDataRole.UserRole, file_path)  # Associate the TOML with the item
+        for invocation_file in invocation_files:
+            try:
+                with open(invocation_file, encoding="utf-8") as f:
+                    invocation_data = toml.load(f)
+                
+                item = self.add_invocation_to_list(invocation_data)
+                item.setData(Qt.ItemDataRole.UserRole, invocation_file)
 
-            if selected_invocation_file and selected_invocation_file == file_path:
-                restored_selection_item = item
+                if selected_invocation_file and selected_invocation_file == invocation_file:
+                    restored_selection_item = item
+                    
+            except (IOError, toml.TomlDecodeError) as e:
+                print(tr("ERROR_LOADING_FILE", file=invocation_file, error=e))
 
         # Restores the selection
         if restored_selection_item:
@@ -5192,9 +5070,8 @@ class Zordeer(QMainWindow):
             QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
             return
 
-        config_dir = Path(self.zordeer_dir) / "config"
         safe_invocation_name = invocation_name.replace(" ", "_").lower()
-        invocation_file_path = config_dir / f"invocation-info-{safe_invocation_name}.toml"
+        invocation_file_path = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
 
         try:
             with invocation_file_path.open('r', encoding='utf-8') as f:
@@ -5233,16 +5110,15 @@ class Zordeer(QMainWindow):
 
         print(tr("STARTING_INVOCATION", name=invocation_name))
 
-        config_dir = Path(self.zordeer_dir) / "config"
         safe_invocation_name = invocation_name.replace(" ", "_").lower()
-        invocation_file_path = config_dir / f"invocation-info-{safe_invocation_name}.toml"
+        invocation_file_path = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
 
         try:
             with invocation_file_path.open('r', encoding='utf-8') as f:
                 invocation_data = toml.load(f)
             print(tr("INVOCATION_INFO_LOADED", name=invocation_name))
 
-            runner_base_path = Path(self.zordeer_dir) / "runner" / invocation_data['runner']
+            runner_base_path = Path(zordeer_dir) / "runner" / invocation_data['runner']
             exec_path_full = Path(invocation_data['exec_path'])
             prefix_path = Path(invocation_data['prefix_path'])
 
@@ -5344,7 +5220,7 @@ class Zordeer(QMainWindow):
                 print(tr("ISO_MOUNTED_EXE_FOUND", iso=str(iso_path), exe=str(exec_path_full)))
 
                 # Save mounted ISO info
-                mounted_iso_info = Path.home() / "AppsFiles" / "Zordeer" / "config" / "mounted_iso_info.toml"
+                mounted_iso_info = Path(zordeer_dir) / "config" / "mounted_iso_info.toml"
                 with mounted_iso_info.open("w", encoding="utf-8") as f:
                     toml.dump({
                         "iso_path": str(iso_path),
@@ -5360,17 +5236,19 @@ class Zordeer(QMainWindow):
                 return
 
             # Check if UMU launcher is enabled
-            use_umu = invocation_data.get('use_umu', False)
-            umu_version = load_settings()["other"].get("umu_version", "").strip()
+            settings = load_settings()
+            umu_global = settings["other"].get("umu_global", False)
+            use_umu = invocation_data.get('use_umu', False) or umu_global
+            umu_version = settings["other"].get("umu_version", "").strip()
 
             if use_umu and runner_name.lower() != "wine":
                 # Validate UMU version
                 if not umu_version or umu_version.lower() == "indefinite":
                     QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_UMU_INDEFINITE"))
                     return
-                
+
                 # Get UMU path
-                umu_path = Path(self.zordeer_dir) / "umu-launcher" / umu_version / "umu-run"
+                umu_path = Path(zordeer_dir) / "umu-launcher" / umu_version / "umu-run"
                 if not umu_path.exists():
                     QMessageBox.critical(
                         self,
@@ -5381,7 +5259,7 @@ class Zordeer(QMainWindow):
 
                 # UMU launcher command structure
                 command = [str(umu_path), str(exec_path_full)]
-                
+
             else:
                 # Check if it's Wine.
                 if runner_name.lower() == "wine":
@@ -5392,7 +5270,7 @@ class Zordeer(QMainWindow):
                     command = [wine_path, str(exec_path_full)]
                 else:
                     # Try using a custom runner
-                    proton_script = Path(self.zordeer_dir) / "runner" / runner_name / "proton"
+                    proton_script = Path(zordeer_dir) / "runner" / runner_name / "proton"
                     if not proton_script.exists():
                         QMessageBox.critical(
                             self,
@@ -5420,17 +5298,17 @@ class Zordeer(QMainWindow):
             env['WINEPREFIX'] = str(prefix_path)
 
             if use_umu and runner_name.lower() != "wine":
-                # Set XDG_DATA_HOME to redirect UMU data to Zordeer directory
-                umu_launcher_files_dir = Path.home()
+                # Set XDG_DATA_HOME to redirect UMU data to $HOME directory
+                umu_launcher_files_dir = str(Path.home() / 'AppsFiles' / 'UMU-launcher')
                 env['XDG_DATA_HOME'] = str(umu_launcher_files_dir)
 
                 if runner_name.lower() != "wine":
-                    env['PROTONPATH'] = str(Path(self.zordeer_dir) / "runner" / runner_name)
+                    env['PROTONPATH'] = str(Path(zordeer_dir) / "runner" / runner_name)
             else:
                 # Set Steam environment variables only for Proton
                 if runner_name.lower() != "wine":
                     env['STEAM_COMPAT_DATA_PATH'] = str(prefix_path)
-                    env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = str(Path.home() / "AppsFiles" / "Zordeer" / ".steam" / "steam")
+                    env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = str(Path(zordeer_dir) / ".steam" / "steam")
                     env['STEAM_EXTRA_COMPAT_TOOLS_PATHS'] = str(runner_base_path)
 
             # Symlink "pfx" > prefix_path (only for non-UMU)
@@ -5544,13 +5422,13 @@ class Zordeer(QMainWindow):
                         debug_vars.append(f"STEAM_COMPAT_CLIENT_INSTALL_PATH='{env['STEAM_COMPAT_CLIENT_INSTALL_PATH']}'")
                     if 'STEAM_EXTRA_COMPAT_TOOLS_PATHS' in env:
                         debug_vars.append(f"STEAM_EXTRA_COMPAT_TOOLS_PATHS='{env['STEAM_EXTRA_COMPAT_TOOLS_PATHS']}'")
-            
+
             # Remove "env" from the beginning of command since we're showing env vars separately
             if command[0] == "env":
                 command_without_env = command[1:]
             else:
                 command_without_env = command
-            
+
             debug_command = " ".join(debug_vars + command_without_env)
             print(tr("RUNNING_COMMAND", command=debug_command))
 
@@ -5631,17 +5509,9 @@ class Zordeer(QMainWindow):
                     icon.addPixmap(pixmap, QIcon.Mode.Disabled, QIcon.State.Off)
 
         if icon is None:
-            palette = QApplication.palette()
-            pixmap = QPixmap(self.invocation_list_widget.iconSize())
-            pixmap.fill(palette.color(QPalette.ColorRole.Base))
-            painter = QPainter(pixmap)
-            painter.setPen(palette.color(QPalette.ColorRole.Text))
-            painter.setFont(font)
-            painter.drawText(pixmap.rect(), Qt.AlignmentFlag.AlignCenter, " /\\_/\\\n >^.^<")
-            painter.end()
-            icon = QIcon(pixmap)
+            icon = self.windowIcon()
 
-        if layout_mode not in ["list", "list-bare"] and icon is not None:
+        if layout_mode not in ["list"] and icon is not None:
             item.setIcon(icon)
 
         self.invocation_list_widget.addItem(item)
@@ -5665,23 +5535,18 @@ class Zordeer(QMainWindow):
         dlg = RunInPrefix(self, invocation_name)
         dlg.exec()
 
-    def run_in_prefix(self, base_invocation_name):
+    def run_in_prefix(self, safe_invocation_name):
         exe_path, _ = QFileDialog.getOpenFileName(
             self,
-            tr("SELECT_EXE"),
+            tr("SELECT_EXECUTABLE"),
             str(Path.home()),
             tr("EXECUTABLE_FILE_FILTER")
         )
         if not exe_path:
             return  # User canceled
 
-        config_dir = Path(self.zordeer_dir) / "config"
-        safe_invocation_name = base_invocation_name.replace(" ", "_").lower()
-        base_file = config_dir / f"invocation-info-{safe_invocation_name}.toml"
-
-        if not base_file.exists():
-            QMessageBox.warning(self, tr("APP_NAME"), tr("INVOCATION_INFO_NOT_FOUND"))
-            return
+        invocation_name = safe_invocation_name.replace(" ", "_").lower()
+        base_file = zordeer_config_dir / f"invocation-info-{invocation_name}.toml"
 
         with base_file.open("r", encoding="utf-8") as f:
             base_info = toml.load(f)
@@ -5690,7 +5555,7 @@ class Zordeer(QMainWindow):
         temp_id = str(uuid.uuid4())[:8]
         temp_name = f"TEMP_EXEC_{temp_id}"
         safe_temp_name = temp_name.lower()
-        temp_file = config_dir / f"invocation-info-{safe_temp_name}.toml"
+        temp_file = zordeer_config_dir / f"invocation-info-{safe_temp_name}.toml"
 
         temp_info = base_info.copy()
         temp_info["name"] = temp_name
@@ -5702,27 +5567,24 @@ class Zordeer(QMainWindow):
         # Start as normal invocation
         self.start_invocation(temp_name)
 
-        # Cleanup function
-        def cleanup():
-            if temp_file.exists():
-                temp_file.unlink()
-                print(tr("RUN_IN_PREFIX_TEMP_FILE_REMOVED", temp_file=str(temp_file)))
-
         # Remove temp TOML after process ends
         if self.invocation_process:
-            threading.Thread(target=lambda: (self.invocation_process.wait(), cleanup()), daemon=True).start()
+            def wait_and_cleanup():
+                self.invocation_process.wait()
+                self.cleanup_temp_toml_files(temp_file)
+            
+            threading.Thread(target=wait_and_cleanup, daemon=True).start()
         else:
-            cleanup()
+            self.cleanup_temp_toml_files(temp_file)
 
     def run_in_prefix_for_selected_invocation(self):
         invocation_name = self.get_selected_invocation()
         self.run_in_prefix(invocation_name)
-    
+
     def cleanup_temp_toml_files(self):
-        config_dir = Path(self.zordeer_dir) / "config"
         removed = 0
-        if config_dir.exists():
-            for file in config_dir.iterdir():
+        if zordeer_config_dir.exists():
+            for file in zordeer_config_dir.iterdir():
                 if file.name.endswith("_ztffrip.toml"):
                     try:
                         file.unlink()
@@ -5732,12 +5594,14 @@ class Zordeer(QMainWindow):
         if removed > 0:
             print(tr("TEMP_FILES_REMOVED", count=removed))
 
-    def open_path(self, base_invocation_name, chosen_path="prefix"):
-        if not base_invocation_name:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
-            return
+    def open_path(self, safe_invocation_name=None, chosen_path="prefix"):
+        if safe_invocation_name is None:
+            safe_invocation_name = self.get_selected_invocation()
+            if not safe_invocation_name:
+                QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
+                return 
 
-        base_file = Path(self.zordeer_dir) / "config" / f"invocation-info-{base_invocation_name.replace(' ', '_').lower()}.toml"
+        base_file = Path(zordeer_dir) / "config" / f"invocation-info-{safe_invocation_name.replace(' ', '_').lower()}.toml"
 
         if not base_file.exists():
             QMessageBox.warning(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR"))
@@ -5759,8 +5623,7 @@ class Zordeer(QMainWindow):
             QMessageBox.critical(
                 self,
                 tr("APP_NAME"),
-                tr("OPEN_PATH_ERROR", path=str(path) if path else "")
-            )
+                tr("OPEN_PATH_ERROR", path=str(path) if path else ""))
 
     def open_settings(self):
         dlg = SettingsDialog(self)
@@ -5821,13 +5684,13 @@ class Zordeer(QMainWindow):
                     QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
                 )
                 if reply == QMessageBox.StandardButton.Yes:
-                    webbrowser.open("https://github.com/Kyuyrii/Zordeer/releases")
+                    subprocess.Popen(['xdg-open', 'https://github.com/Kyuyrii/Zordeer/releases'])
         except Exception as e:
             QMessageBox.warning(self, tr("APP_NAME"), tr("UPDATE_ERROR", error=e))
 
 # Heroes and icons images / SteamGridDB
-HEROES_DIR = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "heroes"
-ICONS_DIR = Path.home() / "AppsFiles" / "Zordeer" / "sgdb" / "icons"
+HEROES_DIR = Path(zordeer_dir) / "sgdb" / "heroes"
+ICONS_DIR = Path(zordeer_dir) / "sgdb" / "icons"
 HEROES_DIR.mkdir(parents=True, exist_ok=True)
 ICONS_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -5954,7 +5817,7 @@ class SteamGridDBApp(QDialog):
 
         self.load_icons_button = QPushButton(tr("LOAD_ICONS"))
         self.load_icons_button.setEnabled(False)
-        self.load_icons_button.clicked.connect(lambda: self.load_artwork("icons"))
+        self.load_icons_button.clicked.connect(partial(self.load_artwork, "icons"))
         buttons_row.addWidget(self.load_icons_button)
 
         self.transfer_button = QPushButton(tr("TRANSFER"))
@@ -5966,7 +5829,7 @@ class SteamGridDBApp(QDialog):
 
         self.load_heroes_button = QPushButton(tr("LOAD_HEROES"))
         self.load_heroes_button.setEnabled(False)
-        self.load_heroes_button.clicked.connect(lambda: self.load_artwork("heroes"))
+        self.load_heroes_button.clicked.connect(partial(self.load_artwork, "heroes"))
         buttons_row.addWidget(self.load_heroes_button)
 
         main_layout.addLayout(buttons_row)
@@ -5986,18 +5849,21 @@ class SteamGridDBApp(QDialog):
 
     def run_auto_transfer(self):
         self._cancel_auto = False
+
+        def get_score(item):
+            return item.get("score", 0)
+
         if not self.headers:
             QMessageBox.warning(self, tr("APP_NAME"), tr("API_KEY_SAVE_FIRST"))
             return
 
-        config_dir = Path.home() / "AppsFiles" / "Zordeer" / "config"
-        if not config_dir.exists():
-            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATIONS"))
+        if not any(zordeer_config_dir.glob("invocation-info-*.toml")):
+            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
 
         # Invocations list
         invocations = []
-        for toml_file in config_dir.glob("invocation-info-*.toml"):
+        for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 with open(toml_file, "r", encoding="utf-8") as fh:
                     inv = toml.load(fh)
@@ -6034,8 +5900,8 @@ class SteamGridDBApp(QDialog):
         QApplication.processEvents()
 
         # Directories
-        ART_DIR = Path.home() / "AppsFiles" / "Zordeer" / "art"
-        GUI_DIR = Path.home() / "AppsFiles" / "Zordeer" / "art" / "gui"
+        ART_DIR = Path(zordeer_dir) / "art"
+        GUI_DIR = Path(zordeer_dir) / "art" / "gui"
         ART_DIR.mkdir(parents=True, exist_ok=True)
         GUI_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -6075,7 +5941,7 @@ class SteamGridDBApp(QDialog):
                     heroes = []
 
                 if heroes:
-                    heroes.sort(key=lambda a: a.get("score", 0), reverse=True)
+                    heroes.sort(key=get_score, reverse=True)
                     best = heroes[0]
                     img_url = (
                         best.get("thumb")
@@ -6110,7 +5976,7 @@ class SteamGridDBApp(QDialog):
                     icons = []
 
                 if icons:
-                    icons.sort(key=lambda a: a.get("score", 0), reverse=True)
+                    icons.sort(key=get_score, reverse=True)
                     best = icons[0]
                     img_url = (
                         best.get("thumb")
@@ -6512,7 +6378,7 @@ if __name__ == "__main__":
 
         if data.startswith("--start-invocation "):
             invocation_name = data[len("--start-invocation "):].strip('"')
-            QTimer.singleShot(200, lambda: window.start_invocation(invocation_name))
+            QTimer.singleShot(200, partial(window.start_invocation, invocation_name))
 
         socket.disconnectFromServer()
 
@@ -6552,7 +6418,7 @@ if __name__ == "__main__":
         try:
             idx = sys.argv.index("--start-invocation") + 1
             invocation_name = sys.argv[idx]
-            QTimer.singleShot(500, lambda: window.start_invocation(invocation_name))
+            QTimer.singleShot(500, partial(window.start_invocation, invocation_name))
         except IndexError:
             pass
 
