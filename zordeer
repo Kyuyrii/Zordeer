@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.2"
+__version__ = "1.7.3"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -3978,12 +3978,12 @@ class RunInPrefix(QDialog):
         mod["exec_path"] = exe_path
         mod["name"] = temp_safe_name  # Ensures that start_invocation validates the name
 
-        # Clear fields from 'language' onward when "Disable variables" is selected
+        # Clears the fields below when CLEAN_RUN is enabled.
         if self.radio_clean.isChecked():
             mod["language"] = ""
+            mod["use_ms_language_code"] = False
             mod["force_opengl"] = False
             mod["use_gamemode"] = False
-            mod["use_umu"] = False
             mod["env_vars"] = ""
             mod["invocation_args"] = ""
             mod["show_fps"] = False
@@ -3991,7 +3991,7 @@ class RunInPrefix(QDialog):
 
         elif self.radio_automatic.isChecked():
             # Normal values restored, but add silent args
-            for key in ("language", "force_opengl", "use_gamemode", "env_vars",
+            for key in ("language", "use_ms_language_code", "force_opengl", "use_gamemode", "env_vars",
                         "show_fps", "fps_hud_type"):
                 if key in self._original_toml:
                     mod[key] = self._original_toml[key]
@@ -4001,7 +4001,7 @@ class RunInPrefix(QDialog):
 
         else:  # Self.radio_normal.isChecked()
             # Just restore original TOML (no modifications)
-            for key in ("language", "force_opengl", "use_gamemode", "env_vars",
+            for key in ("language", "use_ms_language_code", "force_opengl", "use_gamemode", "env_vars",
                         "show_fps", "fps_hud_type", "invocation_args"):
                 if key in self._original_toml:
                     mod[key] = self._original_toml[key]
