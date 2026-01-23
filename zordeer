@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.3"
+__version__ = "1.7.4"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -4141,11 +4141,10 @@ class ShortcutManager(QDialog):
 
         # Own category checkbox
         self.own_category_cb = QCheckBox(tr("OWN_CATEGORY"))
-        own_category_checked = self.shortcut_manager_info.get("own_category", False)
-        menu_dir_str = self.shortcut_manager_info.get("menu_dir", "")
+        own_category_checked = self.shortcut_manager_info.get("own_category", True)
 
-        # Uncheck and disable if menu_dir does not contain /.local/share/applications
-        if "/.local/share/applications" not in menu_dir_str:
+        # Uncheck and disable if running inside Snap
+        if os.environ.get("SNAP"):
             own_category_checked = False
             self.own_category_cb.setEnabled(False)
 
@@ -4370,13 +4369,6 @@ class ShortcutManager(QDialog):
         new_folder = Path(folder)
         line_edit.setText(str(new_folder))
 
-        if line_edit == self.menu_dir_input:
-            if "/.local/share/applications" not in str(new_folder):
-                self.own_category_cb.setChecked(False)
-                self.own_category_cb.setEnabled(False)
-            else:
-                self.own_category_cb.setEnabled(True)
-
     # Save and create .desktop
 
     def remove_all_zordeer_desktops(self, folder: Path):
@@ -4430,10 +4422,16 @@ class ShortcutManager(QDialog):
             saved_directory_file = self.shortcut_manager_info.get("directory_file", "")
 
             if saved_menu_file and Path(saved_menu_file).exists():
-                Path(saved_menu_file).unlink()
+                try:
+                    Path(saved_menu_file).unlink()
+                except Exception as e:
+                    print(tr("ERROR_REMOVING_FILE", file=saved_menu_file, error=e))
 
             if saved_directory_file and Path(saved_directory_file).exists():
-                Path(saved_directory_file).unlink()
+                try:
+                    Path(saved_directory_file).unlink()
+                except Exception as e:
+                    print(tr("ERROR_REMOVING_FILE", file=saved_directory_file, error=e))
 
             self.shortcut_manager_info["menu_file"] = ""
             self.shortcut_manager_info["directory_file"] = ""
@@ -4441,47 +4439,44 @@ class ShortcutManager(QDialog):
         self.save_shortcut_manager_info()
 
         # Manage category files
-        menu_dir_str = str(menu_dir)
-        if self.own_category_cb.isChecked() and "/.local/share/applications" in menu_dir_str:
-            # Extract the home folder
-            home_path = Path(menu_dir_str.split("/.local/share/applications")[0])
+        if self.own_category_cb.isChecked():
+            try:
+                dot_menu_file_path = home_dir / ".config" / "menus" / "applications-merged" / "Zordeer.menu"
+                dot_menu_file_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                menu_content = "\n".join([
+                    "<Menu>",
+                    "  <Name>Applications</Name>",
+                    "  <Menu>",
+                    "    <Name>Zordeer</Name>",
+                    "    <Directory>Zordeer.directory</Directory>",
+                    "    <Include>",
+                    "      <Category>Zordeer</Category>",
+                    "    </Include>",
+                    "  </Menu>",
+                    "</Menu>"
+                ])
+                dot_menu_file_path.write_text(menu_content, encoding="utf-8")
+                self.shortcut_manager_info["menu_file"] = str(dot_menu_file_path)
+            except Exception as e:
+                print(tr("ERROR_CREATING_FILE", file="Zordeer.menu", error=e))
+                self.shortcut_manager_info["menu_file"] = ""
 
-            # Create directories
-            menu_dir_path = home_path / ".config" / "menus" / "applications-merged"
-            directory_dir = home_path / ".local" / "share" / "desktop-directories"
-            menu_dir_path.mkdir(parents=True, exist_ok=True)
-            directory_dir.mkdir(parents=True, exist_ok=True)
+            try:
+                dot_directory_file_path = home_dir / ".local" / "share" / "desktop-directories" / "Zordeer.directory"
+                dot_directory_file_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                directory_content = "\n".join([
+                    "[Desktop Entry]",
+                    "Name=Zordeer",
+                    "Icon=zordeer"
+                ])
+                dot_directory_file_path.write_text(directory_content, encoding="utf-8")
+                self.shortcut_manager_info["directory_file"] = str(dot_directory_file_path)
+            except Exception as e:
+                print(tr("ERROR_CREATING_FILE", file="Zordeer.directory", error=e))
+                self.shortcut_manager_info["directory_file"] = ""
 
-            # Create Zordeer.menu
-            menu_content = "\n".join([
-                "<Menu>",
-                "  <Name>Applications</Name>",
-                "  <Menu>",
-                "    <Name>Zordeer</Name>",
-                "    <Directory>Zordeer.directory</Directory>",
-                "    <Include>",
-                "      <Category>Zordeer</Category>",
-                "    </Include>",
-                "  </Menu>",
-                "</Menu>"
-            ])
-            menu_file_path = menu_dir_path / "Zordeer.menu"
-            menu_file_path.write_text(menu_content, encoding="utf-8")
-
-            # Create Zordeer.directory
-            directory_content = "\n".join([
-                "[Desktop Entry]",
-                "Name=Zordeer",
-                "Icon=zordeer"
-            ])
-            directory_file_path = directory_dir / "Zordeer.directory"
-            directory_file_path.write_text(directory_content, encoding="utf-8")
-
-            # Save the file paths for menu_file and directory_file.
-            self.shortcut_manager_info["menu_file"] = str(menu_file_path)
-            self.shortcut_manager_info["directory_file"] = str(directory_file_path)
-
-            # Save again with the paths
             self.save_shortcut_manager_info()
 
         # Remove existing .desktop files.
