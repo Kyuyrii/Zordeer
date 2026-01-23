@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7"
+__version__ = "1.7.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -4497,8 +4497,8 @@ class ShortcutManager(QDialog):
             checked = cb.isChecked()
             self.create_desktop_file(name, checked, menu_dir)
 
-        os.system(f'chmod +x "{menu_dir}/"invocation-*.desktop')
         os.system(f'chmod +x "{desktop_dir}/"invocation-*.desktop')
+        os.system(f'chmod +x "{menu_dir}/"invocation-*.desktop')
 
         QMessageBox.information(self, tr("APP_NAME"), tr("SHORTCUTS_SAVED"))
         self.update_list_view()
@@ -4512,7 +4512,14 @@ class ShortcutManager(QDialog):
         safe_name = invocation_data.get("safe_invocation_name", "")
 
         desktop_file = folder / f"invocation-{safe_name}.desktop"
-        current_zordeer = self.shortcut_manager_info.get("zordeer_command", "zordeer") + f' --start-invocation "{name}"'
+
+        if os.environ.get("SNAP"):
+            current_zordeer = "snap run zordeer"
+        else:
+            current_zordeer = self.shortcut_manager_info.get("zordeer_command", "zordeer")
+
+        current_zordeer += f' --start-invocation "{name}"'
+
         gui_path = self.invocations.get(name, {}).get("gui_path", "")
 
         categories = "Zordeer;" if self.own_category_cb.isChecked() else "Game;"
