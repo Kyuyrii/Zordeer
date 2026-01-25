@@ -32,7 +32,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.4"
+__version__ = "1.7.4.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -3115,7 +3115,7 @@ class MultipleEditInvocationDialog(QDialog):
             self.invocation_info_viewer.activateWindow()
             return
 
-        self.invocation_info_viewer = InvocationInfoViewerDialog(self.parent_ref.zordeer_dir, self, multiple_edit_dialog=self)
+        self.invocation_info_viewer = InvocationInfoViewerDialog(zordeer_dir, self, multiple_edit_dialog=self)
         self.invocation_info_viewer.finished.connect(partial(setattr, self, "invocation_info_viewer", None))
         self.invocation_info_viewer.show()
 
