@@ -19,6 +19,7 @@ import uuid
 import re
 import random
 import csv
+import dbus
 from pathlib import Path
 from functools import partial
 
@@ -32,7 +33,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.4.1"
+__version__ = "1.7.5"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -4142,12 +4143,6 @@ class ShortcutManager(QDialog):
         # Own category checkbox
         self.own_category_cb = QCheckBox(tr("OWN_CATEGORY"))
         own_category_checked = self.shortcut_manager_info.get("own_category", True)
-
-        # Uncheck and disable if running inside Snap
-        if os.environ.get("SNAP"):
-            own_category_checked = False
-            self.own_category_cb.setEnabled(False)
-
         self.own_category_cb.setChecked(own_category_checked)
         main_layout.addWidget(self.own_category_cb)
 
@@ -4804,6 +4799,8 @@ class Zordeer(QMainWindow):
         atexit.register(self.kill_invocation_process_on_exit)
         self.transfer_successful = False
 
+        self.inhibit_cookie = None
+
     def show_global_context_menu(self, pos):
         global_pos = self.central_widget.mapToGlobal(pos)
         self.global_context_menu.popup(global_pos)
@@ -4908,6 +4905,14 @@ class Zordeer(QMainWindow):
                 self.invocation_list_widget.setCurrentItem(first_visible_item)
 
     def stop_execution(self):
+        if self.inhibit_cookie is not None:
+            try:
+                bus = dbus.SessionBus()
+                request = bus.get_object("org.freedesktop.portal.Desktop", str(self.inhibit_cookie))
+                dbus.Interface(request, "org.freedesktop.portal.Request").Close()
+            except:
+                pass
+            self.inhibit_cookie = None
         self.setWindowTitle(tr("APP_NAME"))
 
         # Try to kill by the real executable
@@ -5440,6 +5445,13 @@ class Zordeer(QMainWindow):
                 stdout=sys.stdout,
                 stderr=sys.stderr
             )
+            try:
+                bus = dbus.SessionBus()
+                portal = bus.get_object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
+                iface = dbus.Interface(portal, "org.freedesktop.portal.Inhibit")
+                self.inhibit_cookie = iface.Inhibit("", 8, {"reason": "Zordeer invocation"})
+            except:
+                self.inhibit_cookie = None
             self.last_wineprefix = env.get("WINEPREFIX")
             self.last_executable = str(exec_path_full)
             self.setWindowTitle(tr("INVOCATION_STARTED", invocation_name=invocation_name))
