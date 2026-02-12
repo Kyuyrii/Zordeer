@@ -33,7 +33,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.5.1"
+__version__ = "1.7.6"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -160,7 +160,7 @@ BUILTIN_TRANSLATIONS = {
         "MANDATORY_FIELD_ERROR": "It is mandatory that the invocation has a name.",
         "MANDATORY_FIELDS_ERROR": "Name and executable are mandatory.",
         "MARK_LISTED": "Check listed",
-        "MENU_FOLDER": "Menu folder",
+        "MENU_FOLDER": "Applications folder",
         "MODIFY_INVOCATION": "Modify invocation",
         "MULTIPLE_INVOCATION_EDITOR": "Multiple invocation editor",
         "MULTIPLE_INVOCATION_CREATOR": "Creator of multiple invocations",
@@ -235,7 +235,6 @@ BUILTIN_TRANSLATIONS = {
         "SHORTCUTS_OF_DESKTOP": "Desktop shortcuts",
         "SHORTCUTS_OF_MENU": "Menu shortcuts",
         "SHORTCUTS_PATHS": "Paths",
-        "SHORTCUTS_SAVED": "Updated shortcuts",
         "SHOW_FPS_OPTION": "Show FPS",
         "SHOW_FPS_OPTION_HUD": "Selected HUD",
         "START_INVOCATION": "Start invocation",
@@ -415,7 +414,7 @@ BUILTIN_TRANSLATIONS = {
         "MANDATORY_FIELD_ERROR": "É obrigatório que a invocação tenha um nome.",
         "MANDATORY_FIELDS_ERROR": "Nome e executável são obrigatórios.",
         "MARK_LISTED": "Marcar listados",
-        "MENU_FOLDER": "Pasta menu",
+        "MENU_FOLDER": "Pasta applications",
         "MODIFY_INVOCATION": "Modificar invocação",
         "MULTIPLE_INVOCATION_EDITOR": "Editor de multiplas invocações",
         "MULTIPLE_INVOCATION_CREATOR": "Criador de múltiplas invocações",
@@ -490,7 +489,6 @@ BUILTIN_TRANSLATIONS = {
         "SHORTCUTS_OF_DESKTOP": "Atalhos da área da trabalho",
         "SHORTCUTS_OF_MENU": "Atalhos do menu",
         "SHORTCUTS_PATHS": "Caminhos",
-        "SHORTCUTS_SAVED": "Atalhos atualizados",
         "SHOW_FPS_OPTION": "Exibir FPS",
         "SHOW_FPS_OPTION_HUD": "HUD selecionado",
         "START_INVOCATION": "Iniciar invocação",
@@ -4142,6 +4140,12 @@ class ShortcutManager(QDialog):
         # Own category checkbox
         self.own_category_cb = QCheckBox(tr("OWN_CATEGORY"))
         own_category_checked = self.shortcut_manager_info.get("own_category", True)
+
+        # Uncheck and disable if running inside Snap
+        if os.environ.get("SNAP"):
+            own_category_checked = False
+            self.own_category_cb.setEnabled(False)
+
         self.own_category_cb.setChecked(own_category_checked)
         main_layout.addWidget(self.own_category_cb)
 
@@ -4457,11 +4461,11 @@ class ShortcutManager(QDialog):
             try:
                 dot_directory_file_path = home_dir / ".local" / "share" / "desktop-directories" / "Zordeer.directory"
                 dot_directory_file_path.parent.mkdir(parents=True, exist_ok=True)
-                
+
                 directory_content = "\n".join([
                     "[Desktop Entry]",
                     "Name=Zordeer",
-                    "Icon=zordeer"
+                    "Icon=io.github.kyuyrii.zordeer"
                 ])
                 dot_directory_file_path.write_text(directory_content, encoding="utf-8")
                 self.shortcut_manager_info["directory_file"] = str(dot_directory_file_path)
@@ -4487,7 +4491,6 @@ class ShortcutManager(QDialog):
         os.system(f'chmod +x "{desktop_dir}/"invocation-*.desktop')
         os.system(f'chmod +x "{menu_dir}/"invocation-*.desktop')
 
-        QMessageBox.information(self, tr("APP_NAME"), tr("SHORTCUTS_SAVED"))
         self.update_list_view()
         self.accept()
 
@@ -4516,7 +4519,7 @@ class ShortcutManager(QDialog):
             f"Name={name}",
             f"Exec={current_zordeer}",
             f"Icon={gui_path}",
-            "StartupWMClass=zordeer",
+            "StartupWMClass=io.github.kyuyrii.zordeer",
             f"Categories={categories}",
             "Keywords=gaming;invocation;",
             "Terminal=false",
@@ -4550,7 +4553,7 @@ class Zordeer(QMainWindow):
         self.invocation_process = None
 
         # Add the icon to the main window
-        local_icons = ['zordeer.svg', 'Zordeer.svg', '/snap/zordeer/current/animarium/zordeer.svg']
+        local_icons = ['io.github.kyuyrii.zordeer.svg', '/snap/zordeer/current/animarium/io.github.kyuyrii.zordeer.svg']
 
         icon_set = False
         for icon_file in local_icons:
@@ -4559,7 +4562,7 @@ class Zordeer(QMainWindow):
                 icon_set = True
                 break
         if not icon_set:
-            for name in ['zordeer', 'Zordeer', 'applications-games']:
+            for name in ['io.github.kyuyrii.zordeer', 'zordeer']:
                 icon = QIcon.fromTheme(name)
                 if not icon.isNull():
                     self.setWindowIcon(icon)
@@ -6346,13 +6349,13 @@ if __name__ == "__main__":
 
     # Define the application ID so Wayland can find the icon.
     # We use the lowercase application name with hyphens instead of spaces.
-    app_id = tr("APP_NAME").lower().replace(' ', '-')
+    app_id = "io.github.kyuyrii.zordeer"
     app.setDesktopFileName(app_id)
 
     # Helper function to send command to already running instance
     def send_to_running_instance(message: str) -> bool:
         socket = QLocalSocket()
-        socket.connectToServer("zordeer_single_instance")
+        socket.connectToServer("io.github.kyuyrii.zordeer")
         if socket.waitForConnected(300):
             socket.write(message.encode("utf-8"))
             socket.flush()
@@ -6394,7 +6397,7 @@ if __name__ == "__main__":
 
     def is_instance_alive() -> bool:
         socket = QLocalSocket()
-        socket.connectToServer("zordeer_single_instance")
+        socket.connectToServer("io.github.kyuyrii.zordeer")
         if socket.waitForConnected(300):
             socket.write(b"--heartbeat")
             socket.flush()
@@ -6403,7 +6406,7 @@ if __name__ == "__main__":
                 socket.disconnectFromServer()
                 if response == "alive":
                     return True
-        QLocalServer.removeServer("zordeer_single_instance")
+        QLocalServer.removeServer("io.github.kyuyrii.zordeer")
         return False
 
     # If another instance is already running, send the command to it and exit
@@ -6419,7 +6422,7 @@ if __name__ == "__main__":
 
     window = Zordeer()
 
-    window.server_name = "zordeer_single_instance"
+    window.server_name = "io.github.kyuyrii.zordeer"
     window.server = QLocalServer(window)
     window.server.listen(window.server_name)
     window.server.newConnection.connect(handle_new_connection)
