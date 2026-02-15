@@ -33,7 +33,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.6"
+__version__ = "1.7.7"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -548,9 +548,11 @@ BUILTIN_TRANSLATIONS = {
 }
 
 if os.environ.get("SNAP"):
-    zordeer_dir: Path = Path(os.environ["SNAP_REAL_HOME"]).joinpath("AppsFiles", "Zordeer")
+    zordeer_dir: Path = Path(os.environ["SNAP_REAL_HOME"]).joinpath("App", "Zordeer")
+elif os.environ.get("container") == "flatpak":
+    zordeer_dir: Path = Path(os.environ.get("HOST_HOME", Path.home())).joinpath("App", "Zordeer")
 else:
-    zordeer_dir: Path = (Path.home() / "AppsFiles" / "Zordeer")
+    zordeer_dir: Path = (Path.home() / "App" / "Zordeer")
 home_dir = zordeer_dir.parent.parent
 
 # Loads translations from external TOML files.
@@ -668,7 +670,7 @@ INVOCATION_LOCALE_OPTIONS = [
 ]
 
 # Zordeer settings (TOML)
-# $HOME/AppsFiles/Zordeer/config/zordeer-settings.toml
+# $HOME/App/Zordeer/config/zordeer-settings.toml
 zordeer_config_dir = zordeer_dir / "config"
 zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
 
@@ -4505,6 +4507,8 @@ class ShortcutManager(QDialog):
 
         if os.environ.get("SNAP"):
             current_zordeer = "snap run zordeer"
+        elif os.environ.get("container") == "flatpak":
+            current_zordeer = "flatpak run io.github.kyuyrii.zordeer"
         else:
             current_zordeer = os.path.abspath(sys.argv[0])
 
