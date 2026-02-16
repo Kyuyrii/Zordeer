@@ -33,7 +33,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.7"
+__version__ = "1.7.7.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -117,8 +117,8 @@ BUILTIN_TRANSLATIONS = {
         "GAME_NAME": "Game Name",
         "GAMEMODE": "Use Feral gamemode",
         "ICON_TOOLBAR_SIZE": "Button size",
-        "ICON_WIDTH_CLASSIC": "Icon size (Classic)",
-        "ICON_WIDTH_GRID": "Icon size (Grid)",
+        "ICON_WIDTH_CLASSIC": "Art size (Classic)",
+        "ICON_WIDTH_GRID": "Art size (Grid)",
         "IMAGE_FILTER": "Image Files (*.jpg *.jpeg *.png *.webp);;All Files (*)",
         "INDEFINITE": "- Indefinite -",
         "INVALID_PREFIX_ERROR": "Invalid prefix, check if the prefix folder exists.",
@@ -371,8 +371,8 @@ BUILTIN_TRANSLATIONS = {
         "GAME_NAME": "Nome do Jogo",
         "GAMEMODE": "Usar Feral gamemode",
         "ICON_TOOLBAR_SIZE": "Tamanho dos botões",
-        "ICON_WIDTH_CLASSIC": "Tamanho do ícone (Clássico)",
-        "ICON_WIDTH_GRID": "Tamanho do ícone (Grade)",
+        "ICON_WIDTH_CLASSIC": "Tamanho da arte (Clássico)",
+        "ICON_WIDTH_GRID": "Tamanho da arte (Grade)",
         "IMAGE_FILTER": "Arquivos de imagem (*.jpg *.jpeg *.png *.webp);;Todos os arquivos (*)",
         "INDEFINITE": "- Indefinido -",
         "INVALID_PREFIX_ERROR": "Prefixo inválido, verifique se a pasta do prefixo existe.",
@@ -973,8 +973,7 @@ class SettingsDialog(QDialog):
         self.runner_combo.addItems(items)
 
     def populate_umu_versions(self):
-        umu_path = zordeer_dir / "umu-launcher"
-        umu_path.mkdir(parents=True, exist_ok=True)
+        umu_path = zordeer_dir / "umu"
 
         # Check if each folder has the umu-run file
         available_umu = sorted([
@@ -1037,7 +1036,7 @@ class TransferWorker(QThread):
             self.message.emit(tr("EXTRACTING", name=Path(self.url).name))
 
             if "umu-launcher" in self.runner_name.lower():
-                base_dir = self.runners_dir.parent / "umu-launcher"
+                base_dir = self.runners_dir.parent / "umu"
             else:
                 base_dir = self.runners_dir
 
@@ -1257,7 +1256,7 @@ class RunnerTransferDialog(QDialog):
 
         if selected_runner == "UMU-launcher":
             runner_folder_name = f"umu-{tag_name}"
-            base_dir = zordeer_dir / "umu-launcher"
+            base_dir = zordeer_dir / "umu"
         else:
             formatted_tag = tag_name.replace('GE-Proton-', '').replace('GE-Proton', '')
             if selected_runner == "Proton-GE":
@@ -4998,7 +4997,7 @@ class Zordeer(QMainWindow):
             base / "runner",
             base / "config",
             base / "art",
-            base / "umu-launcher"
+            base / "umu"
         ]
 
         for subdir in subdirs:
@@ -5259,7 +5258,7 @@ class Zordeer(QMainWindow):
                     return
 
                 # Get UMU path
-                umu_path = zordeer_dir / "umu-launcher" / umu_version / "umu-run"
+                umu_path = zordeer_dir / "umu" / umu_version / "umu-run"
                 if not umu_path.exists():
                     QMessageBox.critical(
                         self,
@@ -5309,11 +5308,9 @@ class Zordeer(QMainWindow):
             env['WINEPREFIX'] = str(prefix_path)
 
             if use_umu and runner_name.lower() != "wine":
-                # Set XDG_DATA_HOME to redirect UMU data to $HOME directory.
-                env['XDG_DATA_HOME'] = str(home_dir)
-
-                if runner_name.lower() != "wine":
-                    env['PROTONPATH'] = str(zordeer_dir / "runner" / runner_name)
+                # Changes the folder used by UMU
+                env['XDG_DATA_HOME'] = str(home_dir / "App" / "UMU")
+                env['PROTONPATH'] = str(zordeer_dir / "runner" / runner_name)
             else:
                 # Set Steam environment variables only for Proton
                 if runner_name.lower() != "wine":
