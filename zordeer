@@ -33,7 +33,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.7.1"
+__version__ = "1.7.7.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -548,12 +548,22 @@ BUILTIN_TRANSLATIONS = {
 }
 
 if os.environ.get("SNAP"):
-    zordeer_dir: Path = Path(os.environ["SNAP_REAL_HOME"]).joinpath("App", "Zordeer")
+    home_connected = subprocess.run(["snapctl", "is-connected", "home"]).returncode == 0
+    
+    if home_connected:
+        zordeer_dir = Path(os.environ["SNAP_REAL_HOME"]) / "App" / "Zordeer"
+    else:
+        zordeer_dir = Path(os.environ["SNAP_USER_COMMON"]) / "Zordeer"
+    
+    home_dir = Path(os.environ["SNAP_REAL_HOME"])
+    
 elif os.environ.get("container") == "flatpak":
-    zordeer_dir: Path = Path(os.environ.get("HOST_HOME", Path.home())).joinpath("App", "Zordeer")
+    zordeer_dir = Path(os.environ["HOST_HOME"]) / "App" / "Zordeer"
+    home_dir = Path(os.environ["HOST_HOME"])
+    
 else:
-    zordeer_dir: Path = (Path.home() / "App" / "Zordeer")
-home_dir = zordeer_dir.parent.parent
+    zordeer_dir = Path.home() / "App" / "Zordeer"
+    home_dir = Path.home()
 
 # Loads translations from external TOML files.
 def load_external_translations():
