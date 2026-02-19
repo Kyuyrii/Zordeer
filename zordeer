@@ -33,519 +33,8 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.7.3"
+__version__ = "1.7.8"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
-
-BUILTIN_TRANSLATIONS = {
-    'en_US': {
-        "ABOUT_TEXT_HTML": """<b>Zordeer</b><br>
-        Version: {__version__}<br><br>
-        A launcher for games that run via Wine/Proton.<br>
-        License: <a href='https://www.gnu.org/licenses/gpl-3.0.html.en'>GPLv3</a><br>
-        Created by {__creator__}""",
-        "ABOUT_ZORDEER": "About Zordeer",
-        "ADD_FILES": "Add files",
-        "ADD_VARIABLES_BUTTON": "Add variables",
-        "AFFECTED_INVOCATIONS": "Invocations that will be affected",
-        "ALREADY_UPDATED": "You are on the latest version.",
-        "API_FAIL": "API error:<br>{error}",
-        "API_KEY_SAVE_FIRST": "Save your API KEY in the Zordeer settings first.",
-        "ALL_INVOCATIONS": "All invocations",
-        "ANIMARIUM_PREFIX_PLACEHOLDER": "Empty = animarium_prefix",
-        "APP_NAME": "Zordeer",
-        "ARTS_LOAD_ERROR": "[DEBUG] Failed to load arts: {error}",
-        "AUTO_TRANSFER_BUTTON": "Automatic mode",
-        "AUTO_TRANSFER_EXPLAIN": "Do you want to try downloading hero artwork and icons for all the invocations that don't have them?<br>After the download, they will be applied automatically.",
-        "AUTO_TRANSFER_FINISHED": "Automatic transfer completed",
-        "AUTO_TRANSFER_GENERAL_ERROR": "General error in {inv_name}: {error}",
-        "AUTO_TRANSFER_NO_MISSING_ARTS": "All invocations already have hero art and icon",
-        "AUTOMATIC_RUN": "Automatic installation (If the installer supports it)",
-        "BROWSE_BUTTON": "Browse",
-        "CANCEL_BUTTON": "Cancel",
-        "CHANGES_SAVED": "Changes have been saved.",
-        "CHECK_UPDATE_BUTTON": "¿Update?",
-        "CLEAN_RUN": "Clean run (Prevents issues with certain installers)",
-        "CLEAR_LIST": "Clear list",
-        "CLOSE_ZORDEER": "Close Zordeer",
-        "CONFIRM": "Confirm",
-        "CONFIRM_AND_RUN": "Start execution",
-        "CONFIRM_CLOSE_MESSAGE": "Do you want to end the current invocation and close Zordeer?",
-        "CONTENT": "Content",
-        "CREATE_INVOCATION": "Create invocation",
-        "CREATE_MULTIPLE_INVOCATIONS": "Create multiple invocations",
-        "DEBUG_REAL_INVOCATION_INITIATED": "[DEBUG] Invocation initiated as PID {pid}",
-        "DEBUG_TEMP_FILE_REMOVED": "[DEBUG] Temporary file removed: {path}",
-        "DEFAULT_QT_STYLE": "- System default -",
-        "DEFAULT_RUNNER": "Default runner",
-        "DEFAULT_RUNNER_INDEFINITE": "Default runner not defined",
-        "DEFAULT_UMU_INDEFINITE": "The version of the UMU launcher to be used has not been defined.",
-        "DELETE_PREFIX_CHECKBOX": "Delete the prefix folder",
-        "DELETE_PREFIX_ANYWAY": "Delete prefix folder anyway",
-        "DELETE_PREFIXES_ANYWAY": "Delete prefixes folders anyway",
-        "DELETE_INVOCATION_CONFIRM_MESSAGE": "Are you sure you want to remove the invocation '{name}'?",
-        "DELETE_INVOCATIONS_CONFIRM_MESSAGE": "Are you sure you want to remove the selected invocations?",
-        "DESELECT_ALL_IN_MULTIPLE_EDIT": "None",
-        "DESKTOP_FOLDER": "Desktop folder",
-        "DONE": "Done",
-        "DO_NOT_CHANGE": "[Do not change]",
-        "DO_NOT_DELETE_PREFIX": "Keep prefix folder",
-        "DO_NOT_DELETE_PREFIXES": "Keep prefix folders",
-        "DUPLICATE_NAME_IN_LIST": "There is already another invocation in the list with the name: {name}",
-        "EDIT_MULTIPLE_INVOCATIONS": "Edit multiple invocations",
-        "ENTER_GAME_NAME": "Enter a game name.",
-        "ENVIRONMENT_VARS": "Variables",
-        "ERROR": "Error",
-        "ERROR_CREATING_FILE": "Error creating {file}: {error}",
-        "ERROR_CREATING_SHORTCUTS_LOCATION": "This location could not be used:<br>{location}<br>Check its existence and permissions",
-        "ERROR_LOADING_FILE": "Error loading file {file}: {error}",
-        "ERROR_MOVING_SHORTCUTS": "Error moving the .desktop files {file}: {error}",
-        "ERROR_REMOVING_FILE": "Error removing {file}: {error}",
-        "ERROR_RUNNER": "Could not find the runner at: {path}",
-        "ERROR_TRANSFERRING_URL": "Error transferring {url}: {error}",
-        "EXEC_PATH_INVALID_CONFIRM": "The executable selected for this invocation appears to be invalid:<br>\"{path}\"<br>Running it may cause problems. Continue?",
-        "EXEC_PATH_NOT_FOUND": "The executable for this invocation was not found:<br>\"{path}\"",
-        "EXECUTABLE_FILE_FILTER": "Executables (*.exe *.msi *.iso);;All Files (*)",
-        "EXECUTABLE_PATH": "Executable",
-        "EXECUTION_MODE": "Execution mode",
-        "EXTRAS": "Extras",
-        "EXTRACTING": "Extracting: {name}",
-        "FAILED_UPDATE_TOML": "Could not update invocation information: {error}",
-        "FORCE_OPENGL": "Force OpenGL (If Vulkan is the default)",
-        "FPS_DXVK_HUD": "DXVK HUD (DirectX 9/10/11 via Vulkan)",
-        "FPS_GALLIUM_HUD": "Gallium HUD (If it runs via OpenGL)",
-        "FPS_MANGOHUD": "MangoHUD (DirectX 12 via Vulkan)",
-        "GAME_NAME": "Game Name",
-        "GAMEMODE": "Use Feral gamemode",
-        "ICON_TOOLBAR_SIZE": "Button size",
-        "ICON_WIDTH_CLASSIC": "Art size (Classic)",
-        "ICON_WIDTH_GRID": "Art size (Grid)",
-        "IMAGE_FILTER": "Image Files (*.jpg *.jpeg *.png *.webp);;All Files (*)",
-        "INDEFINITE": "- Indefinite -",
-        "INVALID_PREFIX_ERROR": "Invalid prefix, check if the prefix folder exists.",
-        "INVOCATION": "Invocation",
-        "INVOCATION_ALREADY_ACTIVE": "End current invocation and start the selected one?",
-        "INVOCATION_ALREADY_EXISTS": "There is already an invocation with that name in the list. Choose another.",
-        "INVOCATION_ARGS": "Arguments",
-        "INVOCATION_ART_PATH": "Art",
-        "INVOCATION_GUI_PATH": "Icon GUI",
-        "INVOCATION_INFO_ERROR": "Could not access executable or find information about this invocation.",
-        "INVOCATION_INFO_LOADED": "Invocation info loaded successfully for: {name}",
-        "INVOCATION_INFO_VIEWER_TITLE": "Invocations information",
-        "INVOCATION_LANGUAGE": "Language (Locale)",
-        "INVOCATION_NAME": "Name",
-        "INVOCATION_IN_MULTIPLE_CREATE_ALREADY_EXISTS": "The invocation '{name}' already exists, use another name.",
-        "INVOCATION_START_ERROR": "An error occurred while trying to start the invocation: {error}",
-        "INVOCATION_STARTED": "Zordeer - Invocation started: {invocation_name}",
-        "ISO_ALREADY_MOUNTED": "ISO is already mounted at {mount}",
-        "ISO_LOOP_DELETE_FAILED": "Failed to delete loop device {device}:\n{error}",
-        "ISO_MOUNT_FAILED": "Failed to mount ISO:\n{error}",
-        "ISO_MOUNT_POINT_NOT_FOUND": "Failed to determine ISO mount point",
-        "ISO_MOUNTED_EXE_FOUND": "Executable found in ISO {iso}: {exe}",
-        "ISO_NO_EXE_FOUND": "No .exe file found in the ISO",
-        "ISO_UNMOUNTED": "ISO unmounted and loop device {device} released",
-        "ISO_UNMOUNT_FAILED": "Failed to unmount ISO on device {device}:\n{error}",
-        "ISO_UNMOUNT_EXCEPTION": "Unexpected error while unmounting ISO:\n{error}",
-        "LANGUAGE": "Language",
-        "LANGUAGE_SET_ERROR": "[Error] Failed to set LC_ALL: {error}",
-        "LAYOUT_MODE": "Layout mode",
-        "LAYOUT_MODE_CLASSIC": "Classic",
-        "LAYOUT_MODE_GRID": "Grid",
-        "LAYOUT_MODE_LIST": "List",
-        "LOAD_HEROES": "Load heroes",
-        "LOAD_ICONS": "Load icons",
-        "LOAD_VERSIONS": "Load versions",
-        "LOOP_DEVICE_CREATION_FAILED": "Failed to create loop device:\n{error}",
-        "LOOP_DEVICE_NOT_FOUND": "Loop device not found",
-        "MANAGE_SHORTCUTS": "Manage shortcuts",
-        "MANDATORY_FIELD_ERROR": "It is mandatory that the invocation has a name.",
-        "MANDATORY_FIELDS_ERROR": "Name and executable are mandatory.",
-        "MARK_LISTED": "Check listed",
-        "MENU_FOLDER": "Applications folder",
-        "MODIFY_INVOCATION": "Modify invocation",
-        "MULTIPLE_INVOCATION_EDITOR": "Multiple invocation editor",
-        "MULTIPLE_INVOCATION_CREATOR": "Creator of multiple invocations",
-        "MULTIPLE_INVOCATION_REMOVER": "Multiple invocation remover",
-        "NAME": "Name",
-        "NAME_INVALID": "The name is invalid, select another.",
-        "NAME_INVALID_IN_MULTIPLE": "The name '{name}' is invalid, select another.",
-        "NEW_VERSION_AVAILABLE": "New version found: '{version}'.<br>Do you want to go to the repository?",
-        "NO_BUTTON": "No",
-        "NO_IMAGES": "No images found.",
-        "NO_EXEC_PATH": "An executable file has not been selected for this invocation.<br>Running it may cause problems. Continue?",
-        "NO_EXECUTABLE_SELECTED": "You have not selected executables",
-        "NO_FILES_EXTRACTED": "No files were extracted from the runner archive.",
-        "NO_GAME_SELECTED_ERROR": "No game selected",
-        "NO_INVOCATION_SELECTED_ERROR": "No invocations found, add one to the list.",
-        "NO_INVOCATION_SELECTED_MULTIPLE": "No invocation selected",
-        "NO_INVOCATIONS_FOUND": "No invocations were found.",
-        "NO_PYQT6_FOUND_ERROR": "PyQt6 not found.",
-        "NO_RESULTS": "No results.",
-        "NO_RUNNER_SELECTED_ERROR": "Please select a runner to transfer.",
-        "NO_TAGS_FOUND": "No tags found in the repository.",
-        "NORMAL_RUN": "Normal run",
-        "OPEN_EXEC_PATH": "Open executable folder",
-        "OPEN_PATH_ERROR": "Could not find this path on your device:<br>{path}",
-        "OPEN_PREFIX_PATH": "Open prefix folder",
-        "OPEN_REPO": "Open repository",
-        "OWN_CATEGORY": "Own category",
-        "PLACEHOLDER_FOR_LANGUAGE": "- No language chosen -",
-        "PLACEHOLDER_FOR_RUNNER": "- Default runner -",
-        "PREFIX_PATH_NOT_FOUND": "The prefix for this invocation was not found:<br>\"{path}\"",
-        "PREFIX_REMOTION_INFORMATION": "Prefix that would be deleted",
-        "PREFIXES_REMOTION_INFORMATION": "Prefixes that would be deleted",
-        "PREFIX_IN_USE_MESSAGE": "The prefix is ​​being used by other invocations.",
-        "PREFIXES_IN_USE_MESSAGE": "Prefixes are being used by other invocations.",
-        "PREFIX_PATH": "Prefix",
-        "QT_STYLE": "QT style",
-        "REMOVE": "Remove",
-        "REMOVE_MULTIPLE_INVOCATIONS": "Remove multiple invocations",
-        "REMOVE_SELECTED": "Remove selected",
-        "REMOVE_RUNNER_ERROR": "Unable to remove the runner: {error}",
-        "RENAME_PREFIX_QUESTION": "The invocation name changed from \"{old}\" to \"{new}\".<br>Do you want to rename the prefix folder?",
-        "RESET_BUTTON_MULTIPLE_EDIT": "Reset",
-        "RUN_IN_PREFIX": "Run in prefix",
-        "RUN_IN_PREFIX_DONE": "Run in prefix completed.",
-        "RUN_IN_PREFIX_INVOCATION_NAME": "Run in the prefix of: {invocation_name}",
-        "RUN_IN_PREFIX_TEMP_FILE_REMOVED": "[Run in prefix] Temporary invocation removed: {temp_file}",
-        "RUN_IN_PREFIX_WAITING": "Waiting for the user to stop the current execution",
-        "RUNNER_EXISTS_WARNING": "The files for '{name}' exist locally.<br>Do you want to remove them and transfer them again?",
-        "RUNNER_REMOVED_SUCCESS": "Runner '{name}' removed successfully!",
-        "RUNNER_VERSION": "Runner",
-        "RUNNING_COMMAND": "Running command: {command}",
-        "RUNNING_IN_BACKGROUND": "Started in the background",
-        "RUNNING_IN_PREFIX": "Running in prefix ({name}): {exe}  silent={silent}",
-        "SAVE_BUTTON": "Save",
-        "SEE_DATA": "View data",
-        "SEARCH": "Search",
-        "SELECT": "Select",
-        "SELECT_ALL_IN_MULTIPLE_EDIT": "All",
-        "SELECT_AT_LEAST_ONE_IMAGE": "Select at least one image.",
-        "SELECT_AVAILABLE_RUNNER_CONFIRM": "The selected runner appears to be absent.<br>Save anyway?",
-        "SELECT_AVAILABLE_UMU_CONFIRM": "The selected version of umu-launcher appears to be missing.<br>Save anyway?",
-        "SELECT_EXECUTABLE": "Select executable",
-        "SELECT_FOLDER": "Select folder",
-        "SELECT_INVOCATION_ART": "Select art",
-        "SELECT_INVOCATION_GUI": "Select gui icon",
-        "SELECT_PREFIX_TITLE": "Select prefix",
-        "SELECTED_EXECUTABLES": "Selected executables",
-        "SELECTED_INVOCATIONS": "Selected Invocations",
-        "SETTINGS_SAVED_RESTART": "Changes saved.<br>Restart Zordeer to apply visual changes.",
-        "SGDB_API_KEY_LABEL": "SteamGridDB API Key",
-        "SHORTCUTS_MANAGER_TITLE": "Shortcut Manager",
-        "SHORTCUTS_OF_DESKTOP": "Desktop shortcuts",
-        "SHORTCUTS_OF_MENU": "Menu shortcuts",
-        "SHORTCUTS_PATHS": "Paths",
-        "SHOW_FPS_OPTION": "Show FPS",
-        "SHOW_FPS_OPTION_HUD": "Selected HUD",
-        "START_INVOCATION": "Start invocation",
-        "START_RANDOM_INVOCATION": "Random invocation",
-        "STARTING_INVOCATION": "Starting invocation: {name}",
-        "STOP_ACCESS_ERROR": "[Stop] Error accessing process: {error}",
-        "STOP_CURRENT": "Close/Next",
-        "STOP_INVOCATION": "Stop invocation",
-        "STOP_INVOCATION_SUCCESS": "[Stop] Invocation terminated successfully.",
-        "STOP_KILL_ERROR": "[Stop] Error killing process {pid}: {error}",
-        "STOP_KILL_PROCESS": "[Stop] Killing process {pid} ({exe})",
-        "STOP_NO_INVOCATION_ACTIVE": "[Stop] No invocation active.",
-        "STOP_NO_PROCESS_FOUND": "[Stop] No invocation process found to terminate.",
-        "STOP_PROCESS_SUCCESS": "[Stop] Process {pid} terminated successfully.",
-        "STORE": "Store",
-        "SYMLINK_CREATED": "Symlink created: {symlink} -> {prefix}",
-        "SYMLINK_ERROR": "Error creating symlink for Proton: {error}",
-        "TEMP_FILES_REMOVED": "Temporary files removed: {count}",
-        "TRANSFER": "Transfer",
-        "TRANSFER_AND_INSTALL_SUCCESS": "'{name}' was successfully transferred and extracted!",
-        "TRANSFER_ARTS": "Arts",
-        "TRANSFER_ARTS_TITLE": "Steamgriddb arts transfer",
-        "TRANSFER_CANCELED": "Transfer canceled",
-        "TRANSFER_ERROR": "Transfer error",
-        "TRANSFER_FAILED": "Transfer failed: {error}",
-        "TRANSFER_RUNNERS": "Runners/UMU",
-        "TRANSFER_RUNNERS_TITLE": "Runners/UMU transfer",
-        "TRANSFER_SUMMARY": "Transferred to:\n{dir}",
-        "TRANSFERRING_RUNNER": "Transferring: {name}",
-        "UMU_DATABASE": "UMU Game Database",
-        "UMU_DATABASE_BUTTON": "Database",
-        "UMU_DATABASE_LOAD_ERROR": "Error loading UMU database: {error}",
-        "UMU_DATABASE_NOT_FOUND": "The UMU database was not found in:<br>\"{path}\"",
-        "UMU_DATABASE_WINE_NOT_SUPPORTED": "UMU database is not available for Wine.<br>Use a Proton runner.",
-        "UMU_GLOBAL": "UMU global",
-        "UMU_NOT_FOUND": "UMU not found in:<br>{path}",
-        "UMU_VERSION": "UMU version",
-        "UNMARK_LISTED": "Uncheck listed",
-        "UNAVAILABLE": "Unavailable",
-        "UPDATE_ERROR": "Error checking for updates:<br>{error}",
-        "UPDATE_SHORTCUTS": "Update shortcuts",
-        "USE_ANIMARIUM_PREFIX": "Use animarium_prefix",
-        "USE_ANIMARIUM_PREFIX_FOR_ALL": "Use the animarium_prefix on all invocations",
-        "USE_AUTO_PREFIX_FOR_ALL": "Set prefixes based on drive_c folder (If exists)",
-        "USE_MS_LANGUAGE_CODE": "Use Microsoft language code",
-        "USE_ON_ALL": "Use on all",
-        "USE_UMU_LAUNCHER": "Use UMU launcher (Proton only)",
-        "USE_UMU_LAUNCHER_INFO": "Transfers files in the background.<br>The first run may take some time.<br>The 'UMU global' overrides this option.",
-        "USING_PYQT6": "Using PyQt6",
-        "WINE_NOT_FOUND": "Wine was not found, please check if it is installed",
-        "WINECFG_BUTTON": "Winecfg",
-        "YES_BUTTON": "Yes",
-        "ZORDEER_CLOSED": "Zordeer closed. Finalizing processes...",
-        "ZORDEER_SETTINGS": "Zordeer preferences",
-        "ZORDEER_TRAY_TOGGLE": "Change visibility",
-    },
-    'pt_BR': {
-        "ABOUT_TEXT_HTML": """<b>Zordeer</b><br>
-        Versão: {__version__}<br><br>
-        Um launcher para jogos que rodam via Wine/Proton.<br>
-        Licença: <a href='https://www.gnu.org/licenses/gpl-3.0.html'>GPLv3</a><br>
-        Criado por {__creator__}""",
-        "ABOUT_ZORDEER": "Sobre o Zordeer",
-        "ADD_FILES": "Adicionar arquivos",
-        "ADD_VARIABLES_BUTTON": "Adicionar variáveis",
-        "AFFECTED_INVOCATIONS": "Invocações que serão afetadas",
-        "ALREADY_UPDATED": "Você está na versão mais recente.",
-        "API_FAIL": "Erro de API:<br>{error}",
-        "API_KEY_SAVE_FIRST": "Salve sua API KEY nas configurações do Zordeer primeiro.",
-        "ALL_INVOCATIONS": "Todas as invocações",
-        "ANIMARIUM_PREFIX_PLACEHOLDER": "Vazio = animarium_prefix",
-        "APP_NAME": "Zordeer",
-        "ARTS_LOAD_ERROR": "[DEBUG] Falha ao carregar artes: {error}",
-        "AUTO_TRANSFER_BUTTON": "Modo automático",
-        "AUTO_TRANSFER_EXPLAIN": "Deseja tentar baixar artes hero e ícones para todas as invocações que não possuem?<br>Após a transferência, elas serão aplicadas automaticamente.",
-        "AUTO_TRANSFER_FINISHED": "Transferência automática finalizada",
-        "AUTO_TRANSFER_GENERAL_ERROR": "Erro geral em {inv_name}: {error}",
-        "AUTO_TRANSFER_NO_MISSING_ARTS": "Todas as invocações já possuem arte hero e ícone",
-        "AUTOMATIC_RUN": "Instalação automática (Caso o instalador suporte)",
-        "BROWSE_BUTTON": "Procurar",
-        "CANCEL_BUTTON": "Cancelar",
-        "CHANGES_SAVED": "As alterações foram salvas.",
-        "CHECK_UPDATE_BUTTON": "¿Atualização?",
-        "CLEAN_RUN": "Execução limpa (Evita problemas com certos instaladores)",
-        "CLEAR_LIST": "Limpar lista",
-        "CLOSE_ZORDEER": "Fechar Zordeer",
-        "CONFIRM": "Confirmar",
-        "CONFIRM_AND_RUN": "Iniciar execução",
-        "CONFIRM_CLOSE_MESSAGE": "Deseja encerrar a invocação atual e fechar o Zordeer?",
-        "CONTENT": "Conteúdo",
-        "CREATE_INVOCATION": "Criar invocação",
-        "CREATE_MULTIPLE_INVOCATIONS": "Criar várias invocações",
-        "DEBUG_REAL_INVOCATION_INITIATED": "[DEBUG] Invocação iniciada como PID {pid}",
-        "DEBUG_TEMP_FILE_REMOVED": "[DEBUG] Arquivo temporário removido: {path}",
-        "DEFAULT_QT_STYLE": "- Padrão do sistema -",
-        "DEFAULT_RUNNER": "Runner padrão",
-        "DEFAULT_RUNNER_INDEFINITE": "Runner padrão não definido",
-        "DEFAULT_UMU_INDEFINITE": "A versão do UMU launcher a ser usada não foi definida.",
-        "DELETE_PREFIX_CHECKBOX": "Excluir a pasta prefixo",
-        "DELETE_PREFIX_ANYWAY": "Excluir pasta prefixo mesmo assim",
-        "DELETE_PREFIXES_ANYWAY": "Excluir pastas prefixo mesmo assim",
-        "DELETE_INVOCATION_CONFIRM_MESSAGE": "Tem certeza de que deseja remover a invocação '{name}'?",
-        "DELETE_INVOCATIONS_CONFIRM_MESSAGE": "Tem certeza de que deseja remover as invocações selecionadas?",
-        "DESELECT_ALL_IN_MULTIPLE_EDIT": "Nenhuma",
-        "DESKTOP_FOLDER": "Pasta área de trabalho",
-        "DONE": "Concluído",
-        "DO_NOT_CHANGE": "[Não mudar]",
-        "DO_NOT_DELETE_PREFIX": "Manter pasta prefixo",
-        "DO_NOT_DELETE_PREFIXES": "Manter pastas prefixo",
-        "DUPLICATE_NAME_IN_LIST": "Já existe outra invocação na lista com o nome: {name}",
-        "EDIT_MULTIPLE_INVOCATIONS": "Editar várias invocações",
-        "ENTER_GAME_NAME": "Digite o nome de um jogo.",
-        "ENVIRONMENT_VARS": "Variáveis",
-        "ERROR": "Erro",
-        "ERROR_CREATING_FILE": "Erro ao criar {file}: {error}",
-        "ERROR_CREATING_SHORTCUTS_LOCATION": "Não foi possível usar essa localização:<br>{location}<br>Verifique sua existência e suas permissões",
-        "ERROR_LOADING_FILE": "Erro ao carregar arquivo {file}: {error}",
-        "ERROR_MOVING_SHORTCUTS": "Erro ao mover os arquivos .desktop {file}: {error}",
-        "ERROR_REMOVING_FILE": "Erro ao remover {file}: {error}",
-        "ERROR_RUNNER": "Não foi possível encontrar o runner em: {path}",
-        "ERROR_TRANSFERRING_URL": "Erro ao transferir {url}: {error}",
-        "EXEC_PATH_INVALID_CONFIRM": "O executável escolhido para essa invocação parece inválido:<br>\"{path}\"<br>Executar ela pode gerar problemas. Continuar?",
-        "EXEC_PATH_NOT_FOUND": "O executável dessa invocação não foi encontrado:<br>\"{path}\"",
-        "EXECUTABLE_FILE_FILTER": "Executáveis (*.exe *.msi *.iso);;Todos os arquivos (*)",
-        "EXECUTABLE_PATH": "Executável",
-        "EXECUTION_MODE": "Modo de execução",
-        "EXTRAS": "Extras",
-        "EXTRACTING": "Extraindo: {name}",
-        "FAILED_UPDATE_TOML": "Não foi possível atualizar as informações da invocação: {error}",
-        "FORCE_OPENGL": "Forçar OpenGL (Se Vulkan for o padrão)",
-        "FPS_DXVK_HUD": "DXVK HUD (DirectX 9/10/11 via Vulkan)",
-        "FPS_GALLIUM_HUD": "Gallium HUD (Caso rode via OpenGL)",
-        "FPS_MANGOHUD": "MangoHUD (DirectX 12 via Vulkan)",
-        "GAME_NAME": "Nome do Jogo",
-        "GAMEMODE": "Usar Feral gamemode",
-        "ICON_TOOLBAR_SIZE": "Tamanho dos botões",
-        "ICON_WIDTH_CLASSIC": "Tamanho da arte (Clássico)",
-        "ICON_WIDTH_GRID": "Tamanho da arte (Grade)",
-        "IMAGE_FILTER": "Arquivos de imagem (*.jpg *.jpeg *.png *.webp);;Todos os arquivos (*)",
-        "INDEFINITE": "- Indefinido -",
-        "INVALID_PREFIX_ERROR": "Prefixo inválido, verifique se a pasta do prefixo existe.",
-        "INVOCATION": "Invocação",
-        "INVOCATION_ALREADY_ACTIVE": "Encerrar invocação atual e iniciar a selecionada?",
-        "INVOCATION_ALREADY_EXISTS": "Já existe uma invocação com esse nome na lista. Escolha outro.",
-        "INVOCATION_ARGS": "Argumentos",
-        "INVOCATION_ART_PATH": "Arte",
-        "INVOCATION_GUI_PATH": "Ícone GUI",
-        "INVOCATION_INFO_ERROR": "Não foi possível acessar o executável ou encontrar informações sobre esta invocação.",
-        "INVOCATION_INFO_LOADED": "Informações da invocação carregadas com sucesso: {name}",
-        "INVOCATION_INFO_VIEWER_TITLE": "Informações das invocações",
-        "INVOCATION_LANGUAGE": "Idioma (Localidade)",
-        "INVOCATION_NAME": "Nome",
-        "INVOCATION_IN_MULTIPLE_CREATE_ALREADY_EXISTS": "A invocação '{name}' já existe, use outro nome.",
-        "INVOCATION_START_ERROR": "Ocorreu um erro ao tentar iniciar a invocação: {error}",
-        "INVOCATION_STARTED": "Zordeer - Invocação iniciada: {invocation_name}",
-        "ISO_ALREADY_MOUNTED": "ISO já está montada em {mount}",
-        "ISO_LOOP_DELETE_FAILED": "Falha ao remover loop device {device}:\n{error}",
-        "ISO_MOUNT_FAILED": "Falha ao montar ISO:\n{error}",
-        "ISO_MOUNT_POINT_NOT_FOUND": "Falha ao determinar o diretório de montagem da ISO",
-        "ISO_MOUNTED_EXE_FOUND": "Executável encontrado na ISO {iso}: {exe}",
-        "ISO_NO_EXE_FOUND": "Nenhum .exe encontrado na ISO",
-        "ISO_UNMOUNTED": "ISO desmontada e loop device {device} liberado",
-        "ISO_UNMOUNT_FAILED": "Falha ao desmontar ISO no dispositivo {device}:\n{error}",
-        "ISO_UNMOUNT_EXCEPTION": "Erro inesperado ao desmontar ISO:\n{error}",
-        "LANGUAGE": "Idioma",
-        "LANGUAGE_SET_ERROR": "[Erro] Falha ao definir LC_ALL: {error}",
-        "LAYOUT_MODE": "Modo do layout",
-        "LAYOUT_MODE_CLASSIC": "Clássico",
-        "LAYOUT_MODE_GRID": "Grade",
-        "LAYOUT_MODE_LIST": "Lista",
-        "LOAD_HEROES": "Carregar heroes",
-        "LOAD_ICONS": "Carregar ícones",
-        "LOAD_VERSIONS": "Carregar versões",
-        "LOOP_DEVICE_CREATION_FAILED": "Falha ao criar loop device:\n{error}",
-        "LOOP_DEVICE_NOT_FOUND": "Loop device não encontrado",
-        "MANAGE_SHORTCUTS": "Gerenciar atalhos",
-        "MANDATORY_FIELD_ERROR": "É obrigatório que a invocação tenha um nome.",
-        "MANDATORY_FIELDS_ERROR": "Nome e executável são obrigatórios.",
-        "MARK_LISTED": "Marcar listados",
-        "MENU_FOLDER": "Pasta applications",
-        "MODIFY_INVOCATION": "Modificar invocação",
-        "MULTIPLE_INVOCATION_EDITOR": "Editor de multiplas invocações",
-        "MULTIPLE_INVOCATION_CREATOR": "Criador de múltiplas invocações",
-        "MULTIPLE_INVOCATION_REMOVER": "Removedor de múltiplas invocações",
-        "NAME": "Nome",
-        "NAME_INVALID": "O nome é inválido, selecione outro.",
-        "NAME_INVALID_IN_MULTIPLE": "O nome '{name}' é inválido, selecione outro.",
-        "NEW_VERSION_AVAILABLE": "Nova versão encontrada: '{version}'.<br>Deseja ir para o repositório?",
-        "NO_BUTTON": "Não",
-        "NO_IMAGES": "Nenhuma imagem encontrada.",
-        "NO_EXEC_PATH": "Um executável não foi escolhido para essa invocação.<br>Executar ela pode gerar problemas. Continuar?",
-        "NO_EXECUTABLE_SELECTED": "Você não selecionou executáveis",
-        "NO_FILES_EXTRACTED": "Nenhum arquivo foi extraído do pacote do runner.",
-        "NO_GAME_SELECTED_ERROR": "Nenhum jogo selecionado",
-        "NO_INVOCATION_SELECTED_ERROR": "Nenhuma invocação encontrada, adicione uma à lista.",
-        "NO_INVOCATION_SELECTED_MULTIPLE": "Nenhuma invocação selecionada",
-        "NO_INVOCATIONS_FOUND": "Nenhuma invocação foi encontrada.",
-        "NO_PYQT6_FOUND_ERROR": "PyQt6 não encontrado.",
-        "NO_RESULTS": "Nenhum resultado.",
-        "NO_RUNNER_SELECTED_ERROR": "Por favor, selecione um runner para baixar.",
-        "NO_TAGS_FOUND": "Nenhuma tag encontrada no repositório.",
-        "NORMAL_RUN": "Execução normal",
-        "OPEN_EXEC_PATH": "Abrir pasta do executável",
-        "OPEN_PATH_ERROR": "Não foi possível encontrar esse caminho no seu dispositivo:<br>{path}",
-        "OPEN_PREFIX_PATH": "Abrir pasta prefixo",
-        "OPEN_REPO": "Abrir repositório",
-        "OWN_CATEGORY": "Categoria própria",
-        "PLACEHOLDER_FOR_LANGUAGE": "- Sem idioma escolhido -",
-        "PLACEHOLDER_FOR_RUNNER": "- Runner padrão -",
-        "PREFIX_PATH_NOT_FOUND": "O prefixo dessa invocação não foi encontrado:<br>\"{path}\"",
-        "PREFIX_REMOTION_INFORMATION": "Prefixo que seria apagado",
-        "PREFIXES_REMOTION_INFORMATION": "Prefixos que seriam apagados",
-        "PREFIX_IN_USE_MESSAGE": "O prefixo está sendo usado por outras invocações.",
-        "PREFIXES_IN_USE_MESSAGE": "Os prefixos estão sendo usados por várias invocações.",
-        "PREFIX_PATH": "Prefixo",
-        "QT_STYLE": "Estilo do QT",
-        "REMOVE": "Remover",
-        "REMOVE_MULTIPLE_INVOCATIONS": "Remover várias invocações",
-        "REMOVE_SELECTED": "Remover selecionado",
-        "REMOVE_RUNNER_ERROR": "Não foi possível remover o runner: {error}",
-        "RENAME_PREFIX_QUESTION": "O nome de invocação mudou de \"{old}\" para \"{new}\".<br>Deseja renomear a pasta prefixo?",
-        "RESET_BUTTON_MULTIPLE_EDIT": "Resetar",
-        "RUN_IN_PREFIX": "Executar no prefixo",
-        "RUN_IN_PREFIX_DONE": "Executar no prefixo foi concluído.",
-        "RUN_IN_PREFIX_INVOCATION_NAME": "Executar no prefixo da: {invocation_name}",
-        "RUN_IN_PREFIX_TEMP_FILE_REMOVED": "[Executar no prefixo] Invocação temporária removida: {temp_file}",
-        "RUN_IN_PREFIX_WAITING": "Esperando o usuário parar a execução atual",
-        "RUNNER_EXISTS_WARNING": "Os arquivos do '{name}' existem localmente.<br>Deseja removê-los e transferir novamente?",
-        "RUNNER_REMOVED_SUCCESS": "Runner '{name}' foi removido com sucesso!",
-        "RUNNER_VERSION": "Runner",
-        "RUNNING_COMMAND": "Executando comando: {command}",
-        "RUNNING_IN_BACKGROUND": "Iniciado em segundo plano",
-        "RUNNING_IN_PREFIX": "Executando no prefixo ({name}): {exe}  silent={silent}",
-        "SAVE_BUTTON": "Salvar",
-        "SEE_DATA": "Ver dados",
-        "SEARCH": "Pesquisar",
-        "SELECT": "Selecionar",
-        "SELECT_ALL_IN_MULTIPLE_EDIT": "Todas",
-        "SELECT_AT_LEAST_ONE_IMAGE": "Selecione pelo menos uma imagem.",
-        "SELECT_AVAILABLE_RUNNER_CONFIRM": "O runner escolhido parece estar ausente.<br>Salvar mesmo assim?",
-        "SELECT_AVAILABLE_UMU_CONFIRM": "A versão escolhida do umu-launcher parece estar ausente.<br>Salvar mesmo assim?",
-        "SELECT_EXECUTABLE": "Selecionar executável",
-        "SELECT_FOLDER": "Selecionar pasta",
-        "SELECT_INVOCATION_ART": "Selecionar arte",
-        "SELECT_INVOCATION_GUI": "Selecionar ícone gui",
-        "SELECT_PREFIX_TITLE": "Selecionar prefixo",
-        "SELECTED_EXECUTABLES": "Executáveis selecionados",
-        "SELECTED_INVOCATIONS": "Invocações selecionadas",
-        "SETTINGS_SAVED_RESTART": "Alterações salvas.<br>Reinicie o Zordeer para aplicar as mudanças visuais.",
-        "SGDB_API_KEY_LABEL": "Chave da API SteamGridDB",
-        "SHORTCUTS_MANAGER_TITLE": "Gerenciador de atalhos",
-        "SHORTCUTS_OF_DESKTOP": "Atalhos da área da trabalho",
-        "SHORTCUTS_OF_MENU": "Atalhos do menu",
-        "SHORTCUTS_PATHS": "Caminhos",
-        "SHOW_FPS_OPTION": "Exibir FPS",
-        "SHOW_FPS_OPTION_HUD": "HUD selecionado",
-        "START_INVOCATION": "Iniciar invocação",
-        "START_RANDOM_INVOCATION": "Invocação aleatória",
-        "STARTING_INVOCATION": "Iniciando invocação: {name}",
-        "STOP_ACCESS_ERROR": "[Parar] Erro ao acessar processo: {error}",
-        "STOP_CURRENT": "Encerrar/Avançar",
-        "STOP_INVOCATION": "Encerrar invocação",
-        "STOP_INVOCATION_SUCCESS": "[Parar] Invocação encerrada com sucesso.",
-        "STOP_KILL_ERROR": "[Parar] Erro ao encerrar processo {pid}: {error}",
-        "STOP_KILL_PROCESS": "[Parar] Encerrando processo {pid} ({exe})",
-        "STOP_NO_INVOCATION_ACTIVE": "[Parar] Nenhuma invocação ativa.",
-        "STOP_NO_PROCESS_FOUND": "[Parar] Nenhum processo de invocação encontrado para encerrar.",
-        "STOP_PROCESS_SUCCESS": "[Parar] Processo {pid} encerrado com sucesso.",
-        "STORE": "Loja",
-        "SYMLINK_CREATED": "Link simbólico criado: {symlink} -> {prefix}",
-        "SYMLINK_ERROR": "Erro ao criar link simbólico para Proton: {error}",
-        "TEMP_FILES_REMOVED": "Arquivos temporários removidos: {count}",
-        "TRANSFER": "Transferir",
-        "TRANSFER_AND_INSTALL_SUCCESS": "'{name}' foi transferido e extraído com sucesso!",
-        "TRANSFER_ARTS": "Artes",
-        "TRANSFER_ARTS_TITLE": "Transferidor de artes do Steamgriddb",
-        "TRANSFER_CANCELED": "Transferência cancelada",
-        "TRANSFER_ERROR": "Erro na transferência",
-        "TRANSFER_FAILED": "Falha na transferência: {error}",
-        "TRANSFER_RUNNERS": "Runners/UMU",
-        "TRANSFER_RUNNERS_TITLE": "Transferidor de runners/UMU",
-        "TRANSFER_SUMMARY": "Transferido para:\n{dir}",
-        "TRANSFERRING_RUNNER": "Transferindo: {name}",
-        "UMU_DATABASE": "Banco de Dados UMU",
-        "UMU_DATABASE_BUTTON": "Database",
-        "UMU_DATABASE_LOAD_ERROR": "Erro ao carregar banco de dados UMU: {error}",
-        "UMU_DATABASE_NOT_FOUND": "O banco de dados do UMU não foi encontrado em:<br>\"{path}\"",
-        "UMU_DATABASE_WINE_NOT_SUPPORTED": "Banco de dados UMU não está disponível para Wine.<br>Use um runner Proton.",
-        "UMU_GLOBAL": "UMU global",
-        "UMU_NOT_FOUND": "UMU não encontrado em:<br>{path}",
-        "UMU_VERSION": "Versão do UMU",
-        "UNAVAILABLE": "Indisponível",
-        "UNMARK_LISTED": "Desmarcar listados",
-        "UPDATE_ERROR": "Erro ao verificar atualizações:<br>{error}",
-        "UPDATE_SHORTCUTS": "Atualizar atalhos",
-        "USE_ANIMARIUM_PREFIX": "Usar o animarium_prefix",
-        "USE_ANIMARIUM_PREFIX_FOR_ALL": "Usar o animarium_prefix em todas as invocações",
-        "USE_AUTO_PREFIX_FOR_ALL": "Definir prefixos com base na pasta drive_c (Caso exista)",
-        "USE_MS_LANGUAGE_CODE": "Usar código de idioma da Microsoft",
-        "USE_ON_ALL": "Usar em todas",
-        "USE_UMU_LAUNCHER": "Usar UMU launcher (Somente Proton)",
-        "USE_UMU_LAUNCHER_INFO": "Transfere arquivos em segundo plano.<br>A primeira execução pode demorar.<br>O 'UMU global' sobrepõe essa opção.",
-        "USING_PYQT6": "Usando PyQt6",
-        "WINE_NOT_FOUND": "Wine não foi encontrado, verifique se ele está instalado",
-        "WINECFG_BUTTON": "Winecfg",
-        "YES_BUTTON": "Sim",
-        "ZORDEER_CLOSED": "Zordeer fechado. Finalizando processos...",
-        "ZORDEER_SETTINGS": "Preferências do Zordeer",
-        "ZORDEER_TRAY_TOGGLE": "Alterar visibilidade",
-    }
-}
 
 if "ZORDEER_DIR" in os.environ:
     zordeer_dir = Path(os.environ["ZORDEER_DIR"]) / "App" / "Zordeer"
@@ -573,15 +62,20 @@ else:
     zordeer_dir = Path.home() / "App" / "Zordeer"
     home_dir = Path.home()
 
+if os.environ.get("XDG_CACHE_HOME"):
+    XDG_CACHE_HOME = Path(os.environ["XDG_CACHE_HOME"])
+else:
+    XDG_CACHE_HOME = Path.home() / ".cache"
+
 # Loads translations from external TOML files.
 def load_external_translations():
     external_translations = {}
-    supported_languages = {"English USA": "en_US", "Português Brasil": "pt_BR"}
+    supported_languages = {}
 
     # Translation folders
     translation_dirs = [
-        Path(sys.argv[0]).parent / "translation",
         zordeer_dir / "translation",
+        Path(sys.argv[0]).parent / "translation",
         Path("/usr/share/Zordeer/translation")
     ]
 
@@ -610,31 +104,22 @@ def load_external_translations():
 # Load external translations
 EXTERNAL_TRANSLATIONS, SUPPORTED_LANGUAGES = load_external_translations()
 
-# First, try the language configured in external translations.
 def tr(key, **kwargs):
-    # Get the translated string (from external or embedded translations)
-    translated_string = None
-
+    # Get the translated string from external translations
     if LANG in EXTERNAL_TRANSLATIONS:
         translation_dict = EXTERNAL_TRANSLATIONS[LANG]
         translated_string = translation_dict.get(key)
+        
+        if translated_string:
+            # Replace special variables
+            translated_string = translated_string.replace("{__version__}", __version__)
+            translated_string = translated_string.replace("{__creator__}", __creator__)
 
-    # Fallback to embedded translations if not found in external
-    if not translated_string:
-        translation_dict = BUILTIN_TRANSLATIONS.get(LANG, BUILTIN_TRANSLATIONS['en_US'])
-        translated_string = translation_dict.get(key, BUILTIN_TRANSLATIONS['en_US'].get(key, key))
-
-    # If we have a translated string, process special variables and formatting
-    if translated_string:
-        # Replace special variables
-        translated_string = translated_string.replace("{__version__}", __version__)
-        translated_string = translated_string.replace("{__creator__}", __creator__)
-
-        # Apply formatting with any additional kwargs
-        try:
-            return translated_string.format(**kwargs)
-        except KeyError:
-            return translated_string
+            # Apply formatting with any additional kwargs
+            try:
+                return translated_string.format(**kwargs)
+            except KeyError:
+                return translated_string
 
     # If no translation found, return the key itself
     return key
@@ -643,13 +128,13 @@ def tr(key, **kwargs):
 try:
     from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QListWidget, QPushButton, QMessageBox, QToolBar, QDialog, QGridLayout,
     QLabel, QLineEdit, QHBoxLayout, QFileDialog, QComboBox, QCheckBox, QListWidgetItem, QStyleFactory, QProgressBar, QButtonGroup,
-    QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit)
+    QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit, QProgressDialog)
     from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo
     from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QPalette, QColor, QTextCharFormat, QTextCursor
     from PyQt6.QtNetwork import QLocalServer, QLocalSocket
-    print(tr("USING_PYQT6"))
+    print("Using PyQt6")
 except ImportError:
-    print(tr("NO_PYQT6_FOUND_ERROR"))
+    print("PyQt6 not found")
     sys.exit(1)
 
 INVOCATION_LOCALE_OPTIONS = [
@@ -1627,28 +1112,20 @@ class AddInvocationDialog(QDialog):
             self.prefix_path_input.setText(dir_path)
 
     def select_invocation_art(self):
-        heroes_dir = zordeer_dir / "sgdb" / "heroes"
-        heroes_dir.mkdir(parents=True, exist_ok=True)
-
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_ART"),
-            str(heroes_dir),
-            tr("IMAGE_FILTER")
-        )
+            str(home_dir),
+            tr("IMAGE_FILTER"))
         if file_path:
             self.invocation_art_input.setText(file_path)
 
     def select_invocation_gui(self):
-        icons_dir = zordeer_dir / "sgdb" / "icons"
-        icons_dir.mkdir(parents=True, exist_ok=True)
-
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_GUI"),
-            str(icons_dir),
-            tr("IMAGE_FILTER")
-        )
+            str(home_dir),
+            tr("IMAGE_FILTER"))
         if file_path:
             self.invocation_gui_input.setText(file_path)
 
@@ -3238,28 +2715,20 @@ class MultipleEditInvocationDialog(QDialog):
             self.prefix_input.setText(dir_path)
 
     def select_invocation_art(self):
-        heroes_dir = zordeer_dir / "sgdb" / "heroes"
-        heroes_dir.mkdir(parents=True, exist_ok=True)
-
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_ART"),
-            str(heroes_dir),
-            tr("IMAGE_FILTER")
-        )
+            str(home_dir),
+            tr("IMAGE_FILTER"))
         if file_path:
             self.art_input.setText(file_path)
 
     def select_invocation_gui(self):
-        icons_dir = zordeer_dir / "sgdb" / "icons"
-        icons_dir.mkdir(parents=True, exist_ok=True)
-
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_GUI"),
-            str(icons_dir),
-            tr("IMAGE_FILTER")
-        )
+            str(home_dir),
+            tr("IMAGE_FILTER"))
         if file_path:
             self.gui_input.setText(file_path)
 
@@ -3510,7 +2979,6 @@ class InvocationInfoViewerDialog(QDialog):
         # Left widget: Search, combobox, list
         left_widget = QWidget()
         left_layout = QVBoxLayout(left_widget)
-        left_layout.setContentsMargins(0, 0, 0, 0)
 
         # Search bar
         self.search_box = QLineEdit()
@@ -3819,7 +3287,7 @@ class RunInPrefix(QDialog):
         self.parent = parent  # Zordeer
         self.invocation_name = invocation_name
         self.setWindowTitle(tr("RUN_IN_PREFIX_INVOCATION_NAME", invocation_name=invocation_name))
-        self.resize(500, 300)
+        self.resize(500, 500)
         self._has_printed_waiting_message = False
 
         # Preventive cleanup: delete old leftovers
@@ -3833,21 +3301,28 @@ class RunInPrefix(QDialog):
         # Main layout
         layout = QVBoxLayout(self)
 
-        # List of executables (Only names, no paths)
+        # List of executables
         self.exe_list = QTreeWidget()
         self.exe_list.setHeaderLabels([tr("SELECTED_EXECUTABLES")])
         self.exe_list.setColumnCount(1)
         self.exe_list.setRootIsDecorated(True)
-        self.exe_list.setSelectionMode(QTreeWidget.SelectionMode.NoSelection)
+        self.exe_list.setSelectionMode(QTreeWidget.SelectionMode.SingleSelection)
         layout.addWidget(self.exe_list)
 
-        # Top buttons (Browse / Clear)
-        btn_top = QHBoxLayout()
+        # Grid layout for buttons (2x2)
+        grid_buttons = QGridLayout()
+        
         self.select_btn = QPushButton(tr("ADD_FILES"))
+        self.remove_btn = QPushButton(tr("REMOVE"))
+        self.select_folder_btn = QPushButton(tr("ADD_FOLDER"))
         self.clear_btn = QPushButton(tr("CLEAR_LIST"))
-        btn_top.addWidget(self.select_btn)
-        btn_top.addWidget(self.clear_btn)
-        layout.addLayout(btn_top)
+        
+        grid_buttons.addWidget(self.select_btn, 0, 0)
+        grid_buttons.addWidget(self.remove_btn, 0, 1)
+        grid_buttons.addWidget(self.select_folder_btn, 1, 0)
+        grid_buttons.addWidget(self.clear_btn, 1, 1)
+        
+        layout.addLayout(grid_buttons)
 
         # Execution mode section (radio buttons)
         layout.addWidget(QLabel(tr("EXECUTION_MODE")))
@@ -3892,6 +3367,8 @@ class RunInPrefix(QDialog):
 
         # Connections
         self.select_btn.clicked.connect(self.select_exes)
+        self.select_folder_btn.clicked.connect(self.select_folder)
+        self.remove_btn.clicked.connect(self.remove_selected)
         self.clear_btn.clicked.connect(self.clear_list)
         self.run_btn.clicked.connect(self.start_execution)
 
@@ -3906,6 +3383,13 @@ class RunInPrefix(QDialog):
 
         # Backup of the original TOML in memory (loaded in start_execution)
         self._original_toml = None
+
+    def remove_selected(self):
+        selected = self.exe_list.selectedItems()
+        if selected:
+            self.exe_list.takeTopLevelItem(self.exe_list.indexOfTopLevelItem(selected[0]))
+            if self.exe_list.topLevelItemCount() == 0:
+                self.progress.setValue(0)
 
     def highlight_current_exe(self, exe_path):
         for i in range(self.exe_list.topLevelItemCount()):
@@ -3923,19 +3407,48 @@ class RunInPrefix(QDialog):
         self.exe_list.clear()
         self.exe_queue = []
         self.current_index = 0
-
         self.progress.setValue(0)
+
+    def select_folder(self):
+        # Select a folder and add compatible files.
+        folder = QFileDialog.getExistingDirectory(
+            self, tr("SELECT_FOLDER"), "")
+        
+        if folder:
+            folder_path = Path(folder)
+            supported_extensions = {'.exe', '.msi', '.iso'}
+            
+            for file_path in folder_path.iterdir():
+                if file_path.is_file():
+                    # Check if file has a supported extension
+                    if file_path.suffix.lower() in supported_extensions:
+                        item = QTreeWidgetItem([file_path.name])
+                        item.setData(0, 0x0100, str(file_path))
+                        self.exe_list.addTopLevelItem(item)
 
     def select_exes(self):
         files, _ = QFileDialog.getOpenFileNames(
-            self, tr("SELECT_EXECUTABLE"), "", tr("EXECUTABLE_FILE_FILTER")
-        )
+            self, tr("SELECT_EXECUTABLE"), "", tr("EXECUTABLE_FILE_FILTER"))
+        
+        blocked = False
         for f in files:
             path_obj = Path(f)
+            
+            # Block if path starts with /run/user/ (XDG Desktop Portal)
+            if str(path_obj).startswith('/run/user/'):
+                blocked = True
+                continue  # Skip this file
+            
             item = QTreeWidgetItem([path_obj.name])
-            # Stores the full path to UserRole
             item.setData(0, 0x0100, str(path_obj))
             self.exe_list.addTopLevelItem(item)
+        
+        # Show single warning if any files were blocked
+        if blocked:
+            QMessageBox.information(
+                self,
+                tr("APP_NAME"),
+                tr("RUN_IN_PREFIX_XDP_DETECTED"))
 
     def start_execution(self):
         if self.exe_list.topLevelItemCount() == 0:
@@ -4061,7 +3574,7 @@ class RunInPrefix(QDialog):
             self.run_next_exe()
             return
 
-        # Clean run e normal run
+        # Clean run and normal run
         if not self._has_printed_waiting_message:
             print(tr("RUN_IN_PREFIX_WAITING"))
             self._has_printed_waiting_message = True
@@ -4085,12 +3598,15 @@ class RunInPrefix(QDialog):
     def set_execution_locked(self, locked: bool):
         self.run_btn.setEnabled(not locked)
         self.select_btn.setEnabled(not locked)
+        self.select_folder_btn.setEnabled(not locked)
+        self.remove_btn.setEnabled(not locked)
         self.clear_btn.setEnabled(not locked)
 
         for radio in (self.radio_clean, self.radio_automatic, self.radio_normal):
             radio.setEnabled(not locked)
 
         if not locked:
+            self.exe_list.clearSelection()
             for i in range(self.exe_list.topLevelItemCount()):
                 self.exe_list.topLevelItem(i).setSelected(False)
 
@@ -4757,6 +4273,8 @@ class Zordeer(QMainWindow):
 
         self.main_layout.insertWidget(0, self.search_bar)
 
+        self.fix_invocation_paths()
+
         self.load_invocations()
 
         # Visibility based on Zordeer settings
@@ -5069,6 +4587,30 @@ class Zordeer(QMainWindow):
 
         # Restore scroll position
         self.invocation_list_widget.verticalScrollBar().setValue(scroll_pos)
+
+    def fix_invocation_paths(self):
+        # Fix paths in all invocations if they don't match current zordeer_dir
+        current_base = str(zordeer_dir).replace('/App/Zordeer', '')
+
+        for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
+            try:
+                with open(toml_file, 'r+', encoding='utf-8') as f:
+                    data = toml.load(f)
+                    modified = False
+                    
+                    for field in ['exec_path', 'prefix_path', 'art_path', 'gui_path']:
+                        if field in data and '/App/Zordeer/' in data[field]:
+                            old_base = data[field].split('/App/Zordeer/')[0]
+                            if old_base != current_base:
+                                data[field] = data[field].replace(old_base, current_base, 1)
+                                modified = True
+                    
+                    if modified:
+                        f.seek(0)
+                        toml.dump(data, f)
+                        f.truncate()
+            except:
+                continue
 
     def add_invocation(self):
         dialog = AddInvocationDialog(self)
@@ -5555,9 +5097,250 @@ class Zordeer(QMainWindow):
         dialog.exec()
 
     def open_transfer_arts(self):
-        dialog = SteamGridDBApp(self)
-        dialog.parent_ref = self
-        dialog.exec()
+        self.run_sgdb_auto_transfer()
+
+    def run_sgdb_auto_transfer(self):
+        # Create progress dialog
+        progress_dialog = QProgressDialog(tr("AUTO_TRANSFER_IN_PROGRESS"), tr("CANCEL_BUTTON"), 0, 100, self)
+        progress_dialog.setWindowTitle(tr("APP_NAME"))
+        progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        progress_dialog.setAutoClose(True)
+        progress_dialog.setAutoReset(True)
+        progress_dialog.show()
+        
+        self._cancel_auto = False
+        progress_dialog.canceled.connect(lambda: setattr(self, '_cancel_auto', True))
+
+        def get_score(item):
+            return item.get("score", 0)
+
+        settings = load_settings()
+        api_key = settings["other"].get("sgdb_apikey", "").strip()
+        if not api_key:
+            progress_dialog.close()
+            QMessageBox.warning(self, tr("APP_NAME"), tr("API_KEY_SAVE_FIRST"))
+            return
+        
+        headers = {"Authorization": f"Bearer {api_key}"}
+
+        if not any(zordeer_config_dir.glob("invocation-info-*.toml")):
+            progress_dialog.close()
+            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
+            return
+
+        # Invocations list
+        invocations = []
+        for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
+            try:
+                with open(toml_file, "r", encoding="utf-8") as fh:
+                    inv = toml.load(fh)
+                inv_name = inv.get("name") or inv.get("display_name") or inv.get("id")
+                art_path = inv.get("art_path", "")
+                gui_path = inv.get("gui_path", "")
+                # Also includes cases where paths are filled in but the files do not exist
+                art_missing = not art_path or not Path(art_path).exists()
+                gui_missing = not gui_path or not Path(gui_path).exists()
+                if inv_name and (art_missing or gui_missing):
+                    invocations.append((inv_name, toml_file))
+            except Exception:
+                continue
+
+        if not invocations:
+            progress_dialog.close()
+            QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_NO_MISSING_ARTS"))
+            return
+
+        confirm = QMessageBox.question(
+            self,
+            tr("APP_NAME"),
+            tr("AUTO_TRANSFER_EXPLAIN"),
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No
+        )
+        if confirm != QMessageBox.StandardButton.Yes:
+            progress_dialog.close()
+            return
+
+        # Progress setup
+        total = len(invocations)
+        progress_dialog.setMaximum(total)
+        progress_dialog.setValue(0)
+        QApplication.processEvents()
+
+        # Directories
+        art_dir = zordeer_dir / "art"
+        gui_dir = zordeer_dir / "art" / "gui"
+        art_dir.mkdir(parents=True, exist_ok=True)
+        gui_dir.mkdir(parents=True, exist_ok=True)
+
+        completed = 0
+        downloads = []  # Stores the hero and icon paths before copying
+
+        for inv_name, toml_file in invocations:
+            if self._cancel_auto or progress_dialog.wasCanceled():
+                break
+
+            hero_saved_path = None
+            icon_saved_path = None
+            hero_cache_path = None
+            icon_cache_path = None
+
+            try:
+                # Search on SteamGridDB
+                search_url = f"https://www.steamgriddb.com/api/v2/search/autocomplete/{inv_name}"
+                with requests.get(search_url, headers=headers, timeout=15) as resp:
+                    resp.raise_for_status()
+                    data = resp.json().get("data", [])
+                
+                if not data:
+                    completed += 1
+                    progress_dialog.setValue(completed)
+                    QApplication.processEvents()
+                    continue
+
+                game = data[0]
+                game_id = game.get("id")
+                steam_game_name = game.get("name") or str(game_id)
+
+                # Download the hero
+                try:
+                    hero_url = f"https://www.steamgriddb.com/api/v2/heroes/game/{game_id}"
+                    with requests.get(hero_url, headers=headers, timeout=20) as r:
+                        r.raise_for_status()
+                        heroes = r.json().get("data", []) or []
+                except Exception:
+                    heroes = []
+
+                if heroes:
+                    heroes.sort(key=get_score, reverse=True)
+                    best = heroes[0]
+                    img_url = (
+                        best.get("thumb")
+                        or best.get("thumb_url")
+                        or (best.get("thumbs")[0] if isinstance(best.get("thumbs"), list) and best.get("thumbs") else None)
+                        or best.get("full")
+                        or best.get("url")
+                    )
+                    if img_url:
+                        try:
+                            with requests.get(img_url, timeout=20) as rr:
+                                rr.raise_for_status()
+                                ext = Path(img_url).suffix
+                                if not ext or len(ext) > 6:
+                                    ext = ".png"
+                                
+                                # Save to cache first
+                                hero_cache_filename = heroes_cache_dir / f"{steam_game_name}_hero_{best.get('id')}{ext}"
+                                with hero_cache_filename.open("wb") as fh:
+                                    fh.write(rr.content)
+                                hero_cache_path = hero_cache_filename
+                        except Exception:
+                            hero_cache_path = None
+
+                # Download the icon
+                try:
+                    icon_url = f"https://www.steamgriddb.com/api/v2/icons/game/{game_id}"
+                    with requests.get(icon_url, headers=headers, timeout=20) as r:
+                        r.raise_for_status()
+                        icons = r.json().get("data", []) or []
+                except Exception:
+                    icons = []
+
+                if icons:
+                    icons.sort(key=get_score, reverse=True)
+                    best = icons[0]
+                    img_url = (
+                        best.get("thumb")
+                        or best.get("thumb_url")
+                        or (best.get("thumbs")[0] if isinstance(best.get("thumbs"), list) and best.get("thumbs") else None)
+                        or best.get("full")
+                        or best.get("url")
+                    )
+                    if img_url:
+                        try:
+                            with requests.get(img_url, timeout=20) as rr:
+                                rr.raise_for_status()
+                                ext = Path(img_url).suffix
+                                if not ext or len(ext) > 6:
+                                    ext = ".png"
+                                
+                                # Save to cache first
+                                icon_cache_filename = icons_cache_dir / f"{steam_game_name}_icon_{best.get('id')}{ext}"
+                                with icon_cache_filename.open("wb") as fh:
+                                    fh.write(rr.content)
+                                icon_cache_path = icon_cache_filename
+                        except Exception:
+                            icon_cache_path = None
+
+                # Store for later copying
+                downloads.append((inv_name, toml_file, hero_cache_path, icon_cache_path))
+
+                # Clear large variables to free memory
+                data = None
+                heroes = None
+                icons = None
+
+            except Exception as e:
+                print(tr("AUTO_TRANSFER_GENERAL_ERROR", inv_name=inv_name, error=str(e)))
+            finally:
+                completed += 1
+                progress_dialog.setValue(completed)
+                QApplication.processEvents()
+
+        # After all downloads are complete, copy from cache to art/gui
+        if not self._cancel_auto and not progress_dialog.wasCanceled():
+            for inv_name, toml_file, hero_cache_path, icon_cache_path in downloads:
+                normalized = inv_name.lower().replace(" ", "_").replace("/", "_").replace("\\", "_")
+                copied_hero = False
+                copied_icon = False
+
+                try:
+                    with open(toml_file, "r", encoding="utf-8") as fh:
+                        inv_toml = toml.load(fh)
+                except Exception:
+                    inv_toml = {}
+
+                if hero_cache_path and hero_cache_path.exists():
+                    try:
+                        dest = art_dir / f"{normalized}{hero_cache_path.suffix}"
+                        shutil.copy2(hero_cache_path, dest)
+                        inv_toml["art_path"] = str(dest)
+                        copied_hero = True
+                        
+                        # Delete the file from the cache folder when finished.
+                        hero_cache_path.unlink()
+                    except Exception:
+                        copied_hero = False
+
+                if icon_cache_path and icon_cache_path.exists():
+                    try:
+                        dest_icon = gui_dir / f"{normalized}{icon_cache_path.suffix}"
+                        shutil.copy2(icon_cache_path, dest_icon)
+                        inv_toml["gui_path"] = str(dest_icon)
+                        copied_icon = True
+                        
+                        # Delete the file from the cache folder when finished.
+                        icon_cache_path.unlink()
+                    except Exception:
+                        copied_icon = False
+
+                if copied_hero or copied_icon:
+                    try:
+                        with open(toml_file, "w", encoding="utf-8") as fh:
+                            toml.dump(inv_toml, fh)
+                    except Exception:
+                        pass
+
+        # Close progress dialog
+        progress_dialog.close()
+
+        # Clear downloads list to free memory
+        downloads.clear()
+
+        self.load_invocations()
+
+        if not self._cancel_auto and not progress_dialog.wasCanceled():
+            QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_FINISHED"))
 
     def run_in_prefix_dialog(self):
         invocation_name = self.get_selected_invocation()  # Use self directly
@@ -5721,13 +5504,11 @@ class Zordeer(QMainWindow):
         except Exception as e:
             QMessageBox.warning(self, tr("APP_NAME"), tr("UPDATE_ERROR", error=e))
 
-# Heroes and icons images / SteamGridDB
-HEROES_DIR = zordeer_dir / "sgdb" / "heroes"
-ICONS_DIR = zordeer_dir / "sgdb" / "icons"
-HEROES_DIR.mkdir(parents=True, exist_ok=True)
-ICONS_DIR.mkdir(parents=True, exist_ok=True)
-
 # ===================== SGDB: artwork worker (thread) =====================
+heroes_cache_dir = XDG_CACHE_HOME / "Zordeer" /"heroes_cache"
+icons_cache_dir = XDG_CACHE_HOME / "Zordeer" / "icons_cache"
+heroes_cache_dir.mkdir(parents=True, exist_ok=True)
+icons_cache_dir.mkdir(parents=True, exist_ok=True)
 class ArtworkLoader(QThread):
     finished = pyqtSignal(list)  # List of artworks [{id, url, img_data}, ...]
     error = pyqtSignal(str)
@@ -5739,6 +5520,31 @@ class ArtworkLoader(QThread):
         self.game_id = game_id
         self.art_type = art_type  # "heroes" or "icons"
 
+    def download_image(self, art):
+        # Attempt to find the best available URL, in descending order of priority
+        img_url = (
+            art.get("thumb")
+            or art.get("thumb_url")
+            or (art.get("thumbs")[0] if isinstance(art.get("thumbs"), list) and art.get("thumbs") else None)
+            or art.get("full")
+            or art.get("url")
+        )
+        
+        img_data = None
+        if img_url:
+            try:
+                rt = requests.get(img_url, timeout=10)
+                rt.raise_for_status()
+                img_data = rt.content
+            except Exception:
+                img_data = None  # If it fails, continue
+        
+        return {
+            "id": art.get("id"),
+            "url": img_url,
+            "img_data": img_data
+        }
+
     def run(self):
         try:
             headers = {"Authorization": f"Bearer {self.api_key}"}
@@ -5747,609 +5553,33 @@ class ArtworkLoader(QThread):
             resp.raise_for_status()
             data = resp.json().get("data", [])
 
-            results = []
+            if not data:
+                self.finished.emit([])
+                return
+
+            from concurrent.futures import ThreadPoolExecutor, as_completed
+            
+            results = [None] * len(data)
             total = len(data)
-
-            for idx, art in enumerate(data):
-                # Attempt to find the best available URL, in descending order of priority
-                img_url = (
-                    art.get("thumb")
-                    or art.get("thumb_url")
-                    or (art.get("thumbs")[0] if isinstance(art.get("thumbs"), list) and art.get("thumbs") else None)
-                    or art.get("full")
-                    or art.get("url")
-                )
-
-                img_data = None
-                if img_url:
-                    try:
-                        rt = requests.get(img_url, timeout=15)
-                        rt.raise_for_status()
-                        img_data = rt.content
-                    except Exception:
-                        img_data = None  # If it fails, continue
-
-                results.append({
-                    "id": art.get("id"),
-                    "url": img_url,
-                    "img_data": img_data
-                })
-
-                # Updates the progress bar
-                if total > 0:
-                    self.progress.emit(int((idx + 1) / total * 100))
-
+            
+            with ThreadPoolExecutor(max_workers=5) as executor:
+                futures = {}
+                for idx, art in enumerate(data):
+                    future = executor.submit(self.download_image, art)
+                    futures[future] = idx
+                
+                completed = 0
+                for future in as_completed(futures):
+                    idx = futures[future]
+                    results[idx] = future.result()
+                    completed += 1
+                    # Updates the progress bar
+                    self.progress.emit(int(completed / total * 100))
+            
             self.finished.emit(results)
-
+            
         except Exception as e:
             self.error.emit(tr("ARTS_LOAD_ERROR", error=str(e)))
-
-# ===================== SGDB: Transfer heroes window =====================
-class SteamGridDBApp(QDialog):
-    def __init__(self, parent):
-        super().__init__(parent)
-        self.api_key = None
-        self.headers = None
-        self.results = []
-        self.heroes = []
-        self.selected_game = None
-        self._cancel_auto = False
-
-        self.setWindowTitle(tr("TRANSFER_ARTS_TITLE"))
-        self.resize(750, 480)
-        self.setMinimumSize(300, 250)
-
-        main_layout = QVBoxLayout(self)
-        self.setLayout(main_layout)
-
-        # Lists (results and images) with resizable splitter
-        self.games_panel = self.make_radio_panel_for_games()
-
-        # Image Container Using QScrollArea
-        self.images_container = QWidget()
-        self.images_layout = QVBoxLayout(self.images_container)
-        self.images_layout.setContentsMargins(6, 6, 6, 6)
-        self.images_layout.setSpacing(4)
-        self.images_layout.setAlignment(Qt.AlignmentFlag.AlignTop)  # Force items to the top
-
-        self.images_scroll = QScrollArea()
-        self.images_scroll.setWidgetResizable(True)
-        self.images_scroll.setWidget(self.images_container)
-
-        # Creates horizontal splitter
-        body_splitter = QSplitter(Qt.Orientation.Horizontal)
-        body_splitter.addWidget(self.games_panel["scroll"])
-        body_splitter.addWidget(self.images_scroll)
-
-        # Equal initial width for both sides
-        body_splitter.setSizes([1, 1])
-
-        # Prevents any side from disappearing when dragging
-        body_splitter.setChildrenCollapsible(False)
-
-        # Adds to main layout
-        main_layout.addWidget(body_splitter)
-
-        # Search
-        search_row = QHBoxLayout()
-
-        self.auto_button = QPushButton(tr("AUTO_TRANSFER_BUTTON"))
-        self.auto_button.clicked.connect(self.run_auto_transfer)
-        search_row.addWidget(self.auto_button)
-
-        self.search_input = QLineEdit()
-        search_row.addWidget(self.search_input)
-
-        search_btn = QPushButton(tr("SEARCH"))
-        search_btn.clicked.connect(self.search_game)
-        search_row.addWidget(search_btn)
-        main_layout.addLayout(search_row)
-
-        # Action buttons (3 side by side)
-        buttons_row = QHBoxLayout()
-
-        self.load_icons_button = QPushButton(tr("LOAD_ICONS"))
-        self.load_icons_button.setEnabled(False)
-        self.load_icons_button.clicked.connect(partial(self.load_artwork, "icons"))
-        buttons_row.addWidget(self.load_icons_button)
-
-        self.transfer_button = QPushButton(tr("TRANSFER"))
-        self.transfer_button.setEnabled(False)
-        self.transfer_button.clicked.connect(self.transfer_images)
-        self.transfer_button.setAutoDefault(False)
-        self.transfer_button.setDefault(False)
-        buttons_row.addWidget(self.transfer_button)
-
-        self.load_heroes_button = QPushButton(tr("LOAD_HEROES"))
-        self.load_heroes_button.setEnabled(False)
-        self.load_heroes_button.clicked.connect(partial(self.load_artwork, "heroes"))
-        buttons_row.addWidget(self.load_heroes_button)
-
-        main_layout.addLayout(buttons_row)
-
-        # Progress bar always visible
-        self.progress_bar = QProgressBar()
-        self.progress_bar.setRange(0, 100)
-        self.progress_bar.setValue(0)  # Starts at 0%
-        main_layout.addWidget(self.progress_bar)
-
-        # Load API key if it exists
-        self.load_api_key()
-
-    def closeEvent(self, event):
-        self._cancel_auto = True
-        event.accept()
-
-    def run_auto_transfer(self):
-        self._cancel_auto = False
-
-        def get_score(item):
-            return item.get("score", 0)
-
-        if not self.headers:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("API_KEY_SAVE_FIRST"))
-            return
-
-        if not any(zordeer_config_dir.glob("invocation-info-*.toml")):
-            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
-            return
-
-        # Invocations list
-        invocations = []
-        for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
-            try:
-                with open(toml_file, "r", encoding="utf-8") as fh:
-                    inv = toml.load(fh)
-                inv_name = inv.get("name") or inv.get("display_name") or inv.get("id")
-                art_path = inv.get("art_path", "")
-                gui_path = inv.get("gui_path", "")
-                # Also includes cases where paths are filled in but the files do not exist
-                art_missing = not art_path or not Path(art_path).exists()
-                gui_missing = not gui_path or not Path(gui_path).exists()
-                if inv_name and (art_missing or gui_missing):
-                    invocations.append((inv_name, toml_file))
-            except Exception:
-                continue
-
-        if not invocations:
-            QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_NO_MISSING_ARTS"))
-            return
-
-        confirm = QMessageBox.question(
-            self,
-            tr("APP_NAME"),
-            tr("AUTO_TRANSFER_EXPLAIN"),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
-        if confirm != QMessageBox.StandardButton.Yes:
-            return
-
-        # Progress bar
-        total = len(invocations)
-        self.progress_bar.setRange(0, total)
-        self.progress_bar.setValue(0)
-        self.setEnabled(False)
-        QApplication.processEvents()
-
-        # Directories
-        ART_DIR = zordeer_dir / "art"
-        GUI_DIR = zordeer_dir / "art" / "gui"
-        ART_DIR.mkdir(parents=True, exist_ok=True)
-        GUI_DIR.mkdir(parents=True, exist_ok=True)
-
-        completed = 0
-        downloads = []  # Stores the hero and icon paths before copying
-
-        for inv_name, toml_file in invocations:
-            if self._cancel_auto:
-                break
-
-            hero_saved_path = None
-            icon_saved_path = None
-
-            try:
-                # Search on SteamGridDB
-                search_url = f"https://www.steamgriddb.com/api/v2/search/autocomplete/{inv_name}"
-                resp = requests.get(search_url, headers=self.headers, timeout=15)
-                resp.raise_for_status()
-                data = resp.json().get("data", [])
-                if not data:
-                    completed += 1
-                    self.progress_bar.setValue(completed)
-                    QApplication.processEvents()
-                    continue
-
-                game = data[0]
-                game_id = game.get("id")
-                steam_game_name = game.get("name") or str(game_id)
-
-                # Download the hero
-                try:
-                    hero_url = f"https://www.steamgriddb.com/api/v2/heroes/game/{game_id}"
-                    r = requests.get(hero_url, headers=self.headers, timeout=20)
-                    r.raise_for_status()
-                    heroes = r.json().get("data", []) or []
-                except Exception:
-                    heroes = []
-
-                if heroes:
-                    heroes.sort(key=get_score, reverse=True)
-                    best = heroes[0]
-                    img_url = (
-                        best.get("thumb")
-                        or best.get("thumb_url")
-                        or (best.get("thumbs")[0] if isinstance(best.get("thumbs"), list) and best.get("thumbs") else None)
-                        or best.get("full")
-                        or best.get("url")
-                    )
-                    if img_url:
-                        try:
-                            rr = requests.get(img_url, timeout=20)
-                            rr.raise_for_status()
-                            ext = Path(img_url).suffix
-                            if not ext or len(ext) > 6:
-                                ext = ".png"
-                            game_hero_dir = HEROES_DIR / steam_game_name
-                            game_hero_dir.mkdir(parents=True, exist_ok=True)
-                            hero_filename = game_hero_dir / f"hero_{best.get('id')}{ext}"
-                            with hero_filename.open("wb") as fh:
-                                fh.write(rr.content)
-                            hero_saved_path = hero_filename
-                        except Exception:
-                            hero_saved_path = None
-
-                # Download the icon
-                try:
-                    icon_url = f"https://www.steamgriddb.com/api/v2/icons/game/{game_id}"
-                    r = requests.get(icon_url, headers=self.headers, timeout=20)
-                    r.raise_for_status()
-                    icons = r.json().get("data", []) or []
-                except Exception:
-                    icons = []
-
-                if icons:
-                    icons.sort(key=get_score, reverse=True)
-                    best = icons[0]
-                    img_url = (
-                        best.get("thumb")
-                        or best.get("thumb_url")
-                        or (best.get("thumbs")[0] if isinstance(best.get("thumbs"), list) and best.get("thumbs") else None)
-                        or best.get("full")
-                        or best.get("url")
-                    )
-                    if img_url:
-                        try:
-                            rr = requests.get(img_url, timeout=20)
-                            rr.raise_for_status()
-                            ext = Path(img_url).suffix
-                            if not ext or len(ext) > 6:
-                                ext = ".png"
-                            game_icon_dir = ICONS_DIR / steam_game_name
-                            game_icon_dir.mkdir(parents=True, exist_ok=True)
-                            icon_filename = game_icon_dir / f"icon_{best.get('id')}{ext}"
-                            with icon_filename.open("wb") as fh:
-                                fh.write(rr.content)
-                            icon_saved_path = icon_filename
-                        except Exception:
-                            icon_saved_path = None
-
-                # Store for later copying
-                downloads.append((inv_name, toml_file, hero_saved_path, icon_saved_path))
-
-            except Exception as e:
-                print(tr("AUTO_TRANSFER_GENERAL_ERROR", inv_name=inv_name, error=str(e)))
-            finally:
-                completed += 1
-                self.progress_bar.setValue(completed)
-                QApplication.processEvents()
-
-        # After all downloads are complete, copy to art/gui
-        if not self._cancel_auto:
-            for inv_name, toml_file, hero_saved_path, icon_saved_path in downloads:
-                normalized = inv_name.lower().replace(" ", "_").replace("/", "_").replace("\\", "_")
-                copied_hero = False
-                copied_icon = False
-
-                try:
-                    with open(toml_file, "r", encoding="utf-8") as fh:
-                        inv_toml = toml.load(fh)
-                except Exception:
-                    inv_toml = {}
-
-                if hero_saved_path:
-                    try:
-                        dest = ART_DIR / f"{normalized}{hero_saved_path.suffix}"
-                        shutil.copy2(hero_saved_path, dest)
-                        inv_toml["art_path"] = str(dest)
-                        copied_hero = True
-                    except Exception:
-                        copied_hero = False
-
-                if icon_saved_path:
-                    try:
-                        dest_icon = GUI_DIR / f"{normalized}{icon_saved_path.suffix}"
-                        shutil.copy2(icon_saved_path, dest_icon)
-                        inv_toml["gui_path"] = str(dest_icon)
-                        copied_icon = True
-                    except Exception:
-                        copied_icon = False
-
-                if copied_hero or copied_icon:
-                    try:
-                        with open(toml_file, "w", encoding="utf-8") as fh:
-                            toml.dump(inv_toml, fh)
-                    except Exception:
-                        pass
-
-        # Finalize progress bar
-        self.progress_bar.setRange(0, 100)
-        self.progress_bar.setValue(100)
-        self.setEnabled(True)
-
-        if not self._cancel_auto:
-            if hasattr(self, 'parent_ref') and self.parent_ref:
-                self.parent_ref.load_invocations()
-            QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_FINISHED"))
-
-    def keyPressEvent(self, event):
-        if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            # Prevents Enter from triggering something that is not selected
-            return
-        super().keyPressEvent(event)
-
-    def load_api_key(self):
-        settings = load_settings()
-        self.api_key = settings["other"].get("sgdb_apikey", "").strip()
-        self.headers = {"Authorization": f"Bearer {self.api_key}"} if self.api_key else None
-
-    # Search games
-    def search_game(self):
-        """Searches for games in SteamGridDB and updates the radio panel."""
-        if not self.headers:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("API_KEY_SAVE_FIRST"))
-            return
-
-        term = self.search_input.text().strip()
-        if not term:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("ENTER_GAME_NAME"))
-            return
-
-        # Clear selection and UI before fetching
-        self.selected_game = None
-        # Clear the image container
-        for i in reversed(range(self.images_layout.count())):
-            widget = self.images_layout.itemAt(i).widget()
-            if widget:
-                widget.setParent(None)
-        self.transfer_button.setEnabled(False)
-        self.clear_radio_panel(self.games_panel)
-
-        # API Search
-        try:
-            url = f"https://www.steamgriddb.com/api/v2/search/autocomplete/{term}"
-            resp = requests.get(url, headers=self.headers, timeout=20)
-            resp.raise_for_status()
-            data = resp.json()
-            self.results = data.get("data", []) if isinstance(data, dict) else []
-        except Exception as e:
-            QMessageBox.critical(self, tr("APP_NAME"), tr("API_FAIL", error=str(e)))
-            return
-
-        layout = self.games_panel["layout"]
-        group = self.games_panel["button_group"]
-
-        # No results
-        if not self.results:
-            layout.addWidget(QLabel(tr("NO_RESULTS")))
-            return
-
-        # Create new radios
-        for game in self.results:
-            rb = QRadioButton(f"{game.get('id')} - {game.get('name')}")
-            rb.setProperty("game_data", game)
-            rb.toggled.connect(self.on_game_radio_toggled)
-            group.addButton(rb)
-            layout.addWidget(rb)
-
-    def clear_radio_panel(self, panel: dict):
-        """Removes all radios and widgets from a radio panel."""
-        group = panel["button_group"]
-        layout = panel["layout"]
-
-        # Remove buttons from group
-        for btn in group.buttons():
-            group.removeButton(btn)
-            btn.deleteLater()
-
-        # Remove widgets from the layout
-        while layout.count():
-            item = layout.takeAt(0)
-            widget = item.widget()
-            if widget:
-                widget.deleteLater()
-
-    def make_radio_panel_for_games(self):
-        scroll = QScrollArea()
-        scroll.setWidgetResizable(True)
-
-        container = QWidget()
-        layout = QVBoxLayout(container)
-        layout.setContentsMargins(6, 6, 6, 6)
-        layout.setSpacing(4)
-        scroll.setWidget(container)
-
-        group = QButtonGroup(self)
-        group.setExclusive(True)
-
-        return {
-            "scroll": scroll,
-            "container": container,
-            "layout": layout,
-            "button_group": group,
-        }
-
-    def on_game_radio_toggled(self, checked: bool):
-        if not checked:
-            return
-        rb = self.sender()
-        game = rb.property("game_data")
-        if not game:
-            return
-        self.selected_game = game
-
-        # Activate the upload buttons
-        self.load_icons_button.setEnabled(True)
-        self.load_heroes_button.setEnabled(True)
-
-    def load_artwork(self, art_type: str):
-        """Loads artwork (heroes or icons) via worker."""
-        if not self.selected_game:
-            return
-
-        game_id = self.selected_game.get("id")
-        if not game_id:
-            return
-
-        self.current_art_type = art_type
-
-        self.setEnabled(False)
-        # Clear previous images
-        for i in reversed(range(self.images_layout.count())):
-            widget = self.images_layout.itemAt(i).widget()
-            if widget:
-                widget.setParent(None)
-        self.transfer_button.setEnabled(False)
-
-        # Infinite progress bar while loading
-        self.progress_bar.setRange(0, 0)
-
-        self.loader = ArtworkLoader(self.api_key, game_id, art_type)
-        self.loader.finished.connect(self.on_images_loaded)
-        self.loader.error.connect(self.on_loader_error)
-        self.loader.start()
-
-    def on_loader_error(self, msg):
-        self.setEnabled(True)
-        # Reset the bar
-        self.progress_bar.setRange(0, 100)
-        self.progress_bar.setValue(0)
-        QMessageBox.critical(self, tr("APP_NAME"), msg)
-
-    def on_images_loaded(self, heroes):
-        self.setEnabled(True)
-
-        # Reset progress bar
-        self.progress_bar.setRange(0, 100)
-        self.progress_bar.setValue(0)
-
-        self.heroes = heroes or []
-
-        # Clear image container
-        for i in reversed(range(self.images_layout.count())):
-            widget = self.images_layout.itemAt(i).widget()
-            if widget:
-                widget.setParent(None)
-
-        if not self.heroes:
-            label = QLabel(tr("NO_IMAGES"))
-            self.images_layout.addWidget(label)
-            self.transfer_button.setEnabled(False)
-            return
-
-        for hero in self.heroes:
-            row = QWidget()
-            row_layout = QHBoxLayout(row)
-            row_layout.setContentsMargins(0, 0, 0, 0)
-            # Adjust spacing according to the current Qt style
-            if QApplication.style().objectName().lower() == "oxygen":
-                row_layout.setSpacing(0)  # Specific Spacing for Oxygen
-            else:
-                row_layout.setSpacing(8)  # Default Spacing
-
-            # Checkbox on the left
-            checkbox = QCheckBox()
-            checkbox.setProperty("hero_data", hero)
-            row_layout.addWidget(checkbox)
-
-            # Image
-            img_label = QLabel()
-            if img_data := hero.get("img_data"):
-                pixmap = QPixmap()
-                pixmap.loadFromData(img_data)
-                img_label.setPixmap(pixmap.scaled(
-                    240, 108,
-                    Qt.AspectRatioMode.KeepAspectRatio,
-                    Qt.TransformationMode.SmoothTransformation
-                ))
-            row_layout.addWidget(img_label)
-
-            # Name/ID next to image
-            text_label = QLabel(f"ID {hero.get('id')}")
-            text_label.setContentsMargins(8, 0, 0, 0)
-            row_layout.addWidget(text_label)
-
-            row_layout.addStretch()  # Maintains clean horizontal alignment
-
-            self.images_layout.addWidget(row)
-
-        self.transfer_button.setEnabled(True)
-
-    def transfer_images(self):
-        """Transfers the selected images."""
-        if not self.selected_game:
-            return
-
-        to_transfer = []
-
-        for i in range(self.images_layout.count()):
-            row = self.images_layout.itemAt(i).widget()
-            if not row:
-                continue
-            checkbox = row.findChild(QCheckBox)
-            if checkbox and checkbox.isChecked():
-                hero = checkbox.property("hero_data")
-                if hero and hero.get("url"):
-                    to_transfer.append(hero)
-
-        if not to_transfer:
-            QMessageBox.information(self, tr("APP_NAME"), tr("SELECT_AT_LEAST_ONE_IMAGE"))
-            return
-
-        self.setEnabled(False)
-
-        game_name = (self.selected_game.get("name") or str(self.selected_game.get('id'))).replace("/", "_")
-        base_dir = HEROES_DIR if self.current_art_type == "heroes" else ICONS_DIR
-        save_dir = base_dir / game_name
-        save_dir.mkdir(parents=True, exist_ok=True)
-
-        # Pull-up bar
-        self.progress_bar.setRange(0, len(to_transfer))
-        self.progress_bar.setValue(0)
-
-        for i, art in enumerate(to_transfer, start=1):
-            url = art.get("url")
-            try:
-                r = requests.get(url, timeout=30)
-                r.raise_for_status()
-                ext = Path(url).suffix
-                if not ext or len(ext) > 6:
-                    ext = ".png"
-                prefix = "hero_" if self.current_art_type == "heroes" else "icon_"
-                filename = save_dir / f"{prefix}{art.get('id')}{ext}"
-                with filename.open("wb") as f:
-                    f.write(r.content)
-            except Exception as e:
-                print(tr("ERROR_TRANSFERRING_URL", url=url, error=e))
-
-            self.progress_bar.setValue(i)
-            QApplication.processEvents()
-
-        # Reset bar
-        self.progress_bar.setValue(100)
-        QMessageBox.information(self, tr("APP_NAME"), tr("TRANSFER_SUMMARY", len=len(to_transfer), dir=str(save_dir)))
-        self.setEnabled(True)
-        self.progress_bar.setValue(0)
 
 if __name__ == "__main__":
     # Loads settings
@@ -6367,8 +5597,7 @@ if __name__ == "__main__":
     if translator.load(f"qt_{user_locale}", translations_path):
         app.installTranslator(translator)
 
-    # Define the application ID so Wayland can find the icon.
-    # We use the lowercase application name with hyphens instead of spaces.
+    # The application ID is needed so that Wayland can find the icon.
     app_id = "io.github.kyuyrii.zordeer"
     app.setDesktopFileName(app_id)
 
