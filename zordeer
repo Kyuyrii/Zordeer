@@ -33,7 +33,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.7.2"
+__version__ = "1.7.7.3"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 BUILTIN_TRANSLATIONS = {
@@ -547,20 +547,28 @@ BUILTIN_TRANSLATIONS = {
     }
 }
 
-if os.environ.get("SNAP"):
+if "ZORDEER_DIR" in os.environ:
+    zordeer_dir = Path(os.environ["ZORDEER_DIR"]) / "App" / "Zordeer"
+    home_dir = Path(os.environ["ZORDEER_DIR"])
+
+elif os.environ.get("SNAP"):
     home_connected = subprocess.run(["snapctl", "is-connected", "home"]).returncode == 0
-    
+
     if home_connected:
         zordeer_dir = Path(os.environ["SNAP_REAL_HOME"]) / "App" / "Zordeer"
+        home_dir = Path(os.environ["SNAP_REAL_HOME"])
     else:
-        zordeer_dir = Path(os.environ["SNAP_USER_COMMON"]) / "Zordeer"
-    
-    home_dir = Path(os.environ["SNAP_REAL_HOME"])
-    
+        zordeer_dir = Path(os.environ["SNAP_USER_COMMON"]) / "App" / "Zordeer"
+        home_dir = Path(os.environ["SNAP_USER_COMMON"])
+
 elif os.environ.get("container") == "flatpak":
-    zordeer_dir = Path(os.environ["HOST_HOME"]) / "App" / "Zordeer"
-    home_dir = Path(os.environ["HOST_HOME"])
-    
+    if os.environ.get("ZORDEER_DIR_APP_ID") == "1":
+        zordeer_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer" / "App" / "Zordeer"
+        home_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer"
+    else:
+        zordeer_dir = Path.home() / "App" / "Zordeer"
+        home_dir = Path.home()
+
 else:
     zordeer_dir = Path.home() / "App" / "Zordeer"
     home_dir = Path.home()
@@ -5319,7 +5327,8 @@ class Zordeer(QMainWindow):
 
             if use_umu and runner_name.lower() != "wine":
                 # Changes the folder used by UMU
-                env['XDG_DATA_HOME'] = str(home_dir / "App" / "UMU")
+                if 'XDG_DATA_HOME' not in env:
+                    env['XDG_DATA_HOME'] = str(home_dir / "App" / "UMU")
                 env['PROTONPATH'] = str(zordeer_dir / "runner" / runner_name)
             else:
                 # Set Steam environment variables only for Proton
