@@ -20,6 +20,7 @@ import re
 import random
 import csv
 import dbus
+import tempfile
 from pathlib import Path
 from functools import partial
 
@@ -33,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.8.1"
+__version__ = "1.7.8.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -61,11 +62,6 @@ elif os.environ.get("container") == "flatpak":
 else:
     zordeer_dir = Path.home() / "App" / "Zordeer"
     home_dir = Path.home()
-
-if os.environ.get("XDG_CACHE_HOME"):
-    XDG_CACHE_HOME = Path(os.environ["XDG_CACHE_HOME"])
-else:
-    XDG_CACHE_HOME = Path.home() / ".cache"
 
 # Loads translations from external TOML files.
 def load_external_translations():
@@ -5221,7 +5217,7 @@ class Zordeer(QMainWindow):
                                     ext = ".png"
                                 
                                 # Save to cache first
-                                hero_cache_filename = heroes_cache_dir / f"{steam_game_name}_hero_{best.get('id')}{ext}"
+                                hero_cache_filename = heroes_tmp_dir / f"{steam_game_name}_hero_{best.get('id')}{ext}"
                                 with hero_cache_filename.open("wb") as fh:
                                     fh.write(rr.content)
                                 hero_cache_path = hero_cache_filename
@@ -5256,7 +5252,7 @@ class Zordeer(QMainWindow):
                                     ext = ".png"
                                 
                                 # Save to cache first
-                                icon_cache_filename = icons_cache_dir / f"{steam_game_name}_icon_{best.get('id')}{ext}"
+                                icon_cache_filename = icons_tmp_dir / f"{steam_game_name}_icon_{best.get('id')}{ext}"
                                 with icon_cache_filename.open("wb") as fh:
                                     fh.write(rr.content)
                                 icon_cache_path = icon_cache_filename
@@ -5459,10 +5455,9 @@ class Zordeer(QMainWindow):
         layout.addWidget(label)
 
         # Update button
-        if not os.environ.get("SNAP") and os.environ.get("container") != "flatpak":
-            update_button = QPushButton(tr("CHECK_UPDATE_BUTTON"))
-            update_button.clicked.connect(self.check_update)
-            layout.addWidget(update_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        update_button = QPushButton(tr("CHECK_UPDATE_BUTTON"))
+        update_button.clicked.connect(self.check_update)
+        layout.addWidget(update_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         dialog.exec()
 
@@ -5496,10 +5491,10 @@ class Zordeer(QMainWindow):
             QMessageBox.warning(self, tr("APP_NAME"), tr("UPDATE_ERROR", error=e))
 
 # ===================== SGDB: artwork worker (thread) =====================
-heroes_cache_dir = XDG_CACHE_HOME / "Zordeer" /"heroes_cache"
-icons_cache_dir = XDG_CACHE_HOME / "Zordeer" / "icons_cache"
-heroes_cache_dir.mkdir(parents=True, exist_ok=True)
-icons_cache_dir.mkdir(parents=True, exist_ok=True)
+heroes_tmp_dir = Path(tempfile.gettempdir()) / "Zordeer" / "sgdb_heroes"
+icons_tmp_dir = Path(tempfile.gettempdir()) / "Zordeer" / "sgdb_icons"
+heroes_tmp_dir.mkdir(parents=True, exist_ok=True)
+icons_tmp_dir.mkdir(parents=True, exist_ok=True)
 
 class ArtworkLoader(QThread):
     finished = pyqtSignal(list)  # List of artworks [{id, url, img_data}, ...]
