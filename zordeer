@@ -33,7 +33,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.8"
+__version__ = "1.7.8.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -199,10 +199,9 @@ def detect_default_settings() -> dict:
         },
         "shortcut": {
             "desktop_dir": "",
-            "menu_dir": "",
+            "dot_config_dir": "",
+            "dot_local_dir": "",
             "own_category": True,
-            "menu_file": "",
-            "directory_file": "",
         },
         "other": {
             "default_runner": "indefinite",
@@ -899,13 +898,9 @@ class AddInvocationDialog(QDialog):
         self.force_opengl_checkbox.setChecked(False)
         self.main_layout.addWidget(self.force_opengl_checkbox, 8, 0, 1, 3)
 
-        self.gamemode_checkbox = QCheckBox(tr("GAMEMODE"))
-        self.gamemode_checkbox.setChecked(True)
-        self.main_layout.addWidget(self.gamemode_checkbox, 9, 0, 1, 3)
-
         self.umu_checkbox = QCheckBox(tr("USE_UMU_LAUNCHER"))
         self.umu_checkbox.setChecked(False)
-        self.main_layout.addWidget(self.umu_checkbox, 10, 0, 1, 3)
+        self.main_layout.addWidget(self.umu_checkbox, 9, 0, 1, 3)
 
         self.umu_buttons_layout = QHBoxLayout()
 
@@ -917,7 +912,7 @@ class AddInvocationDialog(QDialog):
         self.umu_search_button = QPushButton(tr("UMU_DATABASE_BUTTON"))
         self.umu_search_button.clicked.connect(self.open_umu_search)
         self.umu_buttons_layout.addWidget(self.umu_search_button)
-        self.main_layout.addLayout(self.umu_buttons_layout, 10, 2)
+        self.main_layout.addLayout(self.umu_buttons_layout, 9, 2)
 
         self.fps_layout = QHBoxLayout()
         self.show_fps_checkbox = QCheckBox(tr("SHOW_FPS_OPTION"))
@@ -931,17 +926,17 @@ class AddInvocationDialog(QDialog):
         self.fps_layout.addWidget(self.show_fps_checkbox)
         self.fps_layout.addWidget(self.fps_hud_combo)
         self.fps_hud_combo.setEnabled(False)
-        self.main_layout.addLayout(self.fps_layout, 11, 0, 1, 3)
+        self.main_layout.addLayout(self.fps_layout, 10, 0, 1, 3)
 
         self.env_vars_label = QLabel(tr("ENVIRONMENT_VARS"))
         self.env_vars_input = QLineEdit()
-        self.main_layout.addWidget(self.env_vars_label, 12, 0)
-        self.main_layout.addWidget(self.env_vars_input, 12, 1, 1, 2)
+        self.main_layout.addWidget(self.env_vars_label, 11, 0)
+        self.main_layout.addWidget(self.env_vars_input, 11, 1, 1, 2)
 
         self.invocation_args_label = QLabel(tr("INVOCATION_ARGS"))
         self.invocation_args_input = QLineEdit()
-        self.main_layout.addWidget(self.invocation_args_label, 13, 0)
-        self.main_layout.addWidget(self.invocation_args_input, 13, 1, 1, 2)
+        self.main_layout.addWidget(self.invocation_args_label, 12, 0)
+        self.main_layout.addWidget(self.invocation_args_input, 12, 1, 1, 2)
 
         self.buttons_layout = QHBoxLayout()
 
@@ -963,7 +958,7 @@ class AddInvocationDialog(QDialog):
         self.buttons_layout.addStretch()
         self.buttons_layout.addWidget(self.save_button)
 
-        self.main_layout.addLayout(self.buttons_layout, 14, 0, 1, 3)
+        self.main_layout.addLayout(self.buttons_layout, 13, 0, 1, 3)
 
         if self.invocation_data:
             self.load_invocation_data()
@@ -1024,9 +1019,6 @@ class AddInvocationDialog(QDialog):
 
         force_opengl = self.invocation_data.get('force_opengl', False)
         self.force_opengl_checkbox.setChecked(force_opengl)
-
-        use_gamemode = self.invocation_data.get('use_gamemode', True)
-        self.gamemode_checkbox.setChecked(use_gamemode)
 
         use_umu = self.invocation_data.get('use_umu', False)
         self.umu_checkbox.setChecked(use_umu)
@@ -1142,7 +1134,6 @@ class AddInvocationDialog(QDialog):
         env_vars_text = self.env_vars_input.text().strip()
 
         force_opengl = self.force_opengl_checkbox.isChecked()
-        use_gamemode = self.gamemode_checkbox.isChecked()
         use_umu = self.umu_checkbox.isChecked()
         show_fps = self.show_fps_checkbox.isChecked()
         fps_hud_type = self.fps_hud_combo.currentData()  # Get the "id", not the text
@@ -1165,7 +1156,6 @@ class AddInvocationDialog(QDialog):
             "language": selected_lang,
             "use_ms_language_code": use_ms_language_code,
             "force_opengl": force_opengl,
-            "use_gamemode": use_gamemode,
             "use_umu": use_umu,
             "show_fps": show_fps,
             "fps_hud_type": fps_hud_type,
@@ -1944,10 +1934,6 @@ class MultipleCreateInvocationsDialog(QDialog):
         force_opengl_cb.setChecked(False)
         layout.addWidget(force_opengl_cb)
 
-        gamemode_cb = QCheckBox(tr("GAMEMODE"))
-        gamemode_cb.setChecked(True)
-        layout.addWidget(gamemode_cb)
-
         umu_cb = QCheckBox(tr("USE_UMU_LAUNCHER"))
         umu_cb.setChecked(False)
         layout.addWidget(umu_cb)
@@ -1983,7 +1969,6 @@ class MultipleCreateInvocationsDialog(QDialog):
         parent_item.prefix_input = prefix_input
         parent_item.ms_lang_cb = ms_lang_cb
         parent_item.force_opengl_cb = force_opengl_cb
-        parent_item.gamemode_cb = gamemode_cb
         parent_item.umu_cb = umu_cb
         parent_item.show_fps_cb = show_fps_cb
         parent_item.fps_hud_combo = fps_hud_combo
@@ -2101,7 +2086,6 @@ class MultipleCreateInvocationsDialog(QDialog):
                         "language": selected_lang,
                         "use_ms_language_code": item.ms_lang_cb.isChecked(),
                         "force_opengl": item.force_opengl_cb.isChecked(),
-                        "use_gamemode": item.gamemode_cb.isChecked(),
                         "use_umu": item.umu_cb.isChecked(),
                         "show_fps": item.show_fps_cb.isChecked(),
                         "fps_hud_type": item.fps_hud_combo.currentData() or "",
@@ -2518,12 +2502,6 @@ class MultipleEditInvocationDialog(QDialog):
         right_layout.addWidget(self.force_opengl_checkbox, row, 0, 1, 3)
         row += 1
 
-        self.gamemode_checkbox = QCheckBox(tr("GAMEMODE"))
-        self.gamemode_checkbox.setTristate(True)
-        self.gamemode_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
-        right_layout.addWidget(self.gamemode_checkbox, row, 0, 1, 3)
-        row += 1
-
         self.umu_checkbox = QCheckBox(tr("USE_UMU_LAUNCHER"))
         self.umu_checkbox.setTristate(True)
         self.umu_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
@@ -2797,7 +2775,6 @@ class MultipleEditInvocationDialog(QDialog):
         # Checkboxes
         self.ms_lang_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         self.force_opengl_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
-        self.gamemode_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         self.umu_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
 
         # FPS HUD
@@ -2924,7 +2901,6 @@ class MultipleEditInvocationDialog(QDialog):
                     data[key] = (state == Qt.CheckState.Checked)
             apply_checkbox(self.ms_lang_checkbox, "use_ms_language_code")
             apply_checkbox(self.force_opengl_checkbox, "force_opengl")
-            apply_checkbox(self.gamemode_checkbox, "use_gamemode")
             apply_checkbox(self.umu_checkbox, "use_umu")
 
             # FPS HUD
@@ -3219,7 +3195,6 @@ class InvocationInfoViewerDialog(QDialog):
             "language": tr("INVOCATION_LANGUAGE"),
             "use_ms_language_code": tr("USE_MS_LANGUAGE_CODE"),
             "force_opengl": tr("FORCE_OPENGL"),
-            "use_gamemode": tr("GAMEMODE"),
             "use_umu": tr("USE_UMU_LAUNCHER"),
             "show_fps": tr("SHOW_FPS_OPTION"),
             "fps_hud_type": tr("SHOW_FPS_OPTION_HUD"),
@@ -3429,26 +3404,12 @@ class RunInPrefix(QDialog):
     def select_exes(self):
         files, _ = QFileDialog.getOpenFileNames(
             self, tr("SELECT_EXECUTABLE"), "", tr("EXECUTABLE_FILE_FILTER"))
-        
-        blocked = False
         for f in files:
             path_obj = Path(f)
-            
-            # Block if path starts with /run/user/ (XDG Desktop Portal)
-            if str(path_obj).startswith('/run/user/'):
-                blocked = True
-                continue  # Skip this file
-            
             item = QTreeWidgetItem([path_obj.name])
+            # Stores the full path to UserRole
             item.setData(0, 0x0100, str(path_obj))
             self.exe_list.addTopLevelItem(item)
-        
-        # Show single warning if any files were blocked
-        if blocked:
-            QMessageBox.information(
-                self,
-                tr("APP_NAME"),
-                tr("RUN_IN_PREFIX_XDP_DETECTED"))
 
     def start_execution(self):
         if self.exe_list.topLevelItemCount() == 0:
@@ -3513,7 +3474,6 @@ class RunInPrefix(QDialog):
             mod["language"] = ""
             mod["use_ms_language_code"] = False
             mod["force_opengl"] = False
-            mod["use_gamemode"] = False
             mod["env_vars"] = ""
             mod["invocation_args"] = ""
             mod["show_fps"] = False
@@ -3521,7 +3481,7 @@ class RunInPrefix(QDialog):
 
         elif self.radio_automatic.isChecked():
             # Normal values restored, but add silent args
-            for key in ("language", "use_ms_language_code", "force_opengl", "use_gamemode", "env_vars",
+            for key in ("language", "use_ms_language_code", "force_opengl", "env_vars",
                         "show_fps", "fps_hud_type"):
                 if key in self._original_toml:
                     mod[key] = self._original_toml[key]
@@ -3531,7 +3491,7 @@ class RunInPrefix(QDialog):
 
         else:  # Self.radio_normal.isChecked()
             # Just restore original TOML (no modifications)
-            for key in ("language", "use_ms_language_code", "force_opengl", "use_gamemode", "env_vars",
+            for key in ("language", "use_ms_language_code", "force_opengl", "env_vars",
                         "show_fps", "fps_hud_type", "invocation_args"):
                 if key in self._original_toml:
                     mod[key] = self._original_toml[key]
@@ -3675,12 +3635,6 @@ class ShortcutManager(QDialog):
         # Own category checkbox
         self.own_category_cb = QCheckBox(tr("OWN_CATEGORY"))
         own_category_checked = self.shortcut_manager_info.get("own_category", True)
-
-        # Uncheck and disable if running inside Snap
-        if os.environ.get("SNAP"):
-            own_category_checked = False
-            self.own_category_cb.setEnabled(False)
-
         self.own_category_cb.setChecked(own_category_checked)
         main_layout.addWidget(self.own_category_cb)
 
@@ -3698,16 +3652,27 @@ class ShortcutManager(QDialog):
         desktop_buttons.addWidget(desktop_browse)
         grid.addLayout(desktop_buttons, 2, 0, 1, 3)
 
-        # Menu section  
-        grid.addWidget(QLabel(tr("MENU_FOLDER")), 3, 0)
-        self.menu_dir_input = QLineEdit(self.shortcut_manager_info.get("menu_dir", ""))
-        grid.addWidget(self.menu_dir_input, 4, 0, 1, 3)
+        # .config section
+        grid.addWidget(QLabel(tr("DOT_CONFIG_FOLDER")), 3, 0)
+        self.dot_config_input = QLineEdit(self.shortcut_manager_info.get("dot_config_dir", ""))
+        grid.addWidget(self.dot_config_input, 4, 0, 1, 3)
 
-        menu_buttons = QHBoxLayout()
-        menu_browse = QPushButton(tr("BROWSE_BUTTON"))
-        menu_browse.clicked.connect(partial(self.browse_folder, self.menu_dir_input))
-        menu_buttons.addWidget(menu_browse)
-        grid.addLayout(menu_buttons, 5, 0, 1, 3)
+        config_buttons = QHBoxLayout()
+        config_browse = QPushButton(tr("BROWSE_BUTTON"))
+        config_browse.clicked.connect(partial(self.browse_folder, self.dot_config_input))
+        config_buttons.addWidget(config_browse)
+        grid.addLayout(config_buttons, 5, 0, 1, 3)
+
+        # .local section
+        grid.addWidget(QLabel(tr("DOT_LOCAL_FOLDER")), 6, 0)
+        self.dot_local_input = QLineEdit(self.shortcut_manager_info.get("dot_local_dir", ""))
+        grid.addWidget(self.dot_local_input, 7, 0, 1, 3)
+
+        local_buttons = QHBoxLayout()
+        local_browse = QPushButton(tr("BROWSE_BUTTON"))
+        local_browse.clicked.connect(partial(self.browse_folder, self.dot_local_input))
+        local_buttons.addWidget(local_browse)
+        grid.addLayout(local_buttons, 8, 0, 1, 3)
 
         grid.setContentsMargins(0, 0, 0, 0)
 
@@ -3721,6 +3686,13 @@ class ShortcutManager(QDialog):
         self.locations_btn = QPushButton(tr("SHORTCUTS_PATHS"))
         self.locations_btn.clicked.connect(self.toggle_locations)
         buttons_layout.addWidget(self.locations_btn)
+
+        # Button to inform users about problems in Snap.
+        self.paths_info_button = QPushButton()
+        self.paths_info_button.setIcon(QIcon.fromTheme("help-about"))
+        self.paths_info_button.clicked.connect(self.show_paths_info)
+        buttons_layout.addWidget(self.paths_info_button)
+
         buttons_layout.addStretch()
         self.update_shortcuts = QPushButton(tr("UPDATE_SHORTCUTS"))
         self.update_shortcuts.clicked.connect(self.update_and_apply)
@@ -3731,6 +3703,12 @@ class ShortcutManager(QDialog):
         self.view_combo.setCurrentIndex(1)
         self.update_list_view()
         self.view_combo.setCurrentIndex(0)
+
+    def show_paths_info(self):
+        QMessageBox.information(
+            self,
+            tr("APP_NAME"),
+            tr("SHORTCUTS_PATHS_INFO"))
 
     def toggle_locations(self):
         self.locations_widget.setVisible(not self.locations_widget.isVisible())
@@ -3774,8 +3752,14 @@ class ShortcutManager(QDialog):
         # Define current view
         self.current_view = "desktop" if self.view_combo.currentIndex() == 0 else "menu"
 
-        # Current folder and existing desktops
-        folder_path = Path(self.shortcut_manager_info.get(f"{self.current_view}_dir", ""))
+        # Get the appropriate folder path based on current view
+        if self.current_view == "desktop":
+            folder_path = Path(self.shortcut_manager_info.get("desktop_dir", ""))
+        else:
+            # For menu view, use .local/share/applications
+            dot_local = Path(self.shortcut_manager_info.get("dot_local_dir", ""))
+            folder_path = dot_local / "share" / "applications"
+        
         existing_desktops = set()
 
         if folder_path.exists():
@@ -3833,74 +3817,73 @@ class ShortcutManager(QDialog):
         return invs
 
     def load_shortcut_manager_info(self):
-        """Load menu_dir and desktop_dir from TOML settings."""
+        # Load directories from TOML settings.
         settings = load_settings()
         shortcut_section = settings.get("shortcut", {})
 
         # Get values from config or empty strings
         desktop_dir = shortcut_section.get("desktop_dir", "")
-        menu_dir = shortcut_section.get("menu_dir", "")
-
+        dot_config_dir = shortcut_section.get("dot_config_dir", "")
+        dot_local_dir = shortcut_section.get("dot_local_dir", "")
         own_category = shortcut_section.get("own_category", False)
 
         # If desktop_dir is empty in config, calculate default
         if not desktop_dir:
-            desktop_dir = home_dir / "Desktop"  # fallback
-            user_dirs_file = home_dir / ".config" / "user-dirs.dirs"
-            if user_dirs_file.exists():
-                try:
-                    with open(user_dirs_file, encoding="utf-8") as f:
-                        for line in f:
-                            line = line.strip()
-                            if line.startswith("XDG_DESKTOP_DIR"):
-                                path = line.split("=", 1)[1].strip().strip('"')
-                                path = path.replace("$HOME", str(home_dir))
-                                desktop_dir = Path(path)
-                                break
-                except Exception:
-                    pass
+            desktop_dir = self.get_default_desktop_dir()
 
-        # If menu_dir is empty in config, use default
-        if not menu_dir:
-            menu_dir = str(home_dir / ".local" / "share" / "applications")
+        # If dot_config_dir is empty in config, use default
+        if not dot_config_dir:
+            dot_config_dir = str(home_dir / ".config")
+
+        # If dot_local_dir is empty in config, use default
+        if not dot_local_dir:
+            dot_local_dir = str(home_dir / ".local")
 
         # Processed settings for shortcut manager
         info = {
             "desktop_dir": str(desktop_dir),
-            "menu_dir": str(menu_dir),
+            "dot_config_dir": str(dot_config_dir),
+            "dot_local_dir": str(dot_local_dir),
             "own_category": own_category,
-            "menu_file": shortcut_section.get("menu_file", ""),
-            "directory_file": shortcut_section.get("directory_file", "")
         }
 
         return info
 
+    def get_default_desktop_dir(self):
+        # Get default desktop directory from XDG user dirs.
+        desktop_dir = home_dir / "Desktop"
+        user_dirs_file = home_dir / ".config" / "user-dirs.dirs"
+        if user_dirs_file.exists():
+            try:
+                with open(user_dirs_file, encoding="utf-8") as f:
+                    for line in f:
+                        line = line.strip()
+                        if line.startswith("XDG_DESKTOP_DIR"):
+                            path = line.split("=", 1)[1].strip().strip('"')
+                            path = path.replace("$HOME", str(home_dir))
+                            desktop_dir = Path(path)
+                            break
+            except Exception:
+                pass
+        return str(desktop_dir)
+
     def save_shortcut_manager_info(self):
-        """Save menu_dir and desktop_dir to TOML settings."""
+        # Save directories to TOML settings.
         settings = load_settings()
         settings.setdefault("shortcut", {})
         settings["shortcut"]["desktop_dir"] = self.shortcut_manager_info.get("desktop_dir", "")
-        settings["shortcut"]["menu_dir"] = self.shortcut_manager_info.get("menu_dir", "")
+        settings["shortcut"]["dot_config_dir"] = self.shortcut_manager_info.get("dot_config_dir", "")
+        settings["shortcut"]["dot_local_dir"] = self.shortcut_manager_info.get("dot_local_dir", "")
         settings["shortcut"]["own_category"] = self.own_category_cb.isChecked()
-        settings["shortcut"]["menu_file"] = self.shortcut_manager_info.get("menu_file", "")
-        settings["shortcut"]["directory_file"] = self.shortcut_manager_info.get("directory_file", "")
         save_settings(settings)
 
-    # Folder browsing
     def browse_folder(self, line_edit: QLineEdit):
-        if line_edit == self.desktop_dir_input:
-            initial_dir = str(home_dir)
-        else:
-            initial_dir = str(home_dir / ".local" / "share" / "applications")
-        
-        folder = QFileDialog.getExistingDirectory(self, tr("SELECT_FOLDER"), initial_dir)
+        folder = QFileDialog.getExistingDirectory(self, tr("SELECT_FOLDER"), str(home_dir))
         if not folder:
             return
 
         new_folder = Path(folder)
         line_edit.setText(str(new_folder))
-
-    # Save and create .desktop
 
     def remove_all_zordeer_desktops(self, folder: Path):
         if not folder.exists():
@@ -3914,66 +3897,87 @@ class ShortcutManager(QDialog):
                 print(tr("ERROR_REMOVING_FILE", file=f, error=e))
 
     def update_and_apply(self):
-        menu_dir = Path(self.menu_dir_input.text().strip())
         desktop_dir = Path(self.desktop_dir_input.text().strip())
+        dot_config_dir = Path(self.dot_config_input.text().strip())
+        dot_local_dir = Path(self.dot_local_input.text().strip())
+        
+        # Define menu applications directory
+        applications_dir = dot_local_dir / "share" / "applications"
 
+        # Create desktop directory if it doesn't exist
         try:
             desktop_dir.mkdir(parents=True, exist_ok=True)
         except Exception:
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_SHORTCUTS_LOCATION", location=desktop_dir)
+                tr("ERROR_CREATING_PATH", path=desktop_dir)
             )
             return
 
-        try:
-            menu_dir.mkdir(parents=True, exist_ok=True)
-        except Exception:
+        # Check if .config directory exists
+        if not dot_config_dir.exists():
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_SHORTCUTS_LOCATION", location=menu_dir)
+                tr("ERROR_CREATING_PATH", path=dot_config_dir)
             )
             return
 
-        old_desktop_dir = Path(self.shortcut_manager_info.get("desktop_dir", ""))
-        old_menu_dir = Path(self.shortcut_manager_info.get("menu_dir", ""))
+        # Check if .local directory exists
+        if not dot_local_dir.exists():
+            QMessageBox.warning(
+                self,
+                tr("APP_NAME"),
+                tr("ERROR_CREATING_PATH", path=dot_local_dir)
+            )
+            return
         
-        self.remove_all_zordeer_desktops(old_desktop_dir)
-        self.remove_all_zordeer_desktops(old_menu_dir)
+        applications_dir.mkdir(parents=True, exist_ok=True)
 
-        self.shortcut_manager_info["menu_dir"] = str(menu_dir)
+        old_desktop_dir = Path(self.shortcut_manager_info.get("desktop_dir", ""))
+        old_dot_config_dir = Path(self.shortcut_manager_info.get("dot_config_dir", ""))
+        old_dot_local_dir = Path(self.shortcut_manager_info.get("dot_local_dir", ""))
+        
+        # Remove old desktop files from previous locations
+        self.remove_all_zordeer_desktops(old_desktop_dir)
+        
+        # Remove old menu files from previous .local/share/applications
+        old_applications_dir = old_dot_local_dir / "share" / "applications"
+        self.remove_all_zordeer_desktops(old_applications_dir)
+
+        # Update info with new paths
         self.shortcut_manager_info["desktop_dir"] = str(desktop_dir)
+        self.shortcut_manager_info["dot_config_dir"] = str(dot_config_dir)
+        self.shortcut_manager_info["dot_local_dir"] = str(dot_local_dir)
         self.shortcut_manager_info["own_category"] = self.own_category_cb.isChecked()
 
-        # Remove files if the own_category checkbox is unchecked.
+        # Remove category files if checkbox is unchecked
         if not self.own_category_cb.isChecked():
-            saved_menu_file = self.shortcut_manager_info.get("menu_file", "")
-            saved_directory_file = self.shortcut_manager_info.get("directory_file", "")
-
-            if saved_menu_file and Path(saved_menu_file).exists():
+            # Remove menu file from .config
+            old_menu_file = old_dot_config_dir / "menus" / "applications-merged" / "Zordeer.menu"
+            if old_menu_file.exists():
                 try:
-                    Path(saved_menu_file).unlink()
+                    old_menu_file.unlink()
                 except Exception as e:
-                    print(tr("ERROR_REMOVING_FILE", file=saved_menu_file, error=e))
+                    print(tr("ERROR_REMOVING_FILE", file=str(old_menu_file), error=e))
 
-            if saved_directory_file and Path(saved_directory_file).exists():
+            # Remove directory file from .local
+            old_directory_file = old_dot_local_dir / "share" / "desktop-directories" / "Zordeer.directory"
+            if old_directory_file.exists():
                 try:
-                    Path(saved_directory_file).unlink()
+                    old_directory_file.unlink()
                 except Exception as e:
-                    print(tr("ERROR_REMOVING_FILE", file=saved_directory_file, error=e))
-
-            self.shortcut_manager_info["menu_file"] = ""
-            self.shortcut_manager_info["directory_file"] = ""
+                    print(tr("ERROR_REMOVING_FILE", file=str(old_directory_file), error=e))
 
         self.save_shortcut_manager_info()
 
-        # Manage category files
+        # Create category files if checkbox is checked
         if self.own_category_cb.isChecked():
             try:
-                dot_menu_file_path = home_dir / ".config" / "menus" / "applications-merged" / "Zordeer.menu"
-                dot_menu_file_path.parent.mkdir(parents=True, exist_ok=True)
+                # Create .menu file in the configured .config directory
+                menu_file_path = dot_config_dir / "menus" / "applications-merged" / "Zordeer.menu"
+                menu_file_path.parent.mkdir(parents=True, exist_ok=True)
                 
                 menu_content = "\n".join([
                     "<Menu>",
@@ -3987,44 +3991,41 @@ class ShortcutManager(QDialog):
                     "  </Menu>",
                     "</Menu>"
                 ])
-                dot_menu_file_path.write_text(menu_content, encoding="utf-8")
-                self.shortcut_manager_info["menu_file"] = str(dot_menu_file_path)
+                menu_file_path.write_text(menu_content, encoding="utf-8")
             except Exception as e:
                 print(tr("ERROR_CREATING_FILE", file="Zordeer.menu", error=e))
-                self.shortcut_manager_info["menu_file"] = ""
 
             try:
-                dot_directory_file_path = home_dir / ".local" / "share" / "desktop-directories" / "Zordeer.directory"
-                dot_directory_file_path.parent.mkdir(parents=True, exist_ok=True)
+                # Create .directory file in the configured .local directory
+                directory_file_path = dot_local_dir / "share" / "desktop-directories" / "Zordeer.directory"
+                directory_file_path.parent.mkdir(parents=True, exist_ok=True)
 
                 directory_content = "\n".join([
                     "[Desktop Entry]",
                     "Name=Zordeer",
-                    "Icon=io.github.kyuyrii.zordeer"
+                    "Icon=io.github.kyuyrii.zordeer.svg"
                 ])
-                dot_directory_file_path.write_text(directory_content, encoding="utf-8")
-                self.shortcut_manager_info["directory_file"] = str(dot_directory_file_path)
+                directory_file_path.write_text(directory_content, encoding="utf-8")
             except Exception as e:
                 print(tr("ERROR_CREATING_FILE", file="Zordeer.directory", error=e))
-                self.shortcut_manager_info["directory_file"] = ""
 
-            self.save_shortcut_manager_info()
-
-        # Remove existing .desktop files.
+        # Remove existing .desktop files from new locations
         self.remove_all_zordeer_desktops(desktop_dir)
-        self.remove_all_zordeer_desktops(menu_dir)
+        self.remove_all_zordeer_desktops(applications_dir)
 
-        # Create each type separately.
+        # Create desktop shortcuts
         for name, cb in self.checkbox_widgets["desktop"].items():
             checked = cb.isChecked()
             self.create_desktop_file(name, checked, desktop_dir)
 
+        # Create menu shortcuts
         for name, cb in self.checkbox_widgets["menu"].items():
             checked = cb.isChecked()
-            self.create_desktop_file(name, checked, menu_dir)
+            self.create_desktop_file(name, checked, applications_dir)
 
-        os.system(f'chmod +x "{desktop_dir}/"invocation-*.desktop')
-        os.system(f'chmod +x "{menu_dir}/"invocation-*.desktop')
+        # Set executable permissions
+        os.system(f'chmod +x "{desktop_dir}/"invocation-*.desktop 2>/dev/null')
+        os.system(f'chmod +x "{applications_dir}/"invocation-*.desktop 2>/dev/null')
 
         self.update_list_view()
         self.accept()
@@ -4059,8 +4060,9 @@ class ShortcutManager(QDialog):
             "StartupWMClass=io.github.kyuyrii.zordeer",
             f"Categories={categories}",
             "Keywords=gaming;invocation;",
-            "Terminal=false",
-            "Type=Application"
+            "Type=Application",
+            "StartupNotify=false",
+            "Terminal=false"
         ]
 
         try:
@@ -4136,17 +4138,14 @@ class Zordeer(QMainWindow):
         # Menu INVOCATION
         self.invocation_menu = self.menu_bar.addMenu(tr("INVOCATION"))
 
-        # Open executable folder
         self.open_exe_path_action = QAction(tr("OPEN_EXEC_PATH"), self)
         self.open_exe_path_action.triggered.connect(partial(self.open_path, None, "exe"))
         self.invocation_menu.addAction(self.open_exe_path_action)
 
-        # Open prefix folder
         self.open_prefix_path_action = QAction(tr("OPEN_PREFIX_PATH"), self)
         self.open_prefix_path_action.triggered.connect(partial(self.open_path, None, "prefix"))
         self.invocation_menu.addAction(self.open_prefix_path_action)
 
-        # Run in prefix
         self.run_in_prefix_action = QAction(tr("RUN_IN_PREFIX"), self)
         self.run_in_prefix_action.triggered.connect(self.run_in_prefix_dialog)
         self.invocation_menu.addAction(self.run_in_prefix_action)
@@ -4162,33 +4161,35 @@ class Zordeer(QMainWindow):
         self.transfer_arts_menu.triggered.connect(self.open_transfer_arts)
         self.transfer_menu.addAction(self.transfer_arts_menu)
 
-        # Menu EXTRAS
-        self.extras_menu = self.menu_bar.addMenu(tr("EXTRAS"))
+        # Menu MANAGE
+        self.manage_menu = self.menu_bar.addMenu(tr("MANAGE"))
 
-        # Add multiple invocations
         self.multiple_create_action = QAction(tr("CREATE_MULTIPLE_INVOCATIONS"), self)
         self.multiple_create_action.triggered.connect(self.open_multiple_create_dialog)
-        self.extras_menu.addAction(self.multiple_create_action)
+        self.manage_menu.addAction(self.multiple_create_action)
 
         self.multiple_remove_invocations_action = QAction(tr("REMOVE_MULTIPLE_INVOCATIONS"), self)
         self.multiple_remove_invocations_action.triggered.connect(self.open_multiple_remove_invocations_dialog)
-        self.extras_menu.addAction(self.multiple_remove_invocations_action)
+        self.manage_menu.addAction(self.multiple_remove_invocations_action)
 
         self.multiple_edit_invocations_action = QAction(tr("EDIT_MULTIPLE_INVOCATIONS"), self)
         self.multiple_edit_invocations_action.triggered.connect(self.open_multiple_edit_invocations_dialog)
-        self.extras_menu.addAction(self.multiple_edit_invocations_action)
+        self.manage_menu.addAction(self.multiple_edit_invocations_action)
 
         self.shortcut_manager_action = QAction(tr("MANAGE_SHORTCUTS"), self)
         self.shortcut_manager_action.triggered.connect(self.open_shortcut_manager_dialog)
-        self.extras_menu.addAction(self.shortcut_manager_action)
+        self.manage_menu.addAction(self.shortcut_manager_action)
+
+        # Menu EXTRA
+        self.extra_menu = self.menu_bar.addMenu(tr("EXTRA"))
 
         self.settings_action = QAction(tr("ZORDEER_SETTINGS"), self)
         self.settings_action.triggered.connect(self.open_settings)
-        self.extras_menu.addAction(self.settings_action)
+        self.extra_menu.addAction(self.settings_action)
 
         self.about_action = QAction(tr("ABOUT_ZORDEER"), self)
         self.about_action.triggered.connect(self.show_about)
-        self.extras_menu.addAction(self.about_action)
+        self.extra_menu.addAction(self.about_action)
 
         # Increase the size of icons
         toolbar_icon_size = settings["design"].get("toolbar_icon_size", 32)
@@ -4851,13 +4852,6 @@ class Zordeer(QMainWindow):
 
                     command = [str(proton_script), "run", str(exec_path_full)]
 
-            # Gamemode
-            use_gamemode = invocation_data.get('use_gamemode', True)
-            if use_gamemode:
-                gamemoderun_path = shutil.which('gamemoderun')
-                if gamemoderun_path:
-                    command.insert(0, gamemoderun_path)
-
             # Invocation arguments
             invocation_args_str = invocation_data.get('invocation_args', '').strip()
             if invocation_args_str:
@@ -5100,31 +5094,18 @@ class Zordeer(QMainWindow):
         self.run_sgdb_auto_transfer()
 
     def run_sgdb_auto_transfer(self):
-        # Create progress dialog
-        progress_dialog = QProgressDialog(tr("AUTO_TRANSFER_IN_PROGRESS"), tr("CANCEL_BUTTON"), 0, 100, self)
-        progress_dialog.setWindowTitle(tr("APP_NAME"))
-        progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
-        progress_dialog.setAutoClose(True)
-        progress_dialog.setAutoReset(True)
-        progress_dialog.show()
-        
-        self._cancel_auto = False
-        progress_dialog.canceled.connect(lambda: setattr(self, '_cancel_auto', True))
-
         def get_score(item):
             return item.get("score", 0)
 
         settings = load_settings()
         api_key = settings["other"].get("sgdb_apikey", "").strip()
         if not api_key:
-            progress_dialog.close()
             QMessageBox.warning(self, tr("APP_NAME"), tr("API_KEY_SAVE_FIRST"))
             return
-        
+
         headers = {"Authorization": f"Bearer {api_key}"}
 
         if not any(zordeer_config_dir.glob("invocation-info-*.toml")):
-            progress_dialog.close()
             QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
 
@@ -5146,7 +5127,6 @@ class Zordeer(QMainWindow):
                 continue
 
         if not invocations:
-            progress_dialog.close()
             QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_NO_MISSING_ARTS"))
             return
 
@@ -5158,8 +5138,19 @@ class Zordeer(QMainWindow):
             QMessageBox.StandardButton.No
         )
         if confirm != QMessageBox.StandardButton.Yes:
-            progress_dialog.close()
             return
+
+        # Create progress dialog
+        progress_dialog = QProgressDialog(tr("AUTO_TRANSFER_IN_PROGRESS"), tr("CANCEL_BUTTON"), 0, 100, self)
+        progress_dialog.setWindowTitle(tr("APP_NAME"))
+        progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
+        progress_dialog.setAutoClose(True)
+        progress_dialog.setAutoReset(True)
+        progress_dialog.setMinimumWidth(200)
+        progress_dialog.show()
+
+        self._cancel_auto = False
+        progress_dialog.canceled.connect(lambda: setattr(self, '_cancel_auto', True))
 
         # Progress setup
         total = len(invocations)
@@ -5306,7 +5297,7 @@ class Zordeer(QMainWindow):
                         shutil.copy2(hero_cache_path, dest)
                         inv_toml["art_path"] = str(dest)
                         copied_hero = True
-                        
+
                         # Delete the file from the cache folder when finished.
                         hero_cache_path.unlink()
                     except Exception:
@@ -5318,7 +5309,7 @@ class Zordeer(QMainWindow):
                         shutil.copy2(icon_cache_path, dest_icon)
                         inv_toml["gui_path"] = str(dest_icon)
                         copied_icon = True
-                        
+
                         # Delete the file from the cache folder when finished.
                         icon_cache_path.unlink()
                     except Exception:
@@ -5331,16 +5322,15 @@ class Zordeer(QMainWindow):
                     except Exception:
                         pass
 
-        # Close progress dialog
-        progress_dialog.close()
-
         # Clear downloads list to free memory
         downloads.clear()
 
-        self.load_invocations()
-
         if not self._cancel_auto and not progress_dialog.wasCanceled():
             QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_FINISHED"))
+
+        self.load_invocations()
+
+        progress_dialog.close()
 
     def run_in_prefix_dialog(self):
         invocation_name = self.get_selected_invocation()  # Use self directly
@@ -5469,9 +5459,10 @@ class Zordeer(QMainWindow):
         layout.addWidget(label)
 
         # Update button
-        update_button = QPushButton(tr("CHECK_UPDATE_BUTTON"))
-        update_button.clicked.connect(self.check_update)
-        layout.addWidget(update_button, alignment=Qt.AlignmentFlag.AlignCenter)
+        if not os.environ.get("SNAP") and os.environ.get("container") != "flatpak":
+            update_button = QPushButton(tr("CHECK_UPDATE_BUTTON"))
+            update_button.clicked.connect(self.check_update)
+            layout.addWidget(update_button, alignment=Qt.AlignmentFlag.AlignCenter)
 
         dialog.exec()
 
@@ -5509,6 +5500,7 @@ heroes_cache_dir = XDG_CACHE_HOME / "Zordeer" /"heroes_cache"
 icons_cache_dir = XDG_CACHE_HOME / "Zordeer" / "icons_cache"
 heroes_cache_dir.mkdir(parents=True, exist_ok=True)
 icons_cache_dir.mkdir(parents=True, exist_ok=True)
+
 class ArtworkLoader(QThread):
     finished = pyqtSignal(list)  # List of artworks [{id, url, img_data}, ...]
     error = pyqtSignal(str)
