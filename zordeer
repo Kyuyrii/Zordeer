@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.8.2"
+__version__ = "1.7.9"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -182,7 +182,6 @@ def detect_default_settings() -> dict:
             "layout_mode": "classic",
             "icon_width_classic": 420,
             "icon_width_grid": 300,
-            "toolbar_position": "top",
             "toolbar_icon_size": 32,
             "search_bar_visible": False,
             "toolbar_visible": True,
@@ -600,7 +599,7 @@ class RunnerTransferDialog(QDialog):
         # Runner selection layout
         selection_layout = QHBoxLayout()
         self.runner_combo = QComboBox()
-        self.runner_combo.addItems(["Proton-GE", "Proton-Sarek", "Proton-EM", "Proton-CachyOS", "UMU-launcher", "UMU-Proton"])
+        self.runner_combo.addItems(["Proton-GE", "Proton-Sarek", "Proton-EM", "Proton-CachyOS", "UMU-launcher", "UMU-Proton", "Kron4ek"])
         selection_layout.addWidget(self.runner_combo)
         main_layout.addLayout(selection_layout)
 
@@ -656,6 +655,7 @@ class RunnerTransferDialog(QDialog):
             "Proton-CachyOS": "https://api.github.com/repos/CachyOS/proton-cachyos/releases",
             "UMU-launcher": "https://api.github.com/repos/Open-Wine-Components/umu-launcher/releases",
             "UMU-Proton": "https://api.github.com/repos/Open-Wine-Components/umu-proton/releases",
+            "Kron4ek": "https://api.github.com/repos/Kron4ek/Wine-Builds/releases",
         }
 
     def open_runner_repo(self):
@@ -667,6 +667,7 @@ class RunnerTransferDialog(QDialog):
             "Proton-CachyOS": "https://github.com/CachyOS/proton-cachyos",
             "UMU-launcher": "https://github.com/Open-Wine-Components/umu-launcher",
             "UMU-Proton": "https://github.com/Open-Wine-Components/umu-proton",
+            "Kron4ek": "https://github.com/Kron4ek/Wine-Builds",
         }
         url = urls.get(selected_runner)
         if url:
@@ -881,7 +882,7 @@ class AddInvocationDialog(QDialog):
 
         self.language_label = QLabel(tr("INVOCATION_LANGUAGE"))
         self.language_input = QComboBox()
-        self.language_input.addItems([tr("PLACEHOLDER_FOR_LANGUAGE")] + INVOCATION_LOCALE_OPTIONS)
+        self.language_input.addItems([tr("INDEFINITE")] + INVOCATION_LOCALE_OPTIONS)
         self.main_layout.addWidget(self.language_label, 6, 0)
         self.main_layout.addWidget(self.language_input, 6, 1, 1, 2)
 
@@ -1124,7 +1125,7 @@ class AddInvocationDialog(QDialog):
             selected_runner = ""
 
         selected_lang = self.language_input.currentText()
-        if selected_lang == tr("PLACEHOLDER_FOR_LANGUAGE"):
+        if selected_lang == tr("INDEFINITE"):
             selected_lang = ""
 
         env_vars_text = self.env_vars_input.text().strip()
@@ -1584,19 +1585,8 @@ class AddInvocationDialog(QDialog):
         else:
             runner_name = selected_runner
 
-        if runner_name.lower() != "wine":
-            runners_path = zordeer_dir / "runner"
-            proton_script = runners_path / runner_name / "proton"
-
-            # Warning if the Proton runner does not exist
-            if not proton_script.exists():
-                QMessageBox.critical(
-                    self,
-                    tr("APP_NAME"),
-                    tr("ERROR_RUNNER", path=str(proton_script.parent)))
-                return
-
         env = os.environ.copy()
+        env["WINEPREFIX"] = str(prefix_path)
 
         # Warns if the Wine runner does not exist, and runs winecfg in the selected runner.
         if runner_name.lower() == "wine":
@@ -1605,12 +1595,34 @@ class AddInvocationDialog(QDialog):
                 QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
                 return
             cmd = [wine_path, "winecfg"]
-            env["WINEPREFIX"] = str(prefix_path)
-        else:
+            
+        elif "proton" in runner_name.lower():
+            runners_path = zordeer_dir / "runner"
+            proton_script = runners_path / runner_name / "proton"
+            
+            if not proton_script.exists():
+                QMessageBox.critical(
+                    self,
+                    tr("APP_NAME"),
+                    tr("ERROR_RUNNER", path=str(proton_script.parent)))
+                return
+                
             cmd = [str(proton_script), "run", "winecfg"]
             env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
             env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(zordeer_dir / ".steam" / "steam")
             env["STEAM_EXTRA_COMPAT_TOOLS_PATHS"] = str(proton_script.parent)
+            
+        else:
+            wine_binary = zordeer_dir / "runner" / runner_name / "bin" / "wine"
+            
+            if not wine_binary.exists():
+                QMessageBox.critical(
+                    self,
+                    tr("APP_NAME"),
+                    tr("ERROR_RUNNER", path=str(wine_binary.parent)))
+                return
+                
+            cmd = [str(wine_binary), "winecfg"]
 
         subprocess.Popen(cmd, env=env)
 
@@ -1799,7 +1811,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         # Language and combobox
         language_label = QLabel(tr("INVOCATION_LANGUAGE"))
         self.language_input = QComboBox()
-        self.language_input.addItems([tr("PLACEHOLDER_FOR_LANGUAGE")] + INVOCATION_LOCALE_OPTIONS)
+        self.language_input.addItems([tr("INDEFINITE")] + INVOCATION_LOCALE_OPTIONS)
         top_grid.addWidget(language_label, 1, 0)
         top_grid.addWidget(self.language_input, 1, 1)
 
@@ -2041,7 +2053,7 @@ class MultipleCreateInvocationsDialog(QDialog):
                 return
 
         selected_lang = self.language_input.currentText()
-        if selected_lang == tr("PLACEHOLDER_FOR_LANGUAGE"):
+        if selected_lang == tr("INDEFINITE"):
             selected_lang = ""
 
         for i in range(self.file_list.topLevelItemCount()):
@@ -2107,7 +2119,7 @@ class MultipleRemoveInvocationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("MULTIPLE_INVOCATION_REMOVER"))
-        self.resize(340, 400)
+        self.resize(340, 500)
         self.parent_ref = parent
 
         self.main_layout = QVBoxLayout(self)
@@ -2478,7 +2490,7 @@ class MultipleEditInvocationDialog(QDialog):
         self.lang_combo = QComboBox()
         self.lang_combo.addItems([
             tr("DO_NOT_CHANGE"),
-            tr("PLACEHOLDER_FOR_LANGUAGE")
+            tr("INDEFINITE")
         ] + INVOCATION_LOCALE_OPTIONS)
         self.lang_combo.setCurrentIndex(0)
         right_layout.addWidget(self.lang_label, row, 0)
@@ -2888,7 +2900,7 @@ class MultipleEditInvocationDialog(QDialog):
             # Language
             lang = self.lang_combo.currentText()
             if lang != tr("DO_NOT_CHANGE"):
-                data["language"] = "" if lang == tr("PLACEHOLDER_FOR_LANGUAGE") else lang
+                data["language"] = "" if lang == tr("INDEFINITE") else lang
 
             # Checkboxes
             def apply_checkbox(cb_widget, key):
@@ -3581,7 +3593,7 @@ class ShortcutManager(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("SHORTCUTS_MANAGER_TITLE"))
-        self.resize(340, 400)
+        self.resize(340, 500)
 
         # Load invocations and shortcuts info
         self.invocations = self.load_invocations()
@@ -4097,11 +4109,9 @@ class Zordeer(QMainWindow):
                 icon_set = True
                 break
         if not icon_set:
-            for name in ['io.github.kyuyrii.zordeer', 'zordeer']:
-                icon = QIcon.fromTheme(name)
-                if not icon.isNull():
-                    self.setWindowIcon(icon)
-                    break
+            icon = QIcon.fromTheme('io.github.kyuyrii.zordeer')
+            if not icon.isNull():
+                self.setWindowIcon(icon)
 
         self.setup_directories()
 
@@ -4110,25 +4120,12 @@ class Zordeer(QMainWindow):
 
         # Toolbar
         self.toolbar = QToolBar()
-        self.toolbar.setMovable(True)
+        self.toolbar.setMovable(False)
         self.toolbar.setFloatable(False)
-
         self.toolbar.setVisible(settings["design"].get("toolbar_visible", True))
+        self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.toolbar)
 
-        toolbar_position = settings["design"].get("toolbar_position", "top")
-
-        if toolbar_position == "top":
-            self.addToolBar(Qt.ToolBarArea.TopToolBarArea, self.toolbar)
-        elif toolbar_position == "left":
-            self.addToolBar(Qt.ToolBarArea.LeftToolBarArea, self.toolbar)
-        elif toolbar_position == "right":
-            self.addToolBar(Qt.ToolBarArea.RightToolBarArea, self.toolbar)
-        elif toolbar_position == "bottom":
-            self.addToolBar(Qt.ToolBarArea.BottomToolBarArea, self.toolbar)
-        else:
-            self.addToolBar(self.toolbar)  # fallback
-
-        # MenuBar
+        # ===== MenuBar =====
         self.menu_bar = self.menuBar()
 
         # Menu INVOCATION
@@ -4391,15 +4388,6 @@ class Zordeer(QMainWindow):
         settings = load_settings()
         settings["design"]["search_bar_visible"] = self.search_bar.isVisible()
         settings["design"]["toolbar_visible"] = self.toolbar.isVisible()
-        area = self.toolBarArea(self.toolbar)
-        if area == Qt.ToolBarArea.TopToolBarArea:
-            settings["design"]["toolbar_position"] = "top"
-        elif area == Qt.ToolBarArea.LeftToolBarArea:
-            settings["design"]["toolbar_position"] = "left"
-        elif area == Qt.ToolBarArea.RightToolBarArea:
-            settings["design"]["toolbar_position"] = "right"
-        elif area == Qt.ToolBarArea.BottomToolBarArea:
-            settings["design"]["toolbar_position"] = "bottom"
         settings["window"]["windowSize"] = [self.size().width(), self.size().height()]
         settings["window"]["isMaximized"] = self.isMaximized()
         settings["window"]["isFullScreen"] = self.isFullScreen()
@@ -4828,25 +4816,31 @@ class Zordeer(QMainWindow):
                 command = [str(umu_path), str(exec_path_full)]
 
             else:
-                # Check if it's Wine.
+                # Check if it's just "wine", that is, the Wine from $PATH.
                 if runner_name.lower() == "wine":
                     wine_path = shutil.which("wine")
                     if not wine_path:
                         QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
                         return
                     command = [wine_path, str(exec_path_full)]
-                else:
-                    # Try using a custom runner
+                elif "proton" in runner_name.lower():
                     proton_script = zordeer_dir / "runner" / runner_name / "proton"
                     if not proton_script.exists():
                         QMessageBox.critical(
                             self,
                             tr("APP_NAME"),
-                            tr("ERROR_RUNNER", path=str(proton_script.parent))
-                        )
+                            tr("ERROR_RUNNER", path=str(proton_script.parent)))
                         return
-
                     command = [str(proton_script), "run", str(exec_path_full)]
+                else:
+                    wine_binary = zordeer_dir / "runner" / runner_name / "bin" / "wine"
+                    if not wine_binary.exists():
+                        QMessageBox.critical(
+                            self,
+                            tr("APP_NAME"),
+                            tr("ERROR_RUNNER", path=str(wine_binary.parent)))
+                        return
+                    command = [str(wine_binary), str(exec_path_full)]
 
             # Invocation arguments
             invocation_args_str = invocation_data.get('invocation_args', '').strip()
@@ -5142,7 +5136,7 @@ class Zordeer(QMainWindow):
         progress_dialog.setWindowModality(Qt.WindowModality.WindowModal)
         progress_dialog.setAutoClose(True)
         progress_dialog.setAutoReset(True)
-        progress_dialog.setMinimumWidth(200)
+        progress_dialog.setMinimumWidth(400)
         progress_dialog.show()
 
         self._cancel_auto = False
