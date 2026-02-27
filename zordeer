@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.9"
+__version__ = "1.7.9.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -4051,6 +4051,8 @@ class ShortcutManager(QDialog):
             current_zordeer = "snap run zordeer"
         elif os.environ.get("container") == "flatpak":
             current_zordeer = "flatpak run io.github.kyuyrii.zordeer"
+        elif os.environ.get("APPIMAGE"):
+            current_zordeer = os.environ.get("APPIMAGE")
         else:
             current_zordeer = os.path.abspath(sys.argv[0])
 
@@ -4853,8 +4855,8 @@ class Zordeer(QMainWindow):
 
             if use_umu and runner_name.lower() != "wine":
                 # Changes the folder used by UMU
-                if 'XDG_DATA_HOME' not in env:
-                    env['XDG_DATA_HOME'] = str(home_dir / "App" / "UMU")
+                if 'UMU_FOLDERS_PATH' not in env:
+                    env['UMU_FOLDERS_PATH'] = str(home_dir / "App" / "UMU")
                 env['PROTONPATH'] = str(zordeer_dir / "runner" / runner_name)
             else:
                 # Set Steam environment variables only for Proton
