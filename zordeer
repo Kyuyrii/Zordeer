@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.9.1"
+__version__ = "1.7.9.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -125,7 +125,7 @@ try:
     from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QListWidget, QPushButton, QMessageBox, QToolBar, QDialog, QGridLayout,
     QLabel, QLineEdit, QHBoxLayout, QFileDialog, QComboBox, QCheckBox, QListWidgetItem, QStyleFactory, QProgressBar, QButtonGroup,
     QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit, QProgressDialog)
-    from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo
+    from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo, QEventLoop
     from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QPalette, QColor, QTextCharFormat, QTextCursor
     from PyQt6.QtNetwork import QLocalServer, QLocalSocket
     print("Using PyQt6")
@@ -2575,10 +2575,10 @@ class MultipleEditInvocationDialog(QDialog):
     # Auxiliary functions
 
     # Select or deselect innovations listed in the Invocation Viewer.
-    def set_checked_state(self, inv_name, state: bool):
+    def set_checked_state(self, invocation_name, state: bool):
         for checkbox in self.invocation_checkboxes.values():
             try:
-                if checkbox.text() == inv_name:
+                if checkbox.text() == invocation_name:
                     checkbox.setChecked(state)
             except Exception:
                 continue
@@ -5086,16 +5086,11 @@ class Zordeer(QMainWindow):
         self.run_sgdb_auto_transfer()
 
     def run_sgdb_auto_transfer(self):
-        def get_score(item):
-            return item.get("score", 0)
-
         settings = load_settings()
         api_key = settings["other"].get("sgdb_apikey", "").strip()
         if not api_key:
             QMessageBox.warning(self, tr("APP_NAME"), tr("API_KEY_SAVE_FIRST"))
             return
-
-        headers = {"Authorization": f"Bearer {api_key}"}
 
         if not any(zordeer_config_dir.glob("invocation-info-*.toml")):
             QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
@@ -5106,15 +5101,15 @@ class Zordeer(QMainWindow):
         for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 with open(toml_file, "r", encoding="utf-8") as fh:
-                    inv = toml.load(fh)
-                inv_name = inv.get("name") or inv.get("display_name") or inv.get("id")
-                art_path = inv.get("art_path", "")
-                gui_path = inv.get("gui_path", "")
+                    invocation = toml.load(fh)
+                invocation_name = invocation.get("name") or invocation.get("display_name") or invocation.get("id")
+                art_path = invocation.get("art_path", "")
+                gui_path = invocation.get("gui_path", "")
                 # Also includes cases where paths are filled in but the files do not exist
                 art_missing = not art_path or not Path(art_path).exists()
                 gui_missing = not gui_path or not Path(gui_path).exists()
-                if inv_name and (art_missing or gui_missing):
-                    invocations.append((inv_name, toml_file))
+                if invocation_name and (art_missing or gui_missing):
+                    invocations.append((invocation_name, toml_file))
             except Exception:
                 continue
 
@@ -5156,21 +5151,27 @@ class Zordeer(QMainWindow):
         art_dir.mkdir(parents=True, exist_ok=True)
         gui_dir.mkdir(parents=True, exist_ok=True)
 
+        # Cache directories
+        heroes_tmp_dir = Path(tempfile.gettempdir()) / "Zordeer" / "sgdb_heroes"
+        icons_tmp_dir = Path(tempfile.gettempdir()) / "Zordeer" / "sgdb_icons"
+        heroes_tmp_dir.mkdir(parents=True, exist_ok=True)
+        icons_tmp_dir.mkdir(parents=True, exist_ok=True)
+
         completed = 0
         downloads = []  # Stores the hero and icon paths before copying
 
-        for inv_name, toml_file in invocations:
+        for invocation_name, toml_file in invocations:
             if self._cancel_auto or progress_dialog.wasCanceled():
                 break
 
-            hero_saved_path = None
-            icon_saved_path = None
             hero_cache_path = None
             icon_cache_path = None
 
             try:
                 # Search on SteamGridDB
-                search_url = f"https://www.steamgriddb.com/api/v2/search/autocomplete/{inv_name}"
+                search_url = f"https://www.steamgriddb.com/api/v2/search/autocomplete/{invocation_name}"
+                headers = {"Authorization": f"Bearer {api_key}"}
+                
                 with requests.get(search_url, headers=headers, timeout=15) as resp:
                     resp.raise_for_status()
                     data = resp.json().get("data", [])
@@ -5185,86 +5186,109 @@ class Zordeer(QMainWindow):
                 game_id = game.get("id")
                 steam_game_name = game.get("name") or str(game_id)
 
-                # Download the hero
-                try:
-                    hero_url = f"https://www.steamgriddb.com/api/v2/heroes/game/{game_id}"
-                    with requests.get(hero_url, headers=headers, timeout=20) as r:
-                        r.raise_for_status()
-                        heroes = r.json().get("data", []) or []
-                except Exception:
-                    heroes = []
-
-                if heroes:
-                    heroes.sort(key=get_score, reverse=True)
-                    best = heroes[0]
-                    img_url = (
-                        best.get("thumb")
-                        or best.get("thumb_url")
-                        or (best.get("thumbs")[0] if isinstance(best.get("thumbs"), list) and best.get("thumbs") else None)
-                        or best.get("full")
-                        or best.get("url")
-                    )
-                    if img_url:
-                        try:
-                            with requests.get(img_url, timeout=20) as rr:
-                                rr.raise_for_status()
+                # Download hero using ArtworkLoader
+                if not self._cancel_auto and not progress_dialog.wasCanceled():
+                    hero_loader = ArtworkLoader(api_key, game_id, "heroes")
+                    
+                    # Create a local event loop to wait for the thread
+                    loop = QEventLoop()
+                    hero_results = []
+                    
+                    def on_hero_finished(results):
+                        nonlocal hero_results
+                        hero_results = results
+                        loop.quit()
+                    
+                    def on_hero_error(error_msg):
+                        print(error_msg)
+                        loop.quit()
+                    
+                    hero_loader.finished.connect(on_hero_finished)
+                    hero_loader.error.connect(on_hero_error)
+                    hero_loader.start()
+                    
+                    # Process events while waiting
+                    timer = QTimer()
+                    timer.timeout.connect(lambda: QApplication.processEvents())
+                    timer.start(100)
+                    
+                    loop.exec()
+                    timer.stop()
+                    
+                    # Process hero results
+                    if hero_results and len(hero_results) > 0:
+                        # Sort by score if available
+                        best_hero = hero_results[0]  # First item is the highest scored (due to API ordering)
+                        
+                        if best_hero and best_hero.get("img_data"):
+                            img_data = best_hero["img_data"]
+                            img_url = best_hero["url"]
+                            
+                            if img_url:
                                 ext = Path(img_url).suffix
                                 if not ext or len(ext) > 6:
                                     ext = ".png"
                                 
                                 # Save to cache first
-                                hero_cache_filename = heroes_tmp_dir / f"{steam_game_name}_hero_{best.get('id')}{ext}"
+                                hero_cache_filename = heroes_tmp_dir / f"{steam_game_name}_hero_{best_hero['id']}{ext}"
                                 with hero_cache_filename.open("wb") as fh:
-                                    fh.write(rr.content)
+                                    fh.write(img_data)
                                 hero_cache_path = hero_cache_filename
-                        except Exception:
-                            hero_cache_path = None
 
-                # Download the icon
-                try:
-                    icon_url = f"https://www.steamgriddb.com/api/v2/icons/game/{game_id}"
-                    with requests.get(icon_url, headers=headers, timeout=20) as r:
-                        r.raise_for_status()
-                        icons = r.json().get("data", []) or []
-                except Exception:
-                    icons = []
-
-                if icons:
-                    icons.sort(key=get_score, reverse=True)
-                    best = icons[0]
-                    img_url = (
-                        best.get("thumb")
-                        or best.get("thumb_url")
-                        or (best.get("thumbs")[0] if isinstance(best.get("thumbs"), list) and best.get("thumbs") else None)
-                        or best.get("full")
-                        or best.get("url")
-                    )
-                    if img_url:
-                        try:
-                            with requests.get(img_url, timeout=20) as rr:
-                                rr.raise_for_status()
+                # Download icon using ArtworkLoader
+                if not self._cancel_auto and not progress_dialog.wasCanceled():
+                    icon_loader = ArtworkLoader(api_key, game_id, "icons")
+                    
+                    # Create a local event loop to wait for the thread
+                    loop = QEventLoop()
+                    icon_results = []
+                    
+                    def on_icon_finished(results):
+                        nonlocal icon_results
+                        icon_results = results
+                        loop.quit()
+                    
+                    def on_icon_error(error_msg):
+                        print(error_msg)
+                        loop.quit()
+                    
+                    icon_loader.finished.connect(on_icon_finished)
+                    icon_loader.error.connect(on_icon_error)
+                    icon_loader.start()
+                    
+                    # Process events while waiting
+                    timer = QTimer()
+                    timer.timeout.connect(lambda: QApplication.processEvents())
+                    timer.start(100)
+                    
+                    loop.exec()
+                    timer.stop()
+                    
+                    # Process icon results
+                    if icon_results and len(icon_results) > 0:
+                        # Sort by score if available
+                        best_icon = icon_results[0]  # First item is the highest scored (due to API ordering)
+                        
+                        if best_icon and best_icon.get("img_data"):
+                            img_data = best_icon["img_data"]
+                            img_url = best_icon["url"]
+                            
+                            if img_url:
                                 ext = Path(img_url).suffix
                                 if not ext or len(ext) > 6:
                                     ext = ".png"
                                 
                                 # Save to cache first
-                                icon_cache_filename = icons_tmp_dir / f"{steam_game_name}_icon_{best.get('id')}{ext}"
+                                icon_cache_filename = icons_tmp_dir / f"{steam_game_name}_icon_{best_icon['id']}{ext}"
                                 with icon_cache_filename.open("wb") as fh:
-                                    fh.write(rr.content)
+                                    fh.write(img_data)
                                 icon_cache_path = icon_cache_filename
-                        except Exception:
-                            icon_cache_path = None
 
                 # Store for later copying
-                downloads.append((inv_name, toml_file, hero_cache_path, icon_cache_path))
-
-                # Clear large variables to free memory
-                data = None
-                heroes = None
-                icons = None
+                downloads.append((invocation_name, toml_file, hero_cache_path, icon_cache_path))
 
             except Exception as e:
-                print(tr("AUTO_TRANSFER_GENERAL_ERROR", inv_name=inv_name, error=str(e)))
+                print(tr("AUTO_TRANSFER_GENERAL_ERROR", invocation_name=invocation_name, error=str(e)))
             finally:
                 completed += 1
                 progress_dialog.setValue(completed)
@@ -5272,25 +5296,25 @@ class Zordeer(QMainWindow):
 
         # After all downloads are complete, copy from cache to art/gui
         if not self._cancel_auto and not progress_dialog.wasCanceled():
-            for inv_name, toml_file, hero_cache_path, icon_cache_path in downloads:
-                normalized = inv_name.lower().replace(" ", "_").replace("/", "_").replace("\\", "_")
+            for invocation_name, toml_file, hero_cache_path, icon_cache_path in downloads:
+                normalized = invocation_name.lower().replace(" ", "_").replace("/", "_").replace("\\", "_")
                 copied_hero = False
                 copied_icon = False
 
                 try:
                     with open(toml_file, "r", encoding="utf-8") as fh:
-                        inv_toml = toml.load(fh)
+                        invocation_toml = toml.load(fh)
                 except Exception:
-                    inv_toml = {}
+                    invocation_toml = {}
 
                 if hero_cache_path and hero_cache_path.exists():
                     try:
                         dest = art_dir / f"{normalized}{hero_cache_path.suffix}"
                         shutil.copy2(hero_cache_path, dest)
-                        inv_toml["art_path"] = str(dest)
+                        invocation_toml["art_path"] = str(dest)
                         copied_hero = True
 
-                        # Delete the file from the cache folder when finished.
+                        # Delete the file from the cache folder when finished
                         hero_cache_path.unlink()
                     except Exception:
                         copied_hero = False
@@ -5299,10 +5323,10 @@ class Zordeer(QMainWindow):
                     try:
                         dest_icon = gui_dir / f"{normalized}{icon_cache_path.suffix}"
                         shutil.copy2(icon_cache_path, dest_icon)
-                        inv_toml["gui_path"] = str(dest_icon)
+                        invocation_toml["gui_path"] = str(dest_icon)
                         copied_icon = True
 
-                        # Delete the file from the cache folder when finished.
+                        # Delete the file from the cache folder when finished
                         icon_cache_path.unlink()
                     except Exception:
                         copied_icon = False
@@ -5310,7 +5334,7 @@ class Zordeer(QMainWindow):
                 if copied_hero or copied_icon:
                     try:
                         with open(toml_file, "w", encoding="utf-8") as fh:
-                            toml.dump(inv_toml, fh)
+                            toml.dump(invocation_toml, fh)
                     except Exception:
                         pass
 
@@ -5321,7 +5345,6 @@ class Zordeer(QMainWindow):
             QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_FINISHED"))
 
         self.load_invocations()
-
         progress_dialog.close()
 
     def run_in_prefix_dialog(self):
@@ -5485,12 +5508,6 @@ class Zordeer(QMainWindow):
                     subprocess.Popen(['xdg-open', 'https://github.com/Kyuyrii/Zordeer/releases'])
         except Exception as e:
             QMessageBox.warning(self, tr("APP_NAME"), tr("UPDATE_ERROR", error=e))
-
-# ===================== SGDB: artwork worker (thread) =====================
-heroes_tmp_dir = Path(tempfile.gettempdir()) / "Zordeer" / "sgdb_heroes"
-icons_tmp_dir = Path(tempfile.gettempdir()) / "Zordeer" / "sgdb_icons"
-heroes_tmp_dir.mkdir(parents=True, exist_ok=True)
-icons_tmp_dir.mkdir(parents=True, exist_ok=True)
 
 class ArtworkLoader(QThread):
     finished = pyqtSignal(list)  # List of artworks [{id, url, img_data}, ...]
