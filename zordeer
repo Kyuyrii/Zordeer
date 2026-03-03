@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.9.2"
+__version__ = "1.7.9.3"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -1104,7 +1104,7 @@ class AddInvocationDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_ART"),
-            str(home_dir),
+            "",
             tr("IMAGE_FILTER"))
         if file_path:
             self.invocation_art_input.setText(file_path)
@@ -1113,7 +1113,7 @@ class AddInvocationDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_GUI"),
-            str(home_dir),
+            "",
             tr("IMAGE_FILTER"))
         if file_path:
             self.invocation_gui_input.setText(file_path)
@@ -2704,7 +2704,7 @@ class MultipleEditInvocationDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_ART"),
-            str(home_dir),
+            "",
             tr("IMAGE_FILTER"))
         if file_path:
             self.art_input.setText(file_path)
@@ -2713,7 +2713,7 @@ class MultipleEditInvocationDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_GUI"),
-            str(home_dir),
+            "",
             tr("IMAGE_FILTER"))
         if file_path:
             self.gui_input.setText(file_path)
@@ -4454,10 +4454,10 @@ class Zordeer(QMainWindow):
                             proc.kill()
                             print(tr("STOP_PROCESS_SUCCESS", pid=proc.pid))
                         except Exception as e:
-                            print(tr("STOP_KILL_ERROR", pid=proc.pid, error=e))
+                            print(tr("STOP_KILL_ERROR", pid=proc.pid, error=str(e)))
                         found = True
                 except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-                    print(tr("STOP_ACCESS_ERROR", error=e))
+                    print(tr("STOP_ACCESS_ERROR", error=str(e)))
                     continue
             if found:
                 print(tr("STOP_INVOCATION_SUCCESS"))
@@ -4484,7 +4484,7 @@ class Zordeer(QMainWindow):
                 if loop_device:
                     # Unmount
                     result_unmount = subprocess.run(
-                        ["udisksctl", "unmount", "-b", loop_device],
+                        ["udisksctl", "unmount", "-b", loop_device, "--force"],
                         capture_output=True, text=True
                     )
                     if result_unmount.returncode != 0:
