@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.10"
+__version__ = "1.7.10.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -3096,7 +3096,7 @@ class InvocationInfoViewerDialog(QDialog):
             if search_mode == tr("NAME"):
                 match = text in rb.text().lower()
             else:  # Content
-                file_path = zordeer_dir / "config" / filename
+                file_path = zordeer_config_dir / filename
                 if file_path.exists():
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
@@ -3134,7 +3134,7 @@ class InvocationInfoViewerDialog(QDialog):
 
     # Display information by reading the TOML.
     def show_invocation_info_from_file(self, filename: str):
-        file_path = zordeer_dir / "config" / filename
+        file_path = zordeer_config_dir / filename
         if not file_path.exists():
             self.text_box.clear()
             return
@@ -4432,7 +4432,7 @@ class Zordeer(QMainWindow):
             self.last_executable = None
 
         # Unmount/eject mounted ISO, if present
-        mounted_iso_info = zordeer_dir / "config" / "mounted_iso_info.toml"
+        mounted_iso_info = zordeer_config_dir / "mounted_iso_info.toml"
 
         if mounted_iso_info.exists():
             try:
@@ -4728,6 +4728,7 @@ class Zordeer(QMainWindow):
                     if exe_files:
                         break
                     time.sleep(0.3)
+
                 if not exe_files:
                     QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_NO_EXE_FOUND"))
                     return
@@ -4736,7 +4737,7 @@ class Zordeer(QMainWindow):
                 print(tr("ISO_MOUNTED_EXE_FOUND", iso=str(iso_path), exe=str(exec_path_full)))
 
                 # Save mounted ISO info
-                mounted_iso_info = zordeer_dir / "config" / "mounted_iso_info.toml"
+                mounted_iso_info = zordeer_config_dir / "mounted_iso_info.toml"
                 with mounted_iso_info.open("w", encoding="utf-8") as f:
                     toml.dump({
                         "iso_path": str(iso_path),
@@ -4757,7 +4758,7 @@ class Zordeer(QMainWindow):
             use_umu = invocation_data.get('use_umu', False) or umu_global
             umu_version = settings["other"].get("umu_version", "").strip()
 
-            if use_umu and runner_name.lower() != "wine":
+            if use_umu and "proton" in runner_name.lower():
                 # Validate UMU version
                 if not umu_version or umu_version.lower() == "indefinite":
                     QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_UMU_INDEFINITE"))
@@ -4812,14 +4813,14 @@ class Zordeer(QMainWindow):
             env = os.environ.copy()
             env['WINEPREFIX'] = str(prefix_path)
 
-            if use_umu and runner_name.lower() != "wine":
+            if use_umu and "proton" in runner_name.lower():
                 # Changes the folder used by UMU
                 if 'UMU_FOLDERS_PATH' not in env:
                     env['UMU_FOLDERS_PATH'] = str(zordeer_home_dir / "App" / "UMU")
                 env['PROTONPATH'] = str(zordeer_runner_dir / runner_name)
             else:
                 # Set Steam environment variables only for Proton
-                if runner_name.lower() != "wine":
+                if "proton" in runner_name.lower():
                     env['STEAM_COMPAT_DATA_PATH'] = str(prefix_path)
                     env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = str(zordeer_dir / ".steam" / "steam")
                     env['STEAM_EXTRA_COMPAT_TOOLS_PATHS'] = str(runner_base_path)
@@ -4919,7 +4920,7 @@ class Zordeer(QMainWindow):
 
             # Simple debug version showing only UMU-related and important env vars
             debug_vars = []
-            if use_umu and runner_name.lower() != "wine":
+            if use_umu and "proton" in runner_name.lower():
                 debug_vars.append(f"WINEPREFIX='{env['WINEPREFIX']}'")
                 if 'PROTONPATH' in env:
                     debug_vars.append(f"PROTONPATH='{env['PROTONPATH']}'")
@@ -4928,7 +4929,7 @@ class Zordeer(QMainWindow):
             else:
                 debug_vars.append(f"WINEPREFIX='{env['WINEPREFIX']}'")
                 # Only show Steam variables if they exist and runner is not Wine
-                if runner_name.lower() != "wine":
+                if "proton" in runner_name.lower():
                     if 'STEAM_COMPAT_DATA_PATH' in env:
                         debug_vars.append(f"STEAM_COMPAT_DATA_PATH='{env['STEAM_COMPAT_DATA_PATH']}'")
                     if 'STEAM_COMPAT_CLIENT_INSTALL_PATH' in env:
@@ -5329,7 +5330,7 @@ class Zordeer(QMainWindow):
                 QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
                 return 
 
-        base_file = zordeer_dir / "config" / f"invocation-info-{safe_invocation_name.replace(' ', '_').lower()}.toml"
+        base_file = zordeer_config_dir / f"invocation-info-{safe_invocation_name.replace(' ', '_').lower()}.toml"
 
         if not base_file.exists():
             QMessageBox.warning(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR"))
