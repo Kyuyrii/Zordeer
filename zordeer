@@ -34,34 +34,42 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.9.3"
+__version__ = "1.7.10"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
     zordeer_dir = Path(os.environ["ZORDEER_DIR"]) / "App" / "Zordeer"
-    home_dir = Path(os.environ["ZORDEER_DIR"])
+    zordeer_home_dir = Path(os.environ["ZORDEER_DIR"])
 
 elif os.environ.get("SNAP"):
     home_connected = subprocess.run(["snapctl", "is-connected", "home"]).returncode == 0
 
     if home_connected:
         zordeer_dir = Path(os.environ["SNAP_REAL_HOME"]) / "App" / "Zordeer"
-        home_dir = Path(os.environ["SNAP_REAL_HOME"])
+        zordeer_home_dir = Path(os.environ["SNAP_REAL_HOME"])
     else:
         zordeer_dir = Path(os.environ["SNAP_USER_COMMON"]) / "App" / "Zordeer"
-        home_dir = Path(os.environ["SNAP_USER_COMMON"])
+        zordeer_home_dir = Path(os.environ["SNAP_USER_COMMON"])
 
 elif os.environ.get("container") == "flatpak":
     if os.environ.get("ZORDEER_DIR_APP_ID") == "1":
         zordeer_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer" / "App" / "Zordeer"
-        home_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer"
+        zordeer_home_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer"
     else:
         zordeer_dir = Path.home() / "App" / "Zordeer"
-        home_dir = Path.home()
+        zordeer_home_dir = Path.home()
 
 else:
     zordeer_dir = Path.home() / "App" / "Zordeer"
-    home_dir = Path.home()
+    zordeer_home_dir = Path.home()
+
+zordeer_art_dir = zordeer_dir / "art"
+zordeer_gui_dir = zordeer_dir / "art" / "gui"
+zordeer_config_dir = zordeer_dir / "config"
+zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
+zordeer_invocation_dir = zordeer_dir / "invocation"
+zordeer_runner_dir = zordeer_dir / "runner"
+zordeer_umu_dir = zordeer_dir / "umu"
 
 # Loads translations from external TOML files.
 def load_external_translations():
@@ -167,11 +175,6 @@ INVOCATION_LOCALE_OPTIONS = [
     'ไทย (th_TH.UTF-8)',
     'עברית (he_IL.UTF-8)',
 ]
-
-# Zordeer settings (TOML)
-# $HOME/App/Zordeer/config/zordeer-settings.toml
-zordeer_config_dir = zordeer_dir / "config"
-zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
 
 def detect_default_settings() -> dict:
     """Provides default settings for first-time creation."""
@@ -449,9 +452,7 @@ class SettingsDialog(QDialog):
         self.accept()
 
     def populate_runners_settings(self):
-        runners_path = zordeer_dir / "runner"
-        runners_path.mkdir(parents=True, exist_ok=True)
-        available_runners = sorted([d.name for d in runners_path.iterdir() if d.is_dir()], reverse=True)
+        available_runners = sorted([d.name for d in zordeer_runner_dir.iterdir() if d.is_dir()], reverse=True)
 
         items = [tr("INDEFINITE")]
 
@@ -496,11 +497,10 @@ class TransferWorker(QThread):
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
 
-    def __init__(self, url, runner_name, runners_dir, parent=None):
+    def __init__(self, url, runner_name, parent=None):
         super().__init__(parent)
         self.url = url
         self.runner_name = runner_name
-        self.runners_dir = Path(runners_dir)
         self.cancelled = False
         self.finished_transfer = False
 
@@ -533,11 +533,10 @@ class TransferWorker(QThread):
             self.message.emit(tr("EXTRACTING", name=Path(self.url).name))
 
             if "umu-launcher" in self.runner_name.lower():
-                base_dir = self.runners_dir.parent / "umu"
+                base_dir = zordeer_umu_dir
             else:
-                base_dir = self.runners_dir
+                base_dir = zordeer_runner_dir
 
-            base_dir.mkdir(parents=True, exist_ok=True)
             runner_destination_path = base_dir / self.runner_name
             initial_files = set(base_dir.iterdir())
 
@@ -755,7 +754,7 @@ class RunnerTransferDialog(QDialog):
 
         if selected_runner == "UMU-launcher":
             runner_folder_name = f"umu-{tag_name}"
-            base_dir = zordeer_dir / "umu"
+            base_dir = zordeer_umu_dir
         else:
             formatted_tag = tag_name.replace('GE-Proton-', '').replace('GE-Proton', '')
             if selected_runner == "Proton-GE":
@@ -763,7 +762,7 @@ class RunnerTransferDialog(QDialog):
             else:
                 file_name = Path(url).name
                 runner_folder_name = file_name.replace(".tar.gz", "").replace(".tar.xz", "")
-            base_dir = zordeer_dir / "runner"
+            base_dir = zordeer_runner_dir
 
         runner_path = base_dir / runner_folder_name
 
@@ -813,7 +812,6 @@ class AddInvocationDialog(QDialog):
 
     def __init__(self, parent=None, invocation_data=None):
         super().__init__(parent)
-        self.DEFAULT_PREFIX_NAME = "animarium_prefix"
         self.invocation_data = invocation_data
 
         if self.invocation_data:
@@ -1031,17 +1029,14 @@ class AddInvocationDialog(QDialog):
 
     def update_prefix_path(self, name):
         """Generates a default prefix path based on the invocation name."""
-        invocation_dir = name.replace(" ", "_").lower()
-        if invocation_dir:
-            default_path = zordeer_dir / "invocation" / invocation_dir
+        invocation_prefix = name.replace(" ", "_").lower()
+        if invocation_prefix:
+            default_path = zordeer_invocation_dir / invocation_prefix
             self.prefix_path_input.setText(str(default_path))
 
     def populate_runners(self):
         """Lists the available runner options and adds a warning if the runner chosen for the invocation is no longer available."""
-        runners_path = zordeer_dir / "runner"
-        runners_path.mkdir(parents=True, exist_ok=True)
-
-        available_runners = sorted([d.name for d in runners_path.iterdir() if d.is_dir()], reverse=True)
+        available_runners = sorted([d.name for d in zordeer_runner_dir.iterdir() if d.is_dir()], reverse=True)
 
         items = [tr("PLACEHOLDER_FOR_RUNNER")]
 
@@ -1073,10 +1068,9 @@ class AddInvocationDialog(QDialog):
         # Paths in order of priority
         drive_c = Path(self.prefix_path_input.text().strip()) / "drive_c"
         prefix = Path(self.prefix_path_input.text().strip())
-        invocations = zordeer_dir / "invocation"
 
         # Choose the first one that exists
-        start_dir = drive_c if drive_c.exists() else prefix if prefix.exists() else invocations
+        start_dir = drive_c if drive_c.exists() else prefix if prefix.exists() else zordeer_invocation_dir
 
         file_path, _ = QFileDialog.getOpenFileName(
             self,
@@ -1089,13 +1083,10 @@ class AddInvocationDialog(QDialog):
             self.exec_path_input.setText(file_path)
 
     def select_prefix(self):
-        invocations_dir = zordeer_dir / "invocation"
-        invocations_dir.mkdir(parents=True, exist_ok=True)
-
         dir_path = QFileDialog.getExistingDirectory(
             self,
             tr("SELECT_PREFIX_TITLE"),
-            str(invocations_dir)
+            str(zordeer_invocation_dir)
         )
         if dir_path:
             self.prefix_path_input.setText(dir_path)
@@ -1104,7 +1095,7 @@ class AddInvocationDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_ART"),
-            "",
+            str(zordeer_home_dir),
             tr("IMAGE_FILTER"))
         if file_path:
             self.invocation_art_input.setText(file_path)
@@ -1113,7 +1104,7 @@ class AddInvocationDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_GUI"),
-            "",
+            str(zordeer_home_dir),
             tr("IMAGE_FILTER"))
         if file_path:
             self.invocation_gui_input.setText(file_path)
@@ -1138,7 +1129,7 @@ class AddInvocationDialog(QDialog):
 
         prefix_text = self.prefix_path_input.text().strip()
         if not prefix_text:  # If empty, use default
-            prefix_text = str(zordeer_dir / "invocation" / self.DEFAULT_PREFIX_NAME)
+            prefix_text = str(zordeer_invocation_dir / "animarium_prefix")
 
         art_path = self.invocation_art_input.text().strip()
         gui_path = self.invocation_gui_input.text().strip()
@@ -1189,15 +1180,6 @@ class AddInvocationDialog(QDialog):
                 except Exception:
                     pass
 
-            art_dir = zordeer_dir / "art"
-            gui_dir = zordeer_dir / "art" / "gui"
-
-            try:
-                art_dir.mkdir(parents=True, exist_ok=True)
-                gui_dir.mkdir(parents=True, exist_ok=True)
-            except Exception:
-                pass
-
             # Normalize name
             safe_invocation_name = invocation_data["name"].replace(" ", "_").lower()
             invocation_file_path = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
@@ -1227,27 +1209,27 @@ class AddInvocationDialog(QDialog):
                         # Only remove if the new file is different from the old one
                         if old_art_path != art_path:
                             old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
-                            for old_file in art_dir.glob(f"{old_safe_name}.*"):
+                            for old_file in zordeer_art_dir.glob(f"{old_safe_name}.*"):
                                 try:
                                     old_file.unlink()
                                 except Exception:
                                     pass
 
-                    # Copy new image only if it's not already in the art_dir
-                    if art_path.parent != art_dir:
+                    # Copy new image only if it's not already in the zordeer_art_dir
+                    if art_path.parent != zordeer_art_dir:
                         art_extension = art_path.suffix.lower()
-                        new_art_path = art_dir / f"{safe_invocation_name}{art_extension}"
+                        new_art_path = zordeer_art_dir / f"{safe_invocation_name}{art_extension}"
                         try:
                             shutil.copyfile(art_path, new_art_path)
                             invocation_data["art_path"] = str(new_art_path)
                         except Exception:
                             invocation_data["art_path"] = ""
                     else:
-                        # File is already in art_dir, just update the path with new name if needed
+                        # File is already in zordeer_art_dir, just update the path with new name if needed
                         if self.invocation_data:
                             old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
                             if old_safe_name != safe_invocation_name:
-                                new_art_path = art_dir / f"{safe_invocation_name}{art_path.suffix.lower()}"
+                                new_art_path = zordeer_art_dir / f"{safe_invocation_name}{art_path.suffix.lower()}"
                                 try:
                                     art_path.rename(new_art_path)
                                     invocation_data["art_path"] = str(new_art_path)
@@ -1256,7 +1238,7 @@ class AddInvocationDialog(QDialog):
             elif self.invocation_data and self.invocation_data.get("art_path"):
                 # User removed the art path - delete old file
                 old_art_path = Path(self.invocation_data['art_path'])
-                if old_art_path.exists() and old_art_path.is_file() and old_art_path.parent == art_dir:
+                if old_art_path.exists() and old_art_path.is_file() and old_art_path.parent == zordeer_art_dir:
                     try:
                         old_art_path.unlink()
                     except Exception:
@@ -1273,27 +1255,27 @@ class AddInvocationDialog(QDialog):
                         # Only remove if the new file is different from the old one
                         if old_gui_path != gui_path:
                             old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
-                            for old_file in gui_dir.glob(f"{old_safe_name}.*"):
+                            for old_file in zordeer_gui_dir.glob(f"{old_safe_name}.*"):
                                 try:
                                     old_file.unlink()
                                 except Exception:
                                     pass
 
-                    # Copy new image only if it's not already in the gui_dir
-                    if gui_path.parent != gui_dir:
+                    # Copy new image only if it's not already in the zordeer_gui_dir
+                    if gui_path.parent != zordeer_gui_dir:
                         gui_extension = gui_path.suffix.lower()
-                        new_gui_path = gui_dir / f"{safe_invocation_name}{gui_extension}"
+                        new_gui_path = zordeer_gui_dir / f"{safe_invocation_name}{gui_extension}"
                         try:
                             shutil.copyfile(gui_path, new_gui_path)
                             invocation_data["gui_path"] = str(new_gui_path)
                         except Exception:
                             invocation_data["gui_path"] = ""
                     else:
-                        # File is already in gui_dir, just update the path with new name if needed
+                        # File is already in zordeer_gui_dir, just update the path with new name if needed
                         if self.invocation_data:
                             old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
                             if old_safe_name != safe_invocation_name:
-                                new_gui_path = gui_dir / f"{safe_invocation_name}{gui_path.suffix.lower()}"
+                                new_gui_path = zordeer_gui_dir / f"{safe_invocation_name}{gui_path.suffix.lower()}"
                                 try:
                                     gui_path.rename(new_gui_path)
                                     invocation_data["gui_path"] = str(new_gui_path)
@@ -1302,7 +1284,7 @@ class AddInvocationDialog(QDialog):
             elif self.invocation_data and self.invocation_data.get("gui_path"):
                 # User removed the gui path - delete old file
                 old_gui_path = Path(self.invocation_data['gui_path'])
-                if old_gui_path.exists() and old_gui_path.is_file() and old_gui_path.parent == gui_dir:
+                if old_gui_path.exists() and old_gui_path.is_file() and old_gui_path.parent == zordeer_gui_dir:
                     try:
                         old_gui_path.unlink()
                     except Exception:
@@ -1597,9 +1579,8 @@ class AddInvocationDialog(QDialog):
             cmd = [wine_path, "winecfg"]
             
         elif "proton" in runner_name.lower():
-            runners_path = zordeer_dir / "runner"
-            proton_script = runners_path / runner_name / "proton"
-            
+            proton_script = zordeer_runner_dir / runner_name / "proton"
+
             if not proton_script.exists():
                 QMessageBox.critical(
                     self,
@@ -1613,7 +1594,7 @@ class AddInvocationDialog(QDialog):
             env["STEAM_EXTRA_COMPAT_TOOLS_PATHS"] = str(proton_script.parent)
             
         else:
-            wine_binary = zordeer_dir / "runner" / runner_name / "bin" / "wine"
+            wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
             
             if not wine_binary.exists():
                 QMessageBox.critical(
@@ -1684,7 +1665,7 @@ class UMUGameSearchDialog(QDialog):
             QMessageBox.information(self.parent(), tr("APP_NAME"), tr("UMU_DATABASE_WINE_NOT_SUPPORTED"))
             return False
 
-        csv_path = zordeer_dir / "runner" / self.runner_name / "protonfixes" / "umu-database.csv"
+        csv_path = zordeer_runner_dir / self.runner_name / "protonfixes" / "umu-database.csv"
 
         if not csv_path.exists():
             QMessageBox.warning(self.parent(), tr("APP_NAME"), tr("UMU_DATABASE_NOT_FOUND", path=str(csv_path)))
@@ -1868,9 +1849,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         super().keyPressEvent(event)
 
     def populate_runners(self):
-        runners_path = zordeer_dir / "runner"
-        runners_path.mkdir(parents=True, exist_ok=True)
-        runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
+        runners = [d.name for d in zordeer_runner_dir.iterdir() if d.is_dir()]
 
         self.runner_combo.clear()
 
@@ -1884,7 +1863,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         self.runner_combo.addItems(items)
 
     def add_files(self):
-        files, _ = QFileDialog.getOpenFileNames(self, tr("SELECT_EXECUTABLE"), "", tr("EXECUTABLE_FILE_FILTER"))
+        files, _ = QFileDialog.getOpenFileNames(self, tr("SELECT_EXECUTABLE"), str(zordeer_home_dir), tr("EXECUTABLE_FILE_FILTER"))
         for f in files:
             self.add_file_item(f)
 
@@ -1917,7 +1896,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         # Prefix
         prefix_layout = QHBoxLayout()
         prefix_label = QLabel(tr("PREFIX_PATH"))
-        prefix_input = QLineEdit(str(zordeer_dir / "invocation" / Path(path).stem.replace(" ", "_").lower()))
+        prefix_input = QLineEdit(str(zordeer_invocation_dir / Path(path).stem.replace(" ", "_").lower()))
         prefix_button = QPushButton(tr("BROWSE_BUTTON"))
         prefix_layout.addWidget(prefix_label)
         prefix_layout.addWidget(prefix_input)
@@ -1926,7 +1905,7 @@ class MultipleCreateInvocationsDialog(QDialog):
 
         def update_prefix_from_name(text):
             new_text = text.replace(" ", "_").lower()
-            new_path = zordeer_dir / "invocation" / new_text
+            new_path = zordeer_invocation_dir / new_text
             prefix_input.setText(str(new_path))
 
         name_input.textChanged.connect(update_prefix_from_name)
@@ -1985,7 +1964,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         dir_path = QFileDialog.getExistingDirectory(
             self,
             tr("SELECT_PREFIX_TITLE"),
-            str(zordeer_dir / "invocation")
+            str(zordeer_invocation_dir)
         )
         if dir_path:
             line_edit.setText(dir_path)
@@ -2000,11 +1979,6 @@ class MultipleCreateInvocationsDialog(QDialog):
         # If the user does not select a runner, it will be saved as empty.
         if runner == tr("PLACEHOLDER_FOR_RUNNER"):
             runner = ""
-
-        art_dir = zordeer_dir / "art"
-        gui_dir = zordeer_dir / "art" / "gui"
-        art_dir.mkdir(parents=True, exist_ok=True)
-        gui_dir.mkdir(parents=True, exist_ok=True)
 
         # Name and duplicate validation
         existing_names = set()
@@ -2075,7 +2049,7 @@ class MultipleCreateInvocationsDialog(QDialog):
                     prefix_path = Path(item.prefix_input.text())
                 prefix_path.mkdir(parents=True, exist_ok=True)
             elif self.animarium_prefix_cb.isChecked():
-                prefix_path = zordeer_dir / "invocation" / "animarium_prefix"
+                prefix_path = zordeer_invocation_dir / "animarium_prefix"
                 prefix_path.mkdir(parents=True, exist_ok=True)
             else:
                 prefix_path = Path(item.prefix_input.text())
@@ -2237,9 +2211,6 @@ class MultipleRemoveInvocationDialog(QDialog):
 
         if msg.exec() != QMessageBox.StandardButton.Yes:
             return
-
-        art_dir = zordeer_dir / "art"
-        gui_dir = zordeer_dir / "art" / "gui"
 
         # Checking prefixes in use
         prefix_usages = {}
@@ -2656,9 +2627,7 @@ class MultipleEditInvocationDialog(QDialog):
         self.runner_filter.blockSignals(False)
 
     def populate_runners(self):
-        runners_path = zordeer_dir / "runner"
-        runners_path.mkdir(parents=True, exist_ok=True)
-        runners = [d.name for d in runners_path.iterdir() if d.is_dir()]
+        runners = [d.name for d in zordeer_runner_dir.iterdir() if d.is_dir()]
 
         self.runner_combo.clear()
 
@@ -2675,13 +2644,10 @@ class MultipleEditInvocationDialog(QDialog):
         self.fps_hud_combo.setEnabled(Qt.CheckState(state) == Qt.CheckState.Checked)
 
     def select_executable(self):
-        invocations_dir = zordeer_dir / "invocation"
-        invocations_dir.mkdir(parents=True, exist_ok=True)
-
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_EXECUTABLE"),
-            str(invocations_dir),
+            str(zordeer_invocation_dir),
             tr("EXECUTABLE_FILE_FILTER")
         )
 
@@ -2689,13 +2655,10 @@ class MultipleEditInvocationDialog(QDialog):
             self.exec_input.setText(file_path)
 
     def select_prefix(self):
-        invocations_dir = zordeer_dir / "invocation"
-        invocations_dir.mkdir(parents=True, exist_ok=True)
-
         dir_path = QFileDialog.getExistingDirectory(
             self,
             tr("SELECT_PREFIX_TITLE"),
-            str(invocations_dir)
+            str(zordeer_invocation_dir)
         )
         if dir_path:
             self.prefix_input.setText(dir_path)
@@ -2704,7 +2667,7 @@ class MultipleEditInvocationDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_ART"),
-            "",
+            str(zordeer_home_dir),
             tr("IMAGE_FILTER"))
         if file_path:
             self.art_input.setText(file_path)
@@ -2713,7 +2676,7 @@ class MultipleEditInvocationDialog(QDialog):
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             tr("SELECT_INVOCATION_GUI"),
-            "",
+            str(zordeer_home_dir),
             tr("IMAGE_FILTER"))
         if file_path:
             self.gui_input.setText(file_path)
@@ -2821,7 +2784,7 @@ class MultipleEditInvocationDialog(QDialog):
             if prefix_text != tr("DO_NOT_CHANGE"):
                 if prefix_text == "":
                     # Uses the standard prefix animarium_prefix
-                    prefix_path = zordeer_dir / "invocation" / "animarium_prefix"
+                    prefix_path = zordeer_invocation_dir / "animarium_prefix"
                     prefix_path.mkdir(parents=True, exist_ok=True)
                     data["prefix_path"] = str(prefix_path)
                 else:
@@ -2852,10 +2815,8 @@ class MultipleEditInvocationDialog(QDialog):
                                 except Exception:
                                     pass
 
-                        art_dir = zordeer_dir / "art"
-                        art_dir.mkdir(parents=True, exist_ok=True)
                         ext = art_path.suffix.lower()
-                        new_art_path = art_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
+                        new_art_path = zordeer_art_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
                         try:
                             shutil.copyfile(art_path, new_art_path)
                             data["art_path"] = str(new_art_path)
@@ -2887,10 +2848,8 @@ class MultipleEditInvocationDialog(QDialog):
                                 except Exception:
                                     pass
 
-                        gui_dir = zordeer_dir / "art" / "gui"
-                        gui_dir.mkdir(parents=True, exist_ok=True)
                         ext = gui_path.suffix.lower()
-                        new_gui_path = gui_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
+                        new_gui_path = zordeer_gui_dir / f"{data['name'].replace(' ', '_').lower()}{ext}"
                         try:
                             shutil.copyfile(gui_path, new_gui_path)
                             data["gui_path"] = str(new_gui_path)
@@ -3295,12 +3254,12 @@ class RunInPrefix(QDialog):
         # Grid layout for buttons (2x2)
         grid_buttons = QGridLayout()
         
-        self.select_btn = QPushButton(tr("ADD_FILES"))
+        self.select_files_btn = QPushButton(tr("ADD_FILES"))
         self.remove_btn = QPushButton(tr("REMOVE"))
         self.select_folder_btn = QPushButton(tr("ADD_FOLDER"))
         self.clear_btn = QPushButton(tr("CLEAR_LIST"))
         
-        grid_buttons.addWidget(self.select_btn, 0, 0)
+        grid_buttons.addWidget(self.select_files_btn, 0, 0)
         grid_buttons.addWidget(self.remove_btn, 0, 1)
         grid_buttons.addWidget(self.select_folder_btn, 1, 0)
         grid_buttons.addWidget(self.clear_btn, 1, 1)
@@ -3349,7 +3308,7 @@ class RunInPrefix(QDialog):
         layout.addWidget(self.progress)
 
         # Connections
-        self.select_btn.clicked.connect(self.select_exes)
+        self.select_files_btn.clicked.connect(self.select_files)
         self.select_folder_btn.clicked.connect(self.select_folder)
         self.remove_btn.clicked.connect(self.remove_selected)
         self.clear_btn.clicked.connect(self.clear_list)
@@ -3392,10 +3351,20 @@ class RunInPrefix(QDialog):
         self.current_index = 0
         self.progress.setValue(0)
 
+    def select_files(self):
+        files, _ = QFileDialog.getOpenFileNames(
+            self, tr("SELECT_EXECUTABLE"), str(zordeer_home_dir), tr("EXECUTABLE_FILE_FILTER"))
+        for f in files:
+            path_obj = Path(f)
+            item = QTreeWidgetItem([path_obj.name])
+            # Stores the full path to UserRole
+            item.setData(0, 0x0100, str(path_obj))
+            self.exe_list.addTopLevelItem(item)
+
     def select_folder(self):
         # Select a folder and add compatible files.
         folder = QFileDialog.getExistingDirectory(
-            self, tr("SELECT_FOLDER"), "")
+            self, tr("SELECT_FOLDER"), str(zordeer_home_dir))
         
         if folder:
             folder_path = Path(folder)
@@ -3408,16 +3377,6 @@ class RunInPrefix(QDialog):
                         item = QTreeWidgetItem([file_path.name])
                         item.setData(0, 0x0100, str(file_path))
                         self.exe_list.addTopLevelItem(item)
-
-    def select_exes(self):
-        files, _ = QFileDialog.getOpenFileNames(
-            self, tr("SELECT_EXECUTABLE"), "", tr("EXECUTABLE_FILE_FILTER"))
-        for f in files:
-            path_obj = Path(f)
-            item = QTreeWidgetItem([path_obj.name])
-            # Stores the full path to UserRole
-            item.setData(0, 0x0100, str(path_obj))
-            self.exe_list.addTopLevelItem(item)
 
     def start_execution(self):
         if self.exe_list.topLevelItemCount() == 0:
@@ -3565,7 +3524,7 @@ class RunInPrefix(QDialog):
 
     def set_execution_locked(self, locked: bool):
         self.run_btn.setEnabled(not locked)
-        self.select_btn.setEnabled(not locked)
+        self.select_files_btn.setEnabled(not locked)
         self.select_folder_btn.setEnabled(not locked)
         self.remove_btn.setEnabled(not locked)
         self.clear_btn.setEnabled(not locked)
@@ -3841,11 +3800,11 @@ class ShortcutManager(QDialog):
 
         # If dot_config_dir is empty in config, use default
         if not dot_config_dir:
-            dot_config_dir = str(home_dir / ".config")
+            dot_config_dir = str(zordeer_home_dir / ".config")
 
         # If dot_local_dir is empty in config, use default
         if not dot_local_dir:
-            dot_local_dir = str(home_dir / ".local")
+            dot_local_dir = str(zordeer_home_dir / ".local")
 
         # Processed settings for shortcut manager
         info = {
@@ -3859,8 +3818,8 @@ class ShortcutManager(QDialog):
 
     def get_default_desktop_dir(self):
         # Get default desktop directory from XDG user dirs.
-        desktop_dir = home_dir / "Desktop"
-        user_dirs_file = home_dir / ".config" / "user-dirs.dirs"
+        desktop_dir = zordeer_home_dir / "Desktop"
+        user_dirs_file = zordeer_home_dir / ".config" / "user-dirs.dirs"
         if user_dirs_file.exists():
             try:
                 with open(user_dirs_file, encoding="utf-8") as f:
@@ -3868,7 +3827,7 @@ class ShortcutManager(QDialog):
                         line = line.strip()
                         if line.startswith("XDG_DESKTOP_DIR"):
                             path = line.split("=", 1)[1].strip().strip('"')
-                            path = path.replace("$HOME", str(home_dir))
+                            path = path.replace("$HOME", str(zordeer_home_dir))
                             desktop_dir = Path(path)
                             break
             except Exception:
@@ -3886,7 +3845,7 @@ class ShortcutManager(QDialog):
         save_settings(settings)
 
     def browse_folder(self, line_edit: QLineEdit):
-        folder = QFileDialog.getExistingDirectory(self, tr("SELECT_FOLDER"), str(home_dir))
+        folder = QFileDialog.getExistingDirectory(self, tr("SELECT_FOLDER"), str(zordeer_home_dir))
         if not folder:
             return
 
@@ -4513,14 +4472,14 @@ class Zordeer(QMainWindow):
             self.stop_execution()
 
     def setup_directories(self):
-        """Creates the main Zordeer directory structure using pathlib with real folder names."""
-        base = zordeer_dir
+        """Creates the Zordeer directory structure"""
         subdirs = [
-            base / "invocation",
-            base / "runner",
-            base / "config",
-            base / "art",
-            base / "umu"
+            zordeer_art_dir,
+            zordeer_gui_dir,
+            zordeer_config_dir,
+            zordeer_invocation_dir,
+            zordeer_runner_dir,
+            zordeer_umu_dir,
         ]
 
         for subdir in subdirs:
@@ -4675,7 +4634,7 @@ class Zordeer(QMainWindow):
                 invocation_data = toml.load(f)
             print(tr("INVOCATION_INFO_LOADED", name=invocation_name))
 
-            runner_base_path = zordeer_dir / "runner" / invocation_data['runner']
+            runner_base_path = zordeer_runner_dir / invocation_data['runner']
             exec_path_full = Path(invocation_data['exec_path'])
             prefix_path = Path(invocation_data['prefix_path'])
 
@@ -4805,7 +4764,7 @@ class Zordeer(QMainWindow):
                     return
 
                 # Get UMU path
-                umu_path = zordeer_dir / "umu" / umu_version / "umu-run"
+                umu_path = zordeer_umu_dir / umu_version / "umu-run"
                 if not umu_path.exists():
                     QMessageBox.critical(
                         self,
@@ -4826,7 +4785,7 @@ class Zordeer(QMainWindow):
                         return
                     command = [wine_path, str(exec_path_full)]
                 elif "proton" in runner_name.lower():
-                    proton_script = zordeer_dir / "runner" / runner_name / "proton"
+                    proton_script = zordeer_runner_dir / runner_name / "proton"
                     if not proton_script.exists():
                         QMessageBox.critical(
                             self,
@@ -4835,7 +4794,7 @@ class Zordeer(QMainWindow):
                         return
                     command = [str(proton_script), "run", str(exec_path_full)]
                 else:
-                    wine_binary = zordeer_dir / "runner" / runner_name / "bin" / "wine"
+                    wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
                     if not wine_binary.exists():
                         QMessageBox.critical(
                             self,
@@ -4856,8 +4815,8 @@ class Zordeer(QMainWindow):
             if use_umu and runner_name.lower() != "wine":
                 # Changes the folder used by UMU
                 if 'UMU_FOLDERS_PATH' not in env:
-                    env['UMU_FOLDERS_PATH'] = str(home_dir / "App" / "UMU")
-                env['PROTONPATH'] = str(zordeer_dir / "runner" / runner_name)
+                    env['UMU_FOLDERS_PATH'] = str(zordeer_home_dir / "App" / "UMU")
+                env['PROTONPATH'] = str(zordeer_runner_dir / runner_name)
             else:
                 # Set Steam environment variables only for Proton
                 if runner_name.lower() != "wine":
@@ -5145,12 +5104,6 @@ class Zordeer(QMainWindow):
         progress_dialog.setValue(0)
         QApplication.processEvents()
 
-        # Directories
-        art_dir = zordeer_dir / "art"
-        gui_dir = zordeer_dir / "art" / "gui"
-        art_dir.mkdir(parents=True, exist_ok=True)
-        gui_dir.mkdir(parents=True, exist_ok=True)
-
         # Cache directories
         heroes_tmp_dir = Path(tempfile.gettempdir()) / "Zordeer" / "sgdb_heroes"
         icons_tmp_dir = Path(tempfile.gettempdir()) / "Zordeer" / "sgdb_icons"
@@ -5309,7 +5262,7 @@ class Zordeer(QMainWindow):
 
                 if hero_cache_path and hero_cache_path.exists():
                     try:
-                        dest = art_dir / f"{normalized}{hero_cache_path.suffix}"
+                        dest = zordeer_art_dir / f"{normalized}{hero_cache_path.suffix}"
                         shutil.copy2(hero_cache_path, dest)
                         invocation_toml["art_path"] = str(dest)
                         copied_hero = True
@@ -5321,7 +5274,7 @@ class Zordeer(QMainWindow):
 
                 if icon_cache_path and icon_cache_path.exists():
                     try:
-                        dest_icon = gui_dir / f"{normalized}{icon_cache_path.suffix}"
+                        dest_icon = zordeer_gui_dir / f"{normalized}{icon_cache_path.suffix}"
                         shutil.copy2(icon_cache_path, dest_icon)
                         invocation_toml["gui_path"] = str(dest_icon)
                         copied_icon = True
@@ -5348,59 +5301,13 @@ class Zordeer(QMainWindow):
         progress_dialog.close()
 
     def run_in_prefix_dialog(self):
-        invocation_name = self.get_selected_invocation()  # Use self directly
+        invocation_name = self.get_selected_invocation()
         if not invocation_name:
             QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
             return
 
         dlg = RunInPrefix(self, invocation_name)
         dlg.exec()
-
-    def run_in_prefix(self, safe_invocation_name):
-        exe_path, _ = QFileDialog.getOpenFileName(
-            self,
-            tr("SELECT_EXECUTABLE"),
-            str(Path.home()),
-            tr("EXECUTABLE_FILE_FILTER")
-        )
-        if not exe_path:
-            return  # User canceled
-
-        invocation_name = safe_invocation_name.replace(" ", "_").lower()
-        base_file = zordeer_config_dir / f"invocation-info-{invocation_name}.toml"
-
-        with base_file.open("r", encoding="utf-8") as f:
-            base_info = toml.load(f)
-
-        # Create temporary TOML
-        temp_id = str(uuid.uuid4())[:8]
-        temp_name = f"TEMP_EXEC_{temp_id}"
-        safe_temp_name = temp_name.lower()
-        temp_file = zordeer_config_dir / f"invocation-info-{safe_temp_name}.toml"
-
-        temp_info = base_info.copy()
-        temp_info["name"] = temp_name
-        temp_info["exec_path"] = exe_path  # Update the executable
-
-        with temp_file.open("w", encoding="utf-8") as f:
-            toml.dump(temp_info, f)
-
-        # Start as normal invocation
-        self.start_invocation(temp_name)
-
-        # Remove temp TOML after process ends
-        if self.invocation_process:
-            def wait_and_cleanup():
-                self.invocation_process.wait()
-                self.cleanup_temp_toml_files(temp_file)
-            
-            threading.Thread(target=wait_and_cleanup, daemon=True).start()
-        else:
-            self.cleanup_temp_toml_files(temp_file)
-
-    def run_in_prefix_for_selected_invocation(self):
-        invocation_name = self.get_selected_invocation()
-        self.run_in_prefix(invocation_name)
 
     def cleanup_temp_toml_files(self):
         removed = 0
