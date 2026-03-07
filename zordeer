@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.10.1"
+__version__ = "1.7.11"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -799,7 +799,7 @@ class RunnerTransferDialog(QDialog):
         def print_message(msg):
             print(msg)
 
-        self.worker = TransferWorker(url, runner_folder_name, base_dir)
+        self.worker = TransferWorker(url, runner_folder_name)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.message.connect(print_message)
         self.worker.finished.connect(handle_transfer_finished)
@@ -3648,13 +3648,12 @@ class ShortcutManager(QDialog):
         self.locations_widget.hide()
         main_layout.addWidget(self.locations_widget)
 
-        # Show locations and update button
+        # Show locations, info and update button
         buttons_layout = QHBoxLayout()
         self.locations_btn = QPushButton(tr("SHORTCUTS_PATHS"))
         self.locations_btn.clicked.connect(self.toggle_locations)
         buttons_layout.addWidget(self.locations_btn)
 
-        # Button to inform users about problems in Snap.
         self.paths_info_button = QPushButton()
         self.paths_info_button.setIcon(QIcon.fromTheme("help-about"))
         self.paths_info_button.clicked.connect(self.show_paths_info)
@@ -3721,18 +3720,18 @@ class ShortcutManager(QDialog):
 
         # Get the appropriate folder path based on current view
         if self.current_view == "desktop":
-            folder_path = Path(self.shortcut_manager_info.get("desktop_dir", ""))
+            folder_path = Path(self.desktop_dir_input.text())
         else:
             # For menu view, use .local/share/applications
-            dot_local = Path(self.shortcut_manager_info.get("dot_local_dir", ""))
+            dot_local = Path(self.dot_local_input.text())
             folder_path = dot_local / "share" / "applications"
         
         existing_desktops = set()
 
         if folder_path.exists():
             safe_to_display = {data["safe_invocation_name"]: name
-                              for name, data in self.invocations.items()
-                              if "safe_invocation_name" in data}
+                            for name, data in self.invocations.items()
+                            if "safe_invocation_name" in data}
 
             for f in folder_path.glob("invocation-*.desktop"):
                 if self.is_zordeer_desktop(f):
@@ -3750,7 +3749,10 @@ class ShortcutManager(QDialog):
         new_checkboxes = {}
         for inv in sorted(self.invocations.keys()):
             cb = QCheckBox(inv)
-            cb.setChecked(self.checkbox_states[self.current_view].get(inv, inv in existing_desktops))
+            # Combine saved states with existing shortcuts
+            was_checked = self.checkbox_states[self.current_view].get(inv, False)
+            exists_in_folder = inv in existing_desktops
+            cb.setChecked(was_checked or exists_in_folder)
             new_checkboxes[inv] = cb
         self.checkbox_widgets[self.current_view] = new_checkboxes
 
@@ -3851,6 +3853,8 @@ class ShortcutManager(QDialog):
 
         new_folder = Path(folder)
         line_edit.setText(str(new_folder))
+
+        self.update_list_view()
 
     def remove_all_zordeer_desktops(self, folder: Path):
         if not folder.exists():
