@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.11"
+__version__ = "1.7.11.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -51,25 +51,31 @@ elif os.environ.get("SNAP"):
         zordeer_dir = Path(os.environ["SNAP_USER_COMMON"]) / "App" / "Zordeer"
         zordeer_home_dir = Path(os.environ["SNAP_USER_COMMON"])
 
-elif os.environ.get("container") == "flatpak":
-    if os.environ.get("ZORDEER_DIR_APP_ID") == "1":
-        zordeer_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer" / "App" / "Zordeer"
-        zordeer_home_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer"
-    else:
-        zordeer_dir = Path.home() / "App" / "Zordeer"
-        zordeer_home_dir = Path.home()
+elif os.environ.get("container") == "flatpak" and os.environ.get("ZORDEER_DIR_APP_ID") == "1":
+    zordeer_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer" / "App" / "Zordeer"
+    zordeer_home_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer"
 
 else:
     zordeer_dir = Path.home() / "App" / "Zordeer"
     zordeer_home_dir = Path.home()
 
-zordeer_art_dir = zordeer_dir / "art"
-zordeer_gui_dir = zordeer_dir / "art" / "gui"
-zordeer_config_dir = zordeer_dir / "config"
-zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
-zordeer_invocation_dir = zordeer_dir / "invocation"
-zordeer_runner_dir = zordeer_dir / "runner"
-zordeer_umu_dir = zordeer_dir / "umu"
+if os.environ.get("ZORDEER_USE_XDG_CONFIG_AND_XDG_DATA") == "1" and os.environ.get("container") == "flatpak":
+    zordeer_art_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "art"
+    zordeer_gui_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "art" / "gui"
+    zordeer_config_dir = Path(os.environ["XDG_CONFIG_HOME"]) / "Zordeer" / "config"
+    zordeer_settings_file = Path(os.environ["XDG_CONFIG_HOME"]) / "Zordeer" / "config" / "zordeer-settings.toml"
+    zordeer_invocation_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "invocation"
+    zordeer_runner_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "runner"
+    zordeer_umu_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "umu"
+
+else:
+    zordeer_art_dir = zordeer_dir / "art"
+    zordeer_gui_dir = zordeer_dir / "art" / "gui"
+    zordeer_config_dir = zordeer_dir / "config"
+    zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
+    zordeer_invocation_dir = zordeer_dir / "invocation"
+    zordeer_runner_dir = zordeer_dir / "runner"
+    zordeer_umu_dir = zordeer_dir / "umu"
 
 # Loads translations from external TOML files.
 def load_external_translations():
