@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.11.1"
+__version__ = "1.7.11.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -477,11 +477,9 @@ class SettingsDialog(QDialog):
         self.runner_combo.addItems(items)
 
     def populate_umu_versions(self):
-        umu_path = zordeer_dir / "umu"
-
         # Check if each folder has the umu-run file
         available_umu = sorted([
-            d.name for d in umu_path.iterdir()
+            d.name for d in zordeer_umu_dir.iterdir()
             if d.is_dir() and (d / "umu-run").exists()
         ], reverse=True)
 
@@ -4775,17 +4773,17 @@ class Zordeer(QMainWindow):
                     return
 
                 # Get UMU path
-                umu_path = zordeer_umu_dir / umu_version / "umu-run"
-                if not umu_path.exists():
+                umu_run_path = zordeer_umu_dir / umu_version / "umu-run"
+                if not umu_run_path.exists():
                     QMessageBox.critical(
                         self,
                         tr("APP_NAME"),
-                        tr("UMU_NOT_FOUND", path=str(umu_path.parent))
+                        tr("UMU_NOT_FOUND", path=str(umu_run_path.parent))
                     )
                     return
 
                 # UMU launcher command structure
-                command = [str(umu_path), str(exec_path_full)]
+                command = [str(umu_run_path), str(exec_path_full)]
 
             else:
                 # Check if it's just "wine", that is, the Wine from $PATH.
