@@ -17,6 +17,7 @@ import time
 import psutil
 import uuid
 import re
+import shlex
 import random
 import csv
 import dbus
@@ -34,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "2.0"
+__version__ = "2.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -1564,8 +1565,7 @@ class AddInvocationDialog(QDialog):
                 
             cmd = [str(proton_script), "run", "winecfg"]
             env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
-            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = str(zordeer_dir / ".steam" / "steam")
-            env["STEAM_EXTRA_COMPAT_TOOLS_PATHS"] = str(proton_script.parent)
+            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = ""
             
         else:
             wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
@@ -4800,8 +4800,7 @@ class Zordeer(QMainWindow):
                 # Set Steam environment variables only for Proton
                 if "proton" in runner_name.lower():
                     env['STEAM_COMPAT_DATA_PATH'] = str(prefix_path)
-                    env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = str(zordeer_dir / ".local" / "share" / "Steam")
-                    env['STEAM_EXTRA_COMPAT_TOOLS_PATHS'] = str(runner_base_path)
+                    env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = ""
 
             # Symlink "pfx" > prefix_path (only for non-UMU)
             if not use_umu:
@@ -4889,7 +4888,8 @@ class Zordeer(QMainWindow):
             # Extra environment variables
             env_vars_str = invocation_data.get('env_vars', '').strip()
             if env_vars_str:
-                for item in env_vars_str.split():
+                env_items = shlex.split(env_vars_str)
+                for item in env_items:
                     if '=' in item:
                         env_prefix.append(item)
 
@@ -4912,8 +4912,6 @@ class Zordeer(QMainWindow):
                         debug_vars.append(f"STEAM_COMPAT_DATA_PATH='{env['STEAM_COMPAT_DATA_PATH']}'")
                     if 'STEAM_COMPAT_CLIENT_INSTALL_PATH' in env:
                         debug_vars.append(f"STEAM_COMPAT_CLIENT_INSTALL_PATH='{env['STEAM_COMPAT_CLIENT_INSTALL_PATH']}'")
-                    if 'STEAM_EXTRA_COMPAT_TOOLS_PATHS' in env:
-                        debug_vars.append(f"STEAM_EXTRA_COMPAT_TOOLS_PATHS='{env['STEAM_EXTRA_COMPAT_TOOLS_PATHS']}'")
 
             # Remove "env" from the beginning of command since we're showing env vars separately
             if command[0] == "env":
