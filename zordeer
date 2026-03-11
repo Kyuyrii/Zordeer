@@ -5,7 +5,7 @@ import sys
 import os
 import locale
 import json
-import toml
+import tomlkit
 import subprocess
 import atexit
 import shutil
@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "1.7.11.2"
+__version__ = "2.0"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -95,7 +95,7 @@ def load_external_translations():
                 try:
                     lang_code = toml_file.stem.replace("zordeer-translation-", "")
                     with open(toml_file, 'r', encoding='utf-8') as f:
-                        lang_data = toml.load(f)
+                        lang_data = tomlkit.load(f)
 
                     # Add to translations
                     external_translations[lang_code] = lang_data
@@ -221,7 +221,7 @@ def load_settings() -> dict:
 
     try:
         with open(zordeer_settings_file, "r", encoding="utf-8") as f:
-            data = toml.load(f)
+            data = tomlkit.load(f)
     except Exception:
         # First creation: save default settings
         save_settings(defaults)
@@ -259,7 +259,7 @@ def save_settings(data: dict) -> None:
     """Saves settings in TOML."""
     zordeer_config_dir.mkdir(parents=True, exist_ok=True)
     with open(zordeer_settings_file, "w", encoding="utf-8") as f:
-        toml.dump(data, f)
+        tomlkit.dump(data, f)
 
 class SettingsDialog(QDialog):
     def __init__(self, parent=None):
@@ -274,11 +274,11 @@ class SettingsDialog(QDialog):
         # Qt Style Choice
         style_label = QLabel(tr("QT_STYLE"))
         self.style_combo = QComboBox()
-        self.style_combo.addItem(tr("DEFAULT_QT_STYLE"))
+        self.style_combo.addItem(tr("INDEFINITE"))
         self.style_combo.addItems(QStyleFactory.keys())
         saved_style = self.settings["design"].get("qt_style", "indefinite")
         if saved_style == "indefinite":
-            self.style_combo.setCurrentText(tr("DEFAULT_QT_STYLE"))
+            self.style_combo.setCurrentText(tr("INDEFINITE"))
         else:
             self.style_combo.setCurrentText(saved_style)
         layout.addWidget(style_label, 0, 0)
@@ -403,28 +403,6 @@ class SettingsDialog(QDialog):
         selected_runner = self.runner_combo.currentText()
         selected_umu = self.umu_combo.currentText()
 
-        # Runner validation
-        if tr("UNAVAILABLE") in selected_runner:
-            reply = QMessageBox.question(
-                self,
-                tr("APP_NAME"),
-                tr("SELECT_AVAILABLE_RUNNER_CONFIRM"),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            if reply == QMessageBox.StandardButton.No:
-                return
-
-        # UMU validation
-        if tr("UNAVAILABLE") in selected_umu:
-            reply = QMessageBox.question(
-                self,
-                tr("APP_NAME"),
-                tr("SELECT_AVAILABLE_UMU_CONFIRM"),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            if reply == QMessageBox.StandardButton.No:
-                return
-
         unavailable_text = f" ({tr("UNAVAILABLE")})"
         if unavailable_text in selected_runner:
             selected_runner = selected_runner.replace(unavailable_text, "")
@@ -432,7 +410,11 @@ class SettingsDialog(QDialog):
         if unavailable_text in selected_umu:
             selected_umu = selected_umu.replace(unavailable_text, "")
 
-        self.settings["design"]["qt_style"] = self.style_combo.currentText()
+        selected_style = self.style_combo.currentText()
+        if selected_style == tr("INDEFINITE"):
+            self.settings["design"]["qt_style"] = 'indefinite'
+        else:
+            self.settings["design"]["qt_style"] = selected_style
         selected_index = self.lang_combo.currentIndex()
         self.settings["design"]["language"] = list(SUPPORTED_LANGUAGES.values())[selected_index]
         self.settings["design"]["layout_mode"] = ["classic", "grid", "list"][self.layout_mode_combo.currentIndex()]
@@ -1159,18 +1141,6 @@ class AddInvocationDialog(QDialog):
         """Validates fields, saves data to file, and updates paths if the name changes."""
         invocation_data = self.get_form_data()
 
-        # Runner validation
-        selected_runner = invocation_data.get("runner", "")
-        if tr("UNAVAILABLE") in selected_runner:
-            reply = QMessageBox.question(
-                self,
-                tr("APP_NAME"),
-                tr("SELECT_AVAILABLE_RUNNER_CONFIRM"),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
-            if reply == QMessageBox.StandardButton.No:
-                return
-
         old_safe_name = ""
         if self.invocation_data:
             old_safe_name = self.invocation_data.get('name', '').replace(" ", "_").lower()
@@ -1313,7 +1283,7 @@ class AddInvocationDialog(QDialog):
                                 continue  # Skip the current invocation file
                             try:
                                 with open(f, encoding="utf-8") as tf:
-                                    data = toml.load(tf)
+                                    data = tomlkit.load(tf)
                                     other_prefix = Path(data.get('prefix_path', '')).resolve()
                                     other_exec = Path(data.get('exec_path', '')).resolve() if data.get('exec_path') else None
 
@@ -1379,7 +1349,7 @@ class AddInvocationDialog(QDialog):
             # Save TOML
             try:
                 with open(invocation_file_path, 'w', encoding="utf-8") as tf:
-                    toml.dump(invocation_data, tf)
+                    tomlkit.dump(invocation_data, tf)
             except Exception as e:
                 print(e)
                 QMessageBox.critical(
@@ -1434,7 +1404,7 @@ class AddInvocationDialog(QDialog):
 
         # Load data
         with open(invocation_file, encoding='utf-8') as f:
-            invocation_data = toml.load(f)
+            invocation_data = tomlkit.load(f)
 
         prefix_path = invocation_data.get('prefix_path')
         prefix_in_use_by_others = []
@@ -1446,7 +1416,7 @@ class AddInvocationDialog(QDialog):
                     continue
                 try:
                     with open(f, encoding="utf-8") as toml_file:
-                        data = toml.load(toml_file)
+                        data = tomlkit.load(toml_file)
                         other_prefix = data.get('prefix_path')
                         if other_prefix and Path(other_prefix).resolve() == Path(prefix_path).resolve():
                             prefix_in_use_by_others.append(data.get('name', 'Unknown'))
@@ -2020,7 +1990,7 @@ class MultipleCreateInvocationsDialog(QDialog):
             # Test if you can write the file
             try:
                 with open(test_path, 'w', encoding="utf-8") as f:
-                    toml.dump({}, f)
+                    tomlkit.dump({}, f)
                 test_path.unlink()
             except Exception as e:
                 QMessageBox.critical(
@@ -2062,7 +2032,7 @@ class MultipleCreateInvocationsDialog(QDialog):
             # Save TOML
             try:
                 with open(file_path, 'w', encoding="utf-8") as f:
-                    toml.dump({
+                    tomlkit.dump({
                         "name": name,
                         "runner": runner,
                         "exec_path": item.path,
@@ -2091,7 +2061,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         if file_path.exists():
             return
         with open(file_path, 'w', encoding="utf-8") as f:
-            toml.dump(data, f)
+            tomlkit.dump(data, f)
 
 class MultipleRemoveInvocationDialog(QDialog):
     def __init__(self, parent=None):
@@ -2178,7 +2148,7 @@ class MultipleRemoveInvocationDialog(QDialog):
         for invocation_file in invocation_files:
             try:
                 with open(invocation_file, encoding="utf-8") as f:
-                    invocation_data = toml.load(f)
+                    invocation_data = tomlkit.load(f)
                 name = invocation_data.get("name", invocation_file.stem)
                 checkbox = QCheckBox(name)
                 checkbox.invocation_file = invocation_file
@@ -2231,7 +2201,7 @@ class MultipleRemoveInvocationDialog(QDialog):
                 for f in zordeer_config_dir.glob("invocation-info-*.toml"):
                     try:
                         with open(f, encoding="utf-8") as toml_file:
-                            data = toml.load(toml_file)
+                            data = tomlkit.load(toml_file)
                             other_prefix = data.get('prefix_path')
                             if other_prefix and Path(other_prefix).resolve() == prefix_path_obj.resolve():
                                 name = data.get("name", f.stem)
@@ -2603,7 +2573,7 @@ class MultipleEditInvocationDialog(QDialog):
         for cb in self.invocation_checkboxes.values():
             try:
                 with open(cb.invocation_file, encoding="utf-8") as f:
-                    data = toml.load(f)
+                    data = tomlkit.load(f)
                 runner = data.get("runner", "")
                 if not runner:
                     runner = tr("PLACEHOLDER_FOR_RUNNER")
@@ -2696,7 +2666,7 @@ class MultipleEditInvocationDialog(QDialog):
         for invocation_file in invocation_files:
             try:
                 with open(invocation_file, encoding="utf-8") as f:
-                    data = toml.load(f)
+                    data = tomlkit.load(f)
                 name = data.get("name", invocation_file.stem)
                 cb = QCheckBox(name)
                 cb.invocation_file = invocation_file
@@ -2713,7 +2683,7 @@ class MultipleEditInvocationDialog(QDialog):
         for name, cb in self.invocation_checkboxes.items():
             try:
                 with open(cb.invocation_file, encoding="utf-8") as f:
-                    data = toml.load(f)
+                    data = tomlkit.load(f)
                 runner = data.get("runner", "")
                 if not runner:
                     runner = tr("PLACEHOLDER_FOR_RUNNER")
@@ -2770,7 +2740,7 @@ class MultipleEditInvocationDialog(QDialog):
 
         for cb in selected:
             with open(cb.invocation_file, encoding="utf-8") as f:
-                data = toml.load(f)
+                data = tomlkit.load(f)
 
             # Apply fields
             # Runner
@@ -2894,7 +2864,7 @@ class MultipleEditInvocationDialog(QDialog):
 
             # Save TOML
             with open(cb.invocation_file, "w", encoding="utf-8") as f:
-                toml.dump(data, f)
+                tomlkit.dump(data, f)
 
         if self.parent_ref:
             self.update_runner_filter()
@@ -3049,7 +3019,7 @@ class InvocationInfoViewerDialog(QDialog):
         for file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 with open(file, "r", encoding="utf-8") as f:
-                    inv = toml.load(f)
+                    inv = tomlkit.load(f)
                     inv["__filename"] = file.name
                     invocations.append(inv)
             except Exception:
@@ -3104,7 +3074,7 @@ class InvocationInfoViewerDialog(QDialog):
                 if file_path.exists():
                     try:
                         with open(file_path, "r", encoding="utf-8") as f:
-                            data = toml.load(f)
+                            data = tomlkit.load(f)
                         # Search for content only in these fields
                         for key in ["exec_path", "prefix_path", "language", "fps_hud_type", "env_vars", "invocation_args"]:
                             value = str(data.get(key, "")).lower()
@@ -3145,7 +3115,7 @@ class InvocationInfoViewerDialog(QDialog):
 
         try:
             with open(file_path, "r", encoding="utf-8") as f:
-                inv = toml.load(f)
+                inv = tomlkit.load(f)
         except Exception:
             self.text_box.clear()
             return
@@ -3392,7 +3362,7 @@ class RunInPrefix(QDialog):
         # Load and store the original TOML once
         try:
             with open(self.real_toml_path, "r", encoding="utf-8") as f:
-                self._original_toml = toml.load(f)
+                self._original_toml = tomlkit.load(f)
         except Exception as e:
             QMessageBox.critical(
                 self,
@@ -3474,7 +3444,7 @@ class RunInPrefix(QDialog):
         # Save ONLY the temporary TOML
         try:
             with open(self.temp_toml_path, "w", encoding="utf-8") as f:
-                toml.dump(mod, f)
+                tomlkit.dump(mod, f)
         except Exception as e:
             QMessageBox.critical(self, tr("APP_NAME"), tr("FAILED_UPDATE_TOML", error=e))
             return
@@ -3779,7 +3749,7 @@ class ShortcutManager(QDialog):
         for f in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 content = f.read_text(encoding="utf-8")
-                data = toml.loads(content)
+                data = tomlkit.loads(content)
                 name = data.get("name")
                 gui_path = data.get("gui_path", "")
                 safe_invocation_name = f.stem.replace("invocation-info-", "")
@@ -3886,7 +3856,7 @@ class ShortcutManager(QDialog):
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_PATH", path=desktop_dir)
+                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=desktop_dir)
             )
             return
 
@@ -3895,7 +3865,7 @@ class ShortcutManager(QDialog):
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_PATH", path=dot_config_dir)
+                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_config_dir)
             )
             return
 
@@ -3904,7 +3874,7 @@ class ShortcutManager(QDialog):
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_PATH", path=dot_local_dir)
+                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_local_dir)
             )
             return
         
@@ -4445,7 +4415,7 @@ class Zordeer(QMainWindow):
         if mounted_iso_info.exists():
             try:
                 with mounted_iso_info.open("r", encoding="utf-8") as f:
-                    iso_info = toml.load(f)
+                    iso_info = tomlkit.load(f)
 
                 loop_device = iso_info.get("loop_device")
                 if loop_device:
@@ -4516,7 +4486,7 @@ class Zordeer(QMainWindow):
         for invocation_file in invocation_files:
             try:
                 with open(invocation_file, encoding="utf-8") as f:
-                    invocation_data = toml.load(f)
+                    invocation_data = tomlkit.load(f)
                 
                 item = self.add_invocation_to_list(invocation_data)
                 item.setData(Qt.ItemDataRole.UserRole, invocation_file)
@@ -4524,7 +4494,7 @@ class Zordeer(QMainWindow):
                 if selected_invocation_file and selected_invocation_file == invocation_file:
                     restored_selection_item = item
                     
-            except (IOError, toml.TomlDecodeError) as e:
+            except (IOError, tomlkit.exceptions.ParseError) as e:
                 print(tr("ERROR_LOADING_FILE", file=invocation_file, error=e))
 
         # Restores the selection
@@ -4549,7 +4519,7 @@ class Zordeer(QMainWindow):
         for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 with open(toml_file, 'r+', encoding='utf-8') as f:
-                    data = toml.load(f)
+                    data = tomlkit.load(f)
                     modified = False
                     
                     for field in ['exec_path', 'prefix_path', 'art_path', 'gui_path']:
@@ -4561,7 +4531,7 @@ class Zordeer(QMainWindow):
                     
                     if modified:
                         f.seek(0)
-                        toml.dump(data, f)
+                        tomlkit.dump(data, f)
                         f.truncate()
             except:
                 continue
@@ -4599,8 +4569,8 @@ class Zordeer(QMainWindow):
 
         try:
             with invocation_file_path.open('r', encoding='utf-8') as f:
-                invocation_data = toml.load(f)
-        except (IOError, toml.TomlDecodeError):
+                invocation_data = tomlkit.load(f)
+        except (IOError, tomlkit.exceptions.ParseError):
             QMessageBox.critical(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR", name=invocation_name))
             return
 
@@ -4639,7 +4609,7 @@ class Zordeer(QMainWindow):
 
         try:
             with invocation_file_path.open('r', encoding='utf-8') as f:
-                invocation_data = toml.load(f)
+                invocation_data = tomlkit.load(f)
             print(tr("INVOCATION_INFO_LOADED", name=invocation_name))
 
             runner_base_path = zordeer_runner_dir / invocation_data['runner']
@@ -4747,7 +4717,7 @@ class Zordeer(QMainWindow):
                 # Save mounted ISO info
                 mounted_iso_info = zordeer_config_dir / "mounted_iso_info.toml"
                 with mounted_iso_info.open("w", encoding="utf-8") as f:
-                    toml.dump({
+                    tomlkit.dump({
                         "iso_path": str(iso_path),
                         "loop_device": loop_device,
                         "mount_point": str(mount_point)
@@ -4830,7 +4800,7 @@ class Zordeer(QMainWindow):
                 # Set Steam environment variables only for Proton
                 if "proton" in runner_name.lower():
                     env['STEAM_COMPAT_DATA_PATH'] = str(prefix_path)
-                    env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = str(zordeer_dir / ".steam" / "steam")
+                    env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = str(zordeer_dir / ".local" / "share" / "Steam")
                     env['STEAM_EXTRA_COMPAT_TOOLS_PATHS'] = str(runner_base_path)
 
             # Symlink "pfx" > prefix_path (only for non-UMU)
@@ -4987,7 +4957,7 @@ class Zordeer(QMainWindow):
             except psutil.NoSuchProcess:
                 self.real_invocation_process = None
 
-        except (IOError, toml.TomlDecodeError):
+        except (IOError, tomlkit.exceptions.ParseError):
             QMessageBox.critical(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR", name=invocation_name))
         except Exception as e:
             QMessageBox.critical(self, tr("APP_NAME"), tr("INVOCATION_START_ERROR", error=str(e)))
@@ -5069,7 +5039,7 @@ class Zordeer(QMainWindow):
         for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 with open(toml_file, "r", encoding="utf-8") as fh:
-                    invocation = toml.load(fh)
+                    invocation = tomlkit.load(fh)
                 invocation_name = invocation.get("name") or invocation.get("display_name") or invocation.get("id")
                 art_path = invocation.get("art_path", "")
                 gui_path = invocation.get("gui_path", "")
@@ -5265,7 +5235,7 @@ class Zordeer(QMainWindow):
 
                 try:
                     with open(toml_file, "r", encoding="utf-8") as fh:
-                        invocation_toml = toml.load(fh)
+                        invocation_toml = tomlkit.load(fh)
                 except Exception:
                     invocation_toml = {}
 
@@ -5296,7 +5266,7 @@ class Zordeer(QMainWindow):
                 if copied_hero or copied_icon:
                     try:
                         with open(toml_file, "w", encoding="utf-8") as fh:
-                            toml.dump(invocation_toml, fh)
+                            tomlkit.dump(invocation_toml, fh)
                     except Exception:
                         pass
 
@@ -5345,7 +5315,7 @@ class Zordeer(QMainWindow):
             return
 
         with base_file.open("r", encoding="utf-8") as f:
-            invocation_info = toml.load(f)
+            invocation_info = tomlkit.load(f)
 
         path = None
         if chosen_path == "prefix":
