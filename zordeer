@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "2.2"
+__version__ = "2.3"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -4004,7 +4004,6 @@ class ShortcutManager(QDialog):
             f"Name={name}",
             f"Exec={current_zordeer}",
             f"Icon={gui_path}",
-            "StartupWMClass=io.github.kyuyrii.zordeer",
             f"Categories={categories}",
             "Keywords=gaming;invocation;",
             "Type=Application",
