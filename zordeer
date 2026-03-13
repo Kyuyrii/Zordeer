@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "2.3"
+__version__ = "2.4"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -60,23 +60,13 @@ else:
     zordeer_dir = Path.home() / "App" / "Zordeer"
     zordeer_home_dir = Path.home()
 
-if os.environ.get("ZORDEER_USE_XDG_CONFIG_AND_XDG_DATA") == "1" and os.environ.get("container") == "flatpak":
-    zordeer_art_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "art"
-    zordeer_gui_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "art" / "gui"
-    zordeer_config_dir = Path(os.environ["XDG_CONFIG_HOME"]) / "Zordeer" / "config"
-    zordeer_settings_file = Path(os.environ["XDG_CONFIG_HOME"]) / "Zordeer" / "config" / "zordeer-settings.toml"
-    zordeer_invocation_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "invocation"
-    zordeer_runner_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "runner"
-    zordeer_umu_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "umu"
-
-else:
-    zordeer_art_dir = zordeer_dir / "art"
-    zordeer_gui_dir = zordeer_dir / "art" / "gui"
-    zordeer_config_dir = zordeer_dir / "config"
-    zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
-    zordeer_invocation_dir = zordeer_dir / "invocation"
-    zordeer_runner_dir = zordeer_dir / "runner"
-    zordeer_umu_dir = zordeer_dir / "umu"
+zordeer_art_dir = zordeer_dir / "art"
+zordeer_gui_dir = zordeer_dir / "art" / "gui"
+zordeer_config_dir = zordeer_dir / "config"
+zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
+zordeer_invocation_dir = zordeer_dir / "invocation"
+zordeer_runner_dir = zordeer_dir / "runner"
+zordeer_umu_dir = zordeer_dir / "umu"
 
 # Loads translations from external TOML files.
 def load_external_translations():
@@ -477,20 +467,19 @@ class SettingsDialog(QDialog):
         self.umu_combo.clear()
         self.umu_combo.addItems(items)
 
-# Transfer Worker Thread
 class TransferWorker(QThread):
     progress = pyqtSignal(int)
     message = pyqtSignal(str)
     finished = pyqtSignal(str)
     error = pyqtSignal(str)
 
-    def __init__(self, url, runner_name, parent=None):
+    def __init__(self, url, runner_name, runners_dir, parent=None):
         super().__init__(parent)
         self.url = url
         self.runner_name = runner_name
+        self.runners_dir = Path(runners_dir)
         self.cancelled = False
         self.finished_transfer = False
-
 
     def cancel(self):
         self.cancelled = True
@@ -519,10 +508,7 @@ class TransferWorker(QThread):
 
             self.message.emit(tr("EXTRACTING", name=Path(self.url).name))
 
-            if "umu-launcher" in self.runner_name.lower():
-                base_dir = zordeer_umu_dir
-            else:
-                base_dir = zordeer_runner_dir
+            base_dir = self.runners_dir
 
             runner_destination_path = base_dir / self.runner_name
             initial_files = set(base_dir.iterdir())
@@ -786,7 +772,7 @@ class RunnerTransferDialog(QDialog):
         def print_message(msg):
             print(msg)
 
-        self.worker = TransferWorker(url, runner_folder_name)
+        self.worker = TransferWorker(url, runner_folder_name, base_dir)
         self.worker.progress.connect(self.progress_bar.setValue)
         self.worker.message.connect(print_message)
         self.worker.finished.connect(handle_transfer_finished)
@@ -3721,13 +3707,13 @@ class ShortcutManager(QDialog):
 
         # Create/recreate checkboxes for this view.
         new_checkboxes = {}
-        for inv in sorted(self.invocations.keys()):
-            cb = QCheckBox(inv)
+        for invocation in sorted(self.invocations.keys()):
+            cb = QCheckBox(invocation)
             # Combine saved states with existing shortcuts
-            was_checked = self.checkbox_states[self.current_view].get(inv, False)
-            exists_in_folder = inv in existing_desktops
+            was_checked = self.checkbox_states[self.current_view].get(invocation, False)
+            exists_in_folder = invocation in existing_desktops
             cb.setChecked(was_checked or exists_in_folder)
-            new_checkboxes[inv] = cb
+            new_checkboxes[invocation] = cb
         self.checkbox_widgets[self.current_view] = new_checkboxes
 
         # Add only widgets filtered by the search.
@@ -3743,21 +3729,25 @@ class ShortcutManager(QDialog):
 
     # Loading and saving
     def load_invocations(self) -> dict:
-        invs = {}
+        invocations = {}
         if not zordeer_config_dir.exists():
-            return invs
+            return invocations
         for f in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
                 content = f.read_text(encoding="utf-8")
                 data = tomlkit.loads(content)
                 name = data.get("name")
                 gui_path = data.get("gui_path", "")
+                exec_path = data.get("exec_path", "")
                 safe_invocation_name = f.stem.replace("invocation-info-", "")
                 if name:
-                    invs[name] = {"gui_path": gui_path, "safe_invocation_name": safe_invocation_name}
+                    invocations[name] = {
+                        "gui_path": gui_path,
+                        "exec_path": exec_path,
+                        "safe_invocation_name": safe_invocation_name}
             except Exception:
                 continue
-        return invs
+        return invocations
 
     def load_shortcut_manager_info(self):
         # Load directories from TOML settings.
@@ -3981,6 +3971,7 @@ class ShortcutManager(QDialog):
 
         invocation_data = self.invocations.get(name, {})
         safe_name = invocation_data.get("safe_invocation_name", "")
+        exec_path = invocation_data.get("exec_path", "")
 
         desktop_file = folder / f"invocation-{safe_name}.desktop"
 
@@ -4004,6 +3995,7 @@ class ShortcutManager(QDialog):
             f"Name={name}",
             f"Exec={current_zordeer}",
             f"Icon={gui_path}",
+            f"StartupWMClass={os.path.basename(exec_path)}",
             f"Categories={categories}",
             "Keywords=gaming;invocation;",
             "Type=Application",
@@ -4513,7 +4505,7 @@ class Zordeer(QMainWindow):
 
     def fix_invocation_paths(self):
         # Fix paths in all invocations if they don't match current zordeer_dir
-        current_base = str(zordeer_dir).replace('/App/Zordeer', '')
+        current_base = str(zordeer_home_dir)
 
         for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
