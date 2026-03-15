@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "2.4"
+__version__ = "2.4.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -67,6 +67,7 @@ zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
 zordeer_invocation_dir = zordeer_dir / "invocation"
 zordeer_runner_dir = zordeer_dir / "runner"
 zordeer_umu_dir = zordeer_dir / "umu"
+zordeer_umu_folders_path = zordeer_home_dir / "App" / "UMU"
 
 # Loads translations from external TOML files.
 def load_external_translations():
@@ -4785,7 +4786,7 @@ class Zordeer(QMainWindow):
             if use_umu and "proton" in runner_name.lower():
                 # Changes the folder used by UMU
                 if 'UMU_FOLDERS_PATH' not in env:
-                    env['UMU_FOLDERS_PATH'] = str(zordeer_home_dir / "App" / "UMU")
+                    env['UMU_FOLDERS_PATH'] = str(zordeer_umu_folders_path)
                 env['PROTONPATH'] = str(zordeer_runner_dir / runner_name)
             else:
                 # Set Steam environment variables only for Proton
