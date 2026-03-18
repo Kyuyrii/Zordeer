@@ -7,7 +7,6 @@ import locale
 import json
 import tomlkit
 import subprocess
-import atexit
 import shutil
 import requests
 import tarfile
@@ -35,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "2.4.1"
+__version__ = "2.4.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -552,12 +551,8 @@ class TransferWorker(QThread):
             self.finished_transfer = True
             self.finished.emit(tr("TRANSFER_AND_INSTALL_SUCCESS", name=Path(self.url).name))
 
-        except requests.exceptions.RequestException as e:
-            self.error.emit(tr("TRANSFER_FAILED", error=str(e)))
-        except tarfile.TarError as e:
-            self.error.emit(tr("TRANSFER_ERROR", error=str(e)))
         except Exception as e:
-            self.error.emit(tr("TRANSFER_ERROR", error=str(e)))
+            self.error.emit(tr("TRANSFER_FAILED", error=str(e)))
 
 class RunnerTransferDialog(QDialog):
     def __init__(self, parent=None):
@@ -745,8 +740,7 @@ class RunnerTransferDialog(QDialog):
                 self,
                 tr("APP_NAME"),
                 tr("RUNNER_EXISTS_WARNING", name=item_data['display_name']),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.No:
                 return
 
@@ -1050,9 +1044,7 @@ class AddInvocationDialog(QDialog):
             self,
             tr("SELECT_EXECUTABLE"),
             str(start_dir),
-            tr("EXECUTABLE_FILE_FILTER")
-        )
-
+            tr("EXECUTABLE_FILE_FILTER"))
         if file_path:
             self.exec_path_input.setText(file_path)
 
@@ -1060,8 +1052,7 @@ class AddInvocationDialog(QDialog):
         dir_path = QFileDialog.getExistingDirectory(
             self,
             tr("SELECT_PREFIX_TITLE"),
-            str(zordeer_invocation_dir)
-        )
+            str(zordeer_invocation_dir))
         if dir_path:
             self.prefix_path_input.setText(dir_path)
 
@@ -1154,8 +1145,7 @@ class AddInvocationDialog(QDialog):
                 QMessageBox.warning(
                     self,
                     tr("APP_NAME"),
-                    tr("INVOCATION_ALREADY_EXISTS")
-                )
+                    tr("INVOCATION_ALREADY_EXISTS"))
                 return
 
             # Handle artwork
@@ -1297,9 +1287,7 @@ class AddInvocationDialog(QDialog):
                                     self,
                                     tr("APP_NAME"),
                                     tr("RENAME_PREFIX_QUESTION", old=self.invocation_data.get("name", old_safe_name), new=invocation_data.get("name", safe_invocation_name)),
-                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-                                    QMessageBox.StandardButton.No
-                                )
+                                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
                                 if reply == QMessageBox.StandardButton.Yes:
                                     new_prefix_path = old_prefix_path.parent / safe_invocation_name
@@ -1373,9 +1361,6 @@ class AddInvocationDialog(QDialog):
         msg.setText(tr("DELETE_INVOCATION_CONFIRM_MESSAGE", name=invocation_name))
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
-        msg.button(QMessageBox.StandardButton.Yes).setText(tr("YES_BUTTON"))
-        msg.button(QMessageBox.StandardButton.No).setText(tr("NO_BUTTON"))
-
         delete_data_cb = QCheckBox(tr("DELETE_PREFIX_CHECKBOX"))
         msg.setCheckBox(delete_data_cb)
 
@@ -1385,10 +1370,6 @@ class AddInvocationDialog(QDialog):
         # Path to the TOML file
         safe_name = invocation_name.replace(" ", "_").lower()
         invocation_file = zordeer_config_dir / f"invocation-info-{safe_name}.toml"
-
-        if not invocation_file.exists():
-            QMessageBox.critical(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR"))
-            return
 
         # Load data
         with open(invocation_file, encoding='utf-8') as f:
@@ -2167,8 +2148,6 @@ class MultipleRemoveInvocationDialog(QDialog):
         msg.setWindowTitle(tr("MULTIPLE_INVOCATION_REMOVER"))
         msg.setText(tr("DELETE_INVOCATIONS_CONFIRM_MESSAGE"))
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-        msg.button(QMessageBox.StandardButton.Yes).setText(tr("YES_BUTTON"))
-        msg.button(QMessageBox.StandardButton.No).setText(tr("NO_BUTTON"))
 
         if msg.exec() != QMessageBox.StandardButton.Yes:
             return
@@ -3346,17 +3325,8 @@ class RunInPrefix(QDialog):
 
         self.set_execution_locked(True)
 
-        # Load and store the original TOML once
-        try:
-            with open(self.real_toml_path, "r", encoding="utf-8") as f:
-                self._original_toml = tomlkit.load(f)
-        except Exception as e:
-            QMessageBox.critical(
-                self,
-                tr("APP_NAME"),
-                tr("INVOCATION_INFO_ERROR", error=str(e))
-            )
-            return
+        with open(self.real_toml_path, "r", encoding="utf-8") as f:
+            self._original_toml = tomlkit.load(f)
 
         # Build queue
         self.exe_queue = [self.exe_list.topLevelItem(i).data(0, 0x0100)for i in range(self.exe_list.topLevelItemCount())]
@@ -4260,7 +4230,6 @@ class Zordeer(QMainWindow):
         else:
             self.show()
 
-        atexit.register(self.kill_invocation_process_on_exit)
         self.transfer_successful = False
 
         self.inhibit_cookie = None
@@ -4329,8 +4298,7 @@ class Zordeer(QMainWindow):
                 self,
                 tr("APP_NAME"),
                 tr("CONFIRM_CLOSE_MESSAGE"),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
                 self.stop_execution()
                 save_settings(settings)
@@ -4435,11 +4403,6 @@ class Zordeer(QMainWindow):
             finally:
                 # Remove info file no matter what
                 mounted_iso_info.unlink(missing_ok=True)
-
-    def kill_invocation_process_on_exit(self):
-        if self.invocation_process and self.invocation_process.poll() is None:
-            print(tr("ZORDEER_CLOSED"))
-            self.stop_execution()
 
     def setup_directories(self):
         """Creates the Zordeer directory structure"""
@@ -4553,18 +4516,14 @@ class Zordeer(QMainWindow):
     def edit_invocation(self):
         invocation_name = self.get_selected_invocation()
         if not invocation_name:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
+            QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
 
         safe_invocation_name = invocation_name.replace(" ", "_").lower()
         invocation_file_path = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
 
-        try:
-            with invocation_file_path.open('r', encoding='utf-8') as f:
-                invocation_data = tomlkit.load(f)
-        except (IOError, tomlkit.exceptions.ParseError):
-            QMessageBox.critical(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR", name=invocation_name))
-            return
+        with invocation_file_path.open('r', encoding='utf-8') as f:
+            invocation_data = tomlkit.load(f)
 
         dialog = AddInvocationDialog(self, invocation_data)
         dialog.invocation_saved.connect(self.load_invocations)
@@ -4576,8 +4535,7 @@ class Zordeer(QMainWindow):
                 self,
                 tr("APP_NAME"),
                 tr("INVOCATION_ALREADY_ACTIVE"),
-                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-            )
+                QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
             if reply == QMessageBox.StandardButton.Yes:
                 self.stop_execution()
@@ -4585,7 +4543,7 @@ class Zordeer(QMainWindow):
                 return
 
         if not item_or_name:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
+            QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
 
         # Accepts QListWidgetItem or string
@@ -4630,15 +4588,13 @@ class Zordeer(QMainWindow):
                         self,
                         tr("APP_NAME"),
                         tr("NO_EXEC_PATH"),
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                    )
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
                 else:
                     reply = QMessageBox.question(
                         self,
                         tr("APP_NAME"),
                         tr("EXEC_PATH_INVALID_CONFIRM", path=str(exec_path_full)),
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                    )
+                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
                 if reply == QMessageBox.StandardButton.No:
                     return
 
@@ -4947,8 +4903,6 @@ class Zordeer(QMainWindow):
             except psutil.NoSuchProcess:
                 self.real_invocation_process = None
 
-        except (IOError, tomlkit.exceptions.ParseError):
-            QMessageBox.critical(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR", name=invocation_name))
         except Exception as e:
             QMessageBox.critical(self, tr("APP_NAME"), tr("INVOCATION_START_ERROR", error=str(e)))
 
@@ -5017,11 +4971,11 @@ class Zordeer(QMainWindow):
         settings = load_settings()
         api_key = settings["other"].get("sgdb_apikey", "").strip()
         if not api_key:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("API_KEY_SAVE_FIRST"))
+            QMessageBox.information(self, tr("APP_NAME"), tr("API_KEY_SAVE_FIRST"))
             return
 
         if not any(zordeer_config_dir.glob("invocation-info-*.toml")):
-            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
+            QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
 
         # Invocations list
@@ -5049,9 +5003,7 @@ class Zordeer(QMainWindow):
             self,
             tr("APP_NAME"),
             tr("AUTO_TRANSFER_EXPLAIN"),
-            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
-            QMessageBox.StandardButton.No
-        )
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if confirm != QMessageBox.StandardButton.Yes:
             return
 
@@ -5272,7 +5224,7 @@ class Zordeer(QMainWindow):
     def run_in_prefix_dialog(self):
         invocation_name = self.get_selected_invocation()
         if not invocation_name:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
+            QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
 
         dlg = RunInPrefix(self, invocation_name)
@@ -5295,14 +5247,10 @@ class Zordeer(QMainWindow):
         if safe_invocation_name is None:
             safe_invocation_name = self.get_selected_invocation()
             if not safe_invocation_name:
-                QMessageBox.warning(self, tr("APP_NAME"), tr("NO_INVOCATION_SELECTED_ERROR"))
-                return 
+                QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
+                return
 
-        base_file = zordeer_config_dir / f"invocation-info-{safe_invocation_name.replace(' ', '_').lower()}.toml"
-
-        if not base_file.exists():
-            QMessageBox.warning(self, tr("APP_NAME"), tr("INVOCATION_INFO_ERROR"))
-            return
+        base_file = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
 
         with base_file.open("r", encoding="utf-8") as f:
             invocation_info = tomlkit.load(f)
@@ -5378,8 +5326,7 @@ class Zordeer(QMainWindow):
                     self,
                     tr("APP_NAME"),
                     tr("NEW_VERSION_AVAILABLE", version=latest_tag),
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No
-                )
+                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
                 if reply == QMessageBox.StandardButton.Yes:
                     subprocess.Popen(['xdg-open', 'https://github.com/Kyuyrii/Zordeer/releases'])
         except Exception as e:
