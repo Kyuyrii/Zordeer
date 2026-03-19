@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "2.4.2"
+__version__ = "2.4.3"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -560,7 +560,6 @@ class RunnerTransferDialog(QDialog):
         self.setWindowTitle(tr("TRANSFER_RUNNERS_TITLE"))
         self.resize(450, 420)
         self.setMinimumSize(400, 200)
-        self.parent = parent
 
         main_layout = QVBoxLayout(self)
 
@@ -775,9 +774,6 @@ class RunnerTransferDialog(QDialog):
         self.worker.start()
 
 class AddInvocationDialog(QDialog):
-    # Defining a custom signal that doesn't need arguments
-    invocation_saved = pyqtSignal()
-
     def __init__(self, parent=None, invocation_data=None):
         super().__init__(parent)
         self.invocation_data = invocation_data
@@ -991,7 +987,14 @@ class AddInvocationDialog(QDialog):
         self.update_fps_hud_state(Qt.CheckState.Checked if show_fps else Qt.CheckState.Unchecked)
 
         fps_hud_type = self.invocation_data.get('fps_hud_type', '')
-        index_hud = self.fps_hud_combo.findData(fps_hud_type)  # Search by "id"
+        fps_hud_type_str = str(fps_hud_type)
+
+        index_hud = -1
+        for i in range(self.fps_hud_combo.count()):
+            if str(self.fps_hud_combo.itemData(i)) == fps_hud_type_str:
+                index_hud = i
+                break
+
         if index_hud != -1:
             self.fps_hud_combo.setCurrentIndex(index_hud)
 
@@ -1331,8 +1334,7 @@ class AddInvocationDialog(QDialog):
                 QMessageBox.critical(
                     self,
                     tr("APP_NAME"),
-                    tr("NAME_INVALID", error=str(e))
-                )
+                    tr("NAME_INVALID", error=str(e)))
                 return  # The old TOML remains intact.
 
             # Remove old TOML only if name changed
@@ -1345,7 +1347,7 @@ class AddInvocationDialog(QDialog):
                         old_invocation_file_path.unlink()
 
             # Emit signal and close
-            self.invocation_saved.emit()
+            self.parent().load_invocations()
             self.accept()
         else:
             QMessageBox.warning(self, tr("CREATE_INVOCATION"), tr("MANDATORY_FIELD_ERROR"))
@@ -1712,8 +1714,6 @@ class UMUGameSearchDialog(QDialog):
             self.accept()
 
 class MultipleCreateInvocationsDialog(QDialog):
-    invocations_saved = pyqtSignal()
-
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("MULTIPLE_INVOCATION_CREATOR"))
@@ -1748,12 +1748,10 @@ class MultipleCreateInvocationsDialog(QDialog):
         self.main_layout.addWidget(self.auto_prefix_cb)
 
         self.animarium_prefix_cb.stateChanged.connect(
-            partial(QCheckBox.setDisabled, self.auto_prefix_cb)
-        )
+            partial(QCheckBox.setDisabled, self.auto_prefix_cb))
 
         self.auto_prefix_cb.stateChanged.connect(
-            partial(QCheckBox.setDisabled, self.animarium_prefix_cb)
-        )
+            partial(QCheckBox.setDisabled, self.animarium_prefix_cb))
 
         # TreeWidget for multiple invocations
         self.file_list = QTreeWidget()
@@ -1940,8 +1938,7 @@ class MultipleCreateInvocationsDialog(QDialog):
                 QMessageBox.warning(
                     self,
                     tr("APP_NAME"),
-                    tr("DUPLICATE_NAME_IN_LIST", name=name)
-                )
+                    tr("DUPLICATE_NAME_IN_LIST", name=name))
                 return
             existing_names.add(safe_name)
 
@@ -1951,8 +1948,7 @@ class MultipleCreateInvocationsDialog(QDialog):
                 QMessageBox.warning(
                     self,
                     tr("APP_NAME"),
-                    tr("INVOCATION_IN_MULTIPLE_CREATE_ALREADY_EXISTS", name=name)
-                )
+                    tr("INVOCATION_IN_MULTIPLE_CREATE_ALREADY_EXISTS", name=name))
                 return
 
             # Test if you can write the file
@@ -1964,8 +1960,7 @@ class MultipleCreateInvocationsDialog(QDialog):
                 QMessageBox.critical(
                     self,
                     tr("APP_NAME"),
-                    tr("NAME_INVALID_IN_MULTIPLE", name=name, error=str(e))
-                )
+                    tr("NAME_INVALID_IN_MULTIPLE", name=name, error=str(e)))
                 return
 
         selected_lang = self.language_input.currentText()
@@ -2020,7 +2015,7 @@ class MultipleCreateInvocationsDialog(QDialog):
                 QMessageBox.critical(self, tr("APP_NAME"), tr("FAILED_UPDATE_TOML", error=str(e)))
                 return
 
-        self.invocations_saved.emit()
+        self.parent().load_invocations()
         self.accept()
 
     def save_invocation_data(self, data):
@@ -2036,7 +2031,6 @@ class MultipleRemoveInvocationDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(tr("MULTIPLE_INVOCATION_REMOVER"))
         self.resize(340, 500)
-        self.parent_ref = parent
 
         self.main_layout = QVBoxLayout(self)
 
@@ -2064,8 +2058,8 @@ class MultipleRemoveInvocationDialog(QDialog):
 
         # Select All / Deselect All buttons
         btn_layout = QHBoxLayout()
-        self.select_all_btn = QPushButton(tr("SELECT_ALL_IN_MULTIPLE_EDIT"))
-        self.deselect_all_btn = QPushButton(tr("DESELECT_ALL_IN_MULTIPLE_EDIT"))
+        self.select_all_btn = QPushButton(tr("SELECT_ALL"))
+        self.deselect_all_btn = QPushButton(tr("DESELECT_ALL"))
         self.select_all_btn.clicked.connect(self.select_all_invocations)
         self.deselect_all_btn.clicked.connect(self.deselect_all_invocations)
         btn_layout.addWidget(self.select_all_btn)
@@ -2274,11 +2268,7 @@ class MultipleRemoveInvocationDialog(QDialog):
                     except Exception:
                         pass
 
-        # Reload the list
-        self.load_invocations()
-        if self.parent_ref:
-            self.parent_ref.load_invocations()
-
+        self.parent().load_invocations()
         self.accept()
 
 class MultipleEditInvocationDialog(QDialog):
@@ -2286,7 +2276,6 @@ class MultipleEditInvocationDialog(QDialog):
         super().__init__(parent)
         self.setWindowTitle(tr("MULTIPLE_INVOCATION_EDITOR"))
         self.resize(580, 480)
-        self.parent_ref = parent
 
         # Main layout
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
@@ -2319,8 +2308,8 @@ class MultipleEditInvocationDialog(QDialog):
 
         # Select all / Deselect all
         btn_layout = QHBoxLayout()
-        self.select_all_btn = QPushButton(tr("SELECT_ALL_IN_MULTIPLE_EDIT"))
-        self.deselect_all_btn = QPushButton(tr("DESELECT_ALL_IN_MULTIPLE_EDIT"))
+        self.select_all_btn = QPushButton(tr("SELECT_ALL"))
+        self.deselect_all_btn = QPushButton(tr("DESELECT_ALL"))
         self.select_all_btn.clicked.connect(self.select_all_invocations)
         self.deselect_all_btn.clicked.connect(self.deselect_all_invocations)
         btn_layout.addWidget(self.select_all_btn)
@@ -2832,16 +2821,13 @@ class MultipleEditInvocationDialog(QDialog):
             with open(cb.invocation_file, "w", encoding="utf-8") as f:
                 tomlkit.dump(data, f)
 
-        if self.parent_ref:
-            self.update_runner_filter()
-            self.update_invocation_list(self.search_input.text())
-            self.parent_ref.load_invocations()
-
+        self.update_runner_filter()
+        self.update_invocation_list(self.search_input.text())
+        self.parent().load_invocations()
         QMessageBox.information(
             self,
             tr("MULTIPLE_INVOCATION_EDITOR"),
-            tr("CHANGES_SAVED")
-        )
+            tr("CHANGES_SAVED"))
 
         # Updates the right panel of the InvocationInfoViewerDialog.
         if hasattr(self, "invocation_info_viewer") and self.invocation_info_viewer:
@@ -3166,7 +3152,6 @@ class InvocationInfoViewerDialog(QDialog):
 class RunInPrefix(QDialog):
     def __init__(self, parent, invocation_name):
         super().__init__(parent)
-        self.parent = parent  # Zordeer
         self.invocation_name = invocation_name
         self.setWindowTitle(tr("RUN_IN_PREFIX_INVOCATION_NAME", invocation_name=invocation_name))
         self.resize(500, 500)
@@ -3233,8 +3218,8 @@ class RunInPrefix(QDialog):
         self.run_btn = QPushButton(tr("CONFIRM_AND_RUN"))
         self.force_stop_btn = QPushButton(tr("STOP_CURRENT"))
 
-        if hasattr(self.parent, "stop_execution"):
-            self.force_stop_btn.clicked.connect(self.parent.stop_execution)
+        if hasattr(self.parent(), "stop_execution"):
+            self.force_stop_btn.clicked.connect(self.parent().stop_execution)
         else:
             self.force_stop_btn.setEnabled(False)
 
@@ -3414,7 +3399,7 @@ class RunInPrefix(QDialog):
         ))
 
         # Run the temporary "invocation" (start_invocation resolves the path by safe name)
-        self.parent.start_invocation(temp_safe_name)
+        self.parent().start_invocation(temp_safe_name)
 
         # Schedule periodic check for completion
         QTimer.singleShot(2000, self.wait_until_finished)
@@ -3422,11 +3407,11 @@ class RunInPrefix(QDialog):
     def wait_until_finished(self):
         # Automatic installation
         if self.radio_automatic.isChecked():
-            if self.parent.invocation_process and self.parent.invocation_process.poll() is None:
+            if self.parent().invocation_process and self.parent().invocation_process.poll() is None:
                 QTimer.singleShot(2000, self.wait_until_finished)
                 return
 
-            self.parent.stop_execution()
+            self.parent().stop_execution()
             self.current_index += 1
             self.progress.setValue(self.current_index)
             self.run_next_exe()
@@ -3438,7 +3423,7 @@ class RunInPrefix(QDialog):
             self._has_printed_waiting_message = True
 
         started_prefix = tr("INVOCATION_STARTED", invocation_name="").split("{invocation_name}")[0].strip()
-        if self.parent.windowTitle().startswith(started_prefix):
+        if self.parent().windowTitle().startswith(started_prefix):
             QTimer.singleShot(2000, self.wait_until_finished)
         else:
             self.current_index += 1
@@ -3522,9 +3507,9 @@ class ShortcutManager(QDialog):
 
         # Select / Deselect All buttons
         select_layout = QHBoxLayout()
-        self.select_all_btn = QPushButton(tr("SELECT_ALL_IN_MULTIPLE_EDIT"))
+        self.select_all_btn = QPushButton(tr("SELECT_ALL"))
         self.select_all_btn.clicked.connect(self.select_all_checkboxes)
-        self.deselect_all_btn = QPushButton(tr("DESELECT_ALL_IN_MULTIPLE_EDIT"))
+        self.deselect_all_btn = QPushButton(tr("DESELECT_ALL"))
         self.deselect_all_btn.clicked.connect(self.deselect_all_checkboxes)
         select_layout.addWidget(self.select_all_btn)
         select_layout.addWidget(self.deselect_all_btn)
@@ -3817,8 +3802,7 @@ class ShortcutManager(QDialog):
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=desktop_dir)
-            )
+                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=desktop_dir))
             return
 
         # Check if .config directory exists
@@ -3826,8 +3810,7 @@ class ShortcutManager(QDialog):
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_config_dir)
-            )
+                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_config_dir))
             return
 
         # Check if .local directory exists
@@ -3835,8 +3818,7 @@ class ShortcutManager(QDialog):
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_local_dir)
-            )
+                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_local_dir))
             return
         
         applications_dir.mkdir(parents=True, exist_ok=True)
@@ -4160,7 +4142,7 @@ class Zordeer(QMainWindow):
 
         self.main_layout.addWidget(self.invocation_list_widget)
 
-        # Search bar (initially hidden)
+        # Search bar
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText(tr("SEARCH"))
         self.search_bar.textChanged.connect(self.filter_invocations)
@@ -4382,16 +4364,14 @@ class Zordeer(QMainWindow):
                     # Unmount
                     result_unmount = subprocess.run(
                         ["udisksctl", "unmount", "-b", loop_device, "--force"],
-                        capture_output=True, text=True
-                    )
+                        capture_output=True, text=True)
                     if result_unmount.returncode != 0:
                         print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error=result_unmount.stderr.strip()))
 
                     # Delete loop device
                     result_delete = subprocess.run(
                         ["udisksctl", "loop-delete", "-b", loop_device],
-                        capture_output=True, text=True
-                    )
+                        capture_output=True, text=True)
                     if result_delete.returncode != 0:
                         print(tr("ISO_LOOP_DELETE_FAILED", device=loop_device, error=result_delete.stderr.strip()))
                     else:
@@ -4493,12 +4473,10 @@ class Zordeer(QMainWindow):
 
     def add_invocation(self):
         dialog = AddInvocationDialog(self)
-        dialog.invocation_saved.connect(self.load_invocations)
         dialog.exec()
 
     def open_multiple_create_dialog(self):
         dialog = MultipleCreateInvocationsDialog(self)
-        dialog.invocations_saved.connect(self.load_invocations)  # Update list
         dialog.exec()
 
     def open_multiple_remove_invocations_dialog(self):
@@ -4526,7 +4504,6 @@ class Zordeer(QMainWindow):
             invocation_data = tomlkit.load(f)
 
         dialog = AddInvocationDialog(self, invocation_data)
-        dialog.invocation_saved.connect(self.load_invocations)
         dialog.exec()
 
     def start_invocation(self, item_or_name):
@@ -4570,16 +4547,14 @@ class Zordeer(QMainWindow):
                 QMessageBox.critical(
                     self,
                     tr("APP_NAME"),
-                    tr("EXEC_PATH_NOT_FOUND", path=str(exec_path_full))
-                )
+                    tr("EXEC_PATH_NOT_FOUND", path=str(exec_path_full)))
                 return
 
             if not prefix_path.exists():
                 QMessageBox.critical(
                     self,
                     tr("APP_NAME"),
-                    tr("PREFIX_PATH_NOT_FOUND", path=str(prefix_path))
-                )
+                    tr("PREFIX_PATH_NOT_FOUND", path=str(prefix_path)))
                 return
 
             if exec_path_full.suffix.lower() not in (".exe", ".msi", ".iso"):
@@ -4619,8 +4594,7 @@ class Zordeer(QMainWindow):
                     # Create loop device
                     result = subprocess.run(
                         ["udisksctl", "loop-setup", "-f", str(iso_path)],
-                        capture_output=True, text=True
-                    )
+                        capture_output=True, text=True)
                     if result.returncode != 0:
                         QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=result.stderr))
                         return
@@ -4634,8 +4608,7 @@ class Zordeer(QMainWindow):
                     # Mount loop device
                     result_mount = subprocess.run(
                         ["udisksctl", "mount", "-b", loop_device],
-                        capture_output=True, text=True
-                    )
+                        capture_output=True, text=True)
                     if result_mount.returncode != 0:
                         QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_MOUNT_FAILED", error=result_mount.stderr))
                         return
@@ -4696,8 +4669,7 @@ class Zordeer(QMainWindow):
                     QMessageBox.critical(
                         self,
                         tr("APP_NAME"),
-                        tr("UMU_NOT_FOUND", path=str(umu_run_path.parent))
-                    )
+                        tr("UMU_NOT_FOUND", path=str(umu_run_path.parent)))
                     return
 
                 # UMU launcher command structure
@@ -5227,8 +5199,8 @@ class Zordeer(QMainWindow):
             QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
 
-        dlg = RunInPrefix(self, invocation_name)
-        dlg.exec()
+        dialog = RunInPrefix(self, invocation_name)
+        dialog.exec()
 
     def cleanup_temp_toml_files(self):
         removed = 0
@@ -5271,8 +5243,8 @@ class Zordeer(QMainWindow):
                 tr("OPEN_PATH_ERROR", path=str(path) if path else ""))
 
     def open_settings(self):
-        dlg = SettingsDialog(self)
-        dlg.exec()
+        dialog = SettingsDialog(self)
+        dialog.exec()
 
     def show_about(self):
         dialog = QDialog(self)
