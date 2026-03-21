@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "2.4.3"
+__version__ = "2.5"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -68,10 +68,10 @@ zordeer_runner_dir = zordeer_dir / "runner"
 zordeer_umu_dir = zordeer_dir / "umu"
 zordeer_umu_folders_path = zordeer_home_dir / "App" / "UMU"
 
-# Loads translations from external TOML files.
-def load_external_translations():
-    external_translations = {}
-    supported_languages = {}
+# Loads translations from TOML files.
+def load_translations():
+    toml_translations = {}
+    toml_languages = {}
 
     # Translation folders
     translation_dirs = [
@@ -89,26 +89,26 @@ def load_external_translations():
                         lang_data = tomlkit.load(f)
 
                     # Add to translations
-                    external_translations[lang_code] = lang_data
+                    toml_translations[lang_code] = lang_data
 
                     # Adds to supported languages
                     lang_name = lang_data.get("language_name", lang_code)
-                    supported_languages[lang_name] = lang_code
+                    toml_languages[lang_name] = lang_code
 
                     print(f"Loaded translation: {lang_name} ({lang_code})")
 
                 except Exception as e:
                     print(f"Error loading translation {toml_file}: {e}")
 
-    return external_translations, supported_languages
+    return toml_translations, toml_languages
 
-# Load external translations
-EXTERNAL_TRANSLATIONS, SUPPORTED_LANGUAGES = load_external_translations()
+# Load translations
+available_translations, available_languages = load_translations()
 
 def tr(key, **kwargs):
     # Get the translated string from external translations
-    if LANG in EXTERNAL_TRANSLATIONS:
-        translation_dict = EXTERNAL_TRANSLATIONS[LANG]
+    if LANG in available_translations:
+        translation_dict = available_translations[LANG]
         translated_string = translation_dict.get(key)
         
         if translated_string:
@@ -173,7 +173,7 @@ INVOCATION_LOCALE_OPTIONS = [
     'עברית (he_IL.UTF-8)',
 ]
 
-def detect_default_settings() -> dict:
+def create_default_settings() -> dict:
     """Provides default settings for first-time creation."""
     return {
         "design": {
@@ -181,8 +181,7 @@ def detect_default_settings() -> dict:
             "language": LANG if LANG else "en_US",
             "layout_mode": "classic",
             "icon_width_classic": 420,
-            "icon_width_grid": 300,
-            "toolbar_icon_size": 32,
+            "icon_width_grid": 246,
             "search_bar_visible": False,
             "toolbar_visible": True,
         },
@@ -208,7 +207,7 @@ def detect_default_settings() -> dict:
 
 def load_settings() -> dict:
     """Loads settings, uses indefinite if saved style is unavailable."""
-    defaults = detect_default_settings()
+    defaults = create_default_settings()
 
     try:
         with open(zordeer_settings_file, "r", encoding="utf-8") as f:
@@ -278,9 +277,9 @@ class SettingsDialog(QDialog):
         # Language Choice
         lang_label = QLabel(tr("LANGUAGE"))
         self.lang_combo = QComboBox()
-        self.lang_combo.addItems(SUPPORTED_LANGUAGES.keys())
+        self.lang_combo.addItems(available_languages.keys())
         saved_lang = self.settings["design"].get("language", LANG)
-        lang_codes = list(SUPPORTED_LANGUAGES.values())
+        lang_codes = list(available_languages.values())
         if saved_lang in lang_codes:
             self.lang_combo.setCurrentIndex(lang_codes.index(saved_lang))
         else:
@@ -318,14 +317,6 @@ class SettingsDialog(QDialog):
         layout.addWidget(grid_width_label, 4, 0)
         layout.addWidget(self.grid_width_input, 4, 1)
 
-        # Toolbar icon size
-        toolbar_icon_size_label = QLabel(tr("ICON_TOOLBAR_SIZE"))
-        self.toolbar_icon_size_input = QSpinBox()
-        self.toolbar_icon_size_input.setRange(16, 128)
-        self.toolbar_icon_size_input.setValue(self.settings["design"].get("toolbar_icon_size", 32))
-        layout.addWidget(toolbar_icon_size_label, 5, 0)
-        layout.addWidget(self.toolbar_icon_size_input, 5, 1)
-
         # Default Runner Choice
         runner_label = QLabel(tr("DEFAULT_RUNNER"))
         self.runner_combo = QComboBox()
@@ -342,8 +333,8 @@ class SettingsDialog(QDialog):
         else:
             # If you didn't find anything, use a placeholder.
             self.runner_combo.setCurrentText(tr("INDEFINITE"))
-        layout.addWidget(runner_label, 6, 0)
-        layout.addWidget(self.runner_combo, 6, 1)
+        layout.addWidget(runner_label, 5, 0)
+        layout.addWidget(self.runner_combo, 5, 1)
 
         # UMU Launcher Choice
         umu_label = QLabel(tr("UMU_VERSION"))
@@ -361,26 +352,26 @@ class SettingsDialog(QDialog):
         else:
             # If you didn't find anything, use a placeholder.
             self.umu_combo.setCurrentText(tr("INDEFINITE"))
-        layout.addWidget(umu_label, 7, 0)
-        layout.addWidget(self.umu_combo, 7, 1)
+        layout.addWidget(umu_label, 6, 0)
+        layout.addWidget(self.umu_combo, 6, 1)
 
         # SGDB API Key
         api_label = QLabel(tr("SGDB_API_KEY_LABEL"))
         self.api_input = QLineEdit()
         self.api_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.api_input.setText(self.settings["other"].get("sgdb_apikey", ""))
-        layout.addWidget(api_label, 8, 0)
-        layout.addWidget(self.api_input, 8, 1)
+        layout.addWidget(api_label, 7, 0)
+        layout.addWidget(self.api_input, 7, 1)
 
         # Umu global
         self.umu_global_checkbox = QCheckBox(tr("UMU_GLOBAL"))
         self.umu_global_checkbox.setChecked(self.settings["other"].get("umu_global", False))
-        layout.addWidget(self.umu_global_checkbox, 9, 0)
+        layout.addWidget(self.umu_global_checkbox, 8, 0)
 
         # Save button
         save_btn = QPushButton(tr("SAVE_BUTTON"))
         save_btn.clicked.connect(self.save_and_close)
-        layout.addWidget(save_btn, 10, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(save_btn, 9, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.setLayout(layout)
 
@@ -407,9 +398,8 @@ class SettingsDialog(QDialog):
         else:
             self.settings["design"]["qt_style"] = selected_style
         selected_index = self.lang_combo.currentIndex()
-        self.settings["design"]["language"] = list(SUPPORTED_LANGUAGES.values())[selected_index]
+        self.settings["design"]["language"] = list(available_languages.values())[selected_index]
         self.settings["design"]["layout_mode"] = ["classic", "grid", "list"][self.layout_mode_combo.currentIndex()]
-        self.settings["design"]["toolbar_icon_size"] = self.toolbar_icon_size_input.value()
         if selected_runner == tr("INDEFINITE"):
             self.settings["other"]["default_runner"] = "indefinite"
         else:
@@ -1370,8 +1360,8 @@ class AddInvocationDialog(QDialog):
             return
 
         # Path to the TOML file
-        safe_name = invocation_name.replace(" ", "_").lower()
-        invocation_file = zordeer_config_dir / f"invocation-info-{safe_name}.toml"
+        safe_invocation_name = invocation_name.replace(" ", "_").lower()
+        invocation_file = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
 
         # Load data
         with open(invocation_file, encoding='utf-8') as f:
@@ -4015,11 +4005,11 @@ class Zordeer(QMainWindow):
         self.invocation_menu = self.menu_bar.addMenu(tr("INVOCATION"))
 
         self.open_exe_path_action = QAction(tr("OPEN_EXEC_PATH"), self)
-        self.open_exe_path_action.triggered.connect(partial(self.open_path, None, "exe"))
+        self.open_exe_path_action.triggered.connect(partial(self.open_path, "exe"))
         self.invocation_menu.addAction(self.open_exe_path_action)
 
         self.open_prefix_path_action = QAction(tr("OPEN_PREFIX_PATH"), self)
-        self.open_prefix_path_action.triggered.connect(partial(self.open_path, None, "prefix"))
+        self.open_prefix_path_action.triggered.connect(partial(self.open_path, "prefix"))
         self.invocation_menu.addAction(self.open_prefix_path_action)
 
         self.run_in_prefix_action = QAction(tr("RUN_IN_PREFIX"), self)
@@ -4037,24 +4027,24 @@ class Zordeer(QMainWindow):
         self.transfer_arts_menu.triggered.connect(self.open_transfer_arts)
         self.transfer_menu.addAction(self.transfer_arts_menu)
 
-        # Menu MANAGE
-        self.manage_menu = self.menu_bar.addMenu(tr("MANAGE"))
+        # Menu MANIPULATE
+        self.manipulate_menu = self.menu_bar.addMenu(tr("MANIPULATE"))
 
         self.multiple_create_action = QAction(tr("CREATE_MULTIPLE_INVOCATIONS"), self)
         self.multiple_create_action.triggered.connect(self.open_multiple_create_dialog)
-        self.manage_menu.addAction(self.multiple_create_action)
+        self.manipulate_menu.addAction(self.multiple_create_action)
 
         self.multiple_remove_invocations_action = QAction(tr("REMOVE_MULTIPLE_INVOCATIONS"), self)
         self.multiple_remove_invocations_action.triggered.connect(self.open_multiple_remove_invocations_dialog)
-        self.manage_menu.addAction(self.multiple_remove_invocations_action)
+        self.manipulate_menu.addAction(self.multiple_remove_invocations_action)
 
         self.multiple_edit_invocations_action = QAction(tr("EDIT_MULTIPLE_INVOCATIONS"), self)
         self.multiple_edit_invocations_action.triggered.connect(self.open_multiple_edit_invocations_dialog)
-        self.manage_menu.addAction(self.multiple_edit_invocations_action)
+        self.manipulate_menu.addAction(self.multiple_edit_invocations_action)
 
-        self.shortcut_manager_action = QAction(tr("MANAGE_SHORTCUTS"), self)
+        self.shortcut_manager_action = QAction(tr("CREATE_SHORTCUTS"), self)
         self.shortcut_manager_action.triggered.connect(self.open_shortcut_manager_dialog)
-        self.manage_menu.addAction(self.shortcut_manager_action)
+        self.manipulate_menu.addAction(self.shortcut_manager_action)
 
         # Menu EXTRA
         self.extra_menu = self.menu_bar.addMenu(tr("EXTRA"))
@@ -4067,9 +4057,8 @@ class Zordeer(QMainWindow):
         self.about_action.triggered.connect(self.show_about)
         self.extra_menu.addAction(self.about_action)
 
-        # Increase the size of icons
-        toolbar_icon_size = settings["design"].get("toolbar_icon_size", 32)
-        self.toolbar.setIconSize(QSize(toolbar_icon_size, toolbar_icon_size))
+        # Size of icons
+        self.toolbar.setIconSize(QSize(32, 32))
 
         self.run_action = QAction(QIcon.fromTheme("media-playback-start"), tr("START_INVOCATION"), self)
         self.run_action.triggered.connect(self.start_selected_invocation)
@@ -4726,11 +4715,11 @@ class Zordeer(QMainWindow):
             if not use_umu:
                 pfx_symlink = prefix_path / "pfx"
                 try:
-                    if not pfx_symlink.exists():
-                        if pfx_symlink.is_symlink():
-                            pfx_symlink.unlink()
-                        pfx_symlink.symlink_to(prefix_path)
-                        print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink), prefix=str(prefix_path)))
+                    if pfx_symlink.is_symlink():
+                        pfx_symlink.unlink()
+                    if not pfx_symlink.is_dir():
+                        pfx_symlink.symlink_to(".")
+                        print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink)))
                 except Exception as e:
                     print(tr("SYMLINK_ERROR", error=e))
 
@@ -4794,14 +4783,16 @@ class Zordeer(QMainWindow):
             show_fps = invocation_data.get('show_fps', False)
             fps_hud_type = invocation_data.get('fps_hud_type', '')
             if show_fps:
-                if fps_hud_type == "FPS_DXVK_HUD":
-                    env_prefix.append("DXVK_HUD=fps,gpuload,frametimes")
-                elif fps_hud_type == "FPS_GALLIUM_HUD":
+                if fps_hud_type == "FPS_GALLIUM_HUD":
                     env_prefix.append("GALLIUM_HUD=fps+cpu,frametime")
+                elif fps_hud_type == "FPS_DXVK_HUD":
+                    env_prefix.append("DXVK_HUD=fps,gpuload,frametimes")
                 elif fps_hud_type == "FPS_MANGOHUD":
-                    env_prefix.append("MANGOHUD=1")
+                    mangohud_path = shutil.which('mangohud')
+                    if mangohud_path:
+                        command.insert(0, mangohud_path)
 
-            # OpenGL (wined3d)
+            # OpenGL (WineD3D)
             if invocation_data.get('force_opengl', False):
                 env_prefix.append("PROTON_USE_WINED3D=1")
 
@@ -4899,10 +4890,7 @@ class Zordeer(QMainWindow):
         font.setBold(True)
         item.setFont(font)
 
-        # Decide which image to use
-        art_path_to_use = None
         layout_mode = settings["design"].get("layout_mode", "classic")
-
         art_path_to_use = invocation_data.get("art_path")
 
         # Art as an icon
@@ -5215,13 +5203,13 @@ class Zordeer(QMainWindow):
         if removed > 0:
             print(tr("TEMP_FILES_REMOVED", count=removed))
 
-    def open_path(self, safe_invocation_name=None, chosen_path="prefix"):
-        if safe_invocation_name is None:
-            safe_invocation_name = self.get_selected_invocation()
-            if not safe_invocation_name:
-                QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
-                return
+    def open_path(self, chosen_path):
+        invocation_name = self.get_selected_invocation()
+        if not invocation_name:
+            QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
+            return
 
+        safe_invocation_name = invocation_name.replace(" ", "_").lower()
         base_file = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
 
         with base_file.open("r", encoding="utf-8") as f:
