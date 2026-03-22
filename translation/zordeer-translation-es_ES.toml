@@ -77,7 +77,6 @@ FAILED_UPDATE_TOML = "No se pudo actualizar la información de la invocación: {
 FORCE_OPENGL = "Forzar OpenGL (WineD3D)"
 FPS_DXVK_HUD = "DXVK HUD (Vulkan)"
 FPS_GALLIUM_HUD = "Gallium HUD (OpenGL)"
-FPS_MANGOHUD = "MangoHUD (OpenGL/Vulkan)"
 GAME_NAME = "Nombre del Juego"
 ICON_TOOLBAR_SIZE = "Tamaño del botón"
 ICON_WIDTH_CLASSIC = "Tamaño del arte (Clásico)"
