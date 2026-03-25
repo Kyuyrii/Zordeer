@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "2.6"
+__version__ = "3.0"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -180,8 +180,8 @@ def create_default_settings() -> dict:
             "qt_style": "indefinite",
             "language": LANG if LANG else "en_US",
             "layout_mode": "classic",
-            "icon_width_classic": 420,
-            "icon_width_grid": 246,
+            "art_width_classic": 420,
+            "art_width_grid": 246,
             "search_bar_visible": False,
             "toolbar_visible": True,
         },
@@ -302,18 +302,20 @@ class SettingsDialog(QDialog):
         layout.addWidget(self.layout_mode_combo, 2, 1)
 
         # Icon Width for Classic
-        classic_width_label = QLabel(tr("ICON_WIDTH_CLASSIC"))
+        classic_width_label = QLabel(tr("ART_WIDTH_CLASSIC"))
         self.classic_width_input = QSpinBox()
         self.classic_width_input.setRange(100, 2000)
-        self.classic_width_input.setValue(self.settings["design"].get("icon_width_classic", 420))
+        self.classic_width_input.setValue(self.settings["design"].get("art_width_classic", 420))
+        self.classic_width_input.valueChanged.connect(self.save_art_width_classic)
         layout.addWidget(classic_width_label, 3, 0)
         layout.addWidget(self.classic_width_input, 3, 1)
 
         # Icon Width for Grid
-        grid_width_label = QLabel(tr("ICON_WIDTH_GRID"))
+        grid_width_label = QLabel(tr("ART_WIDTH_GRID"))
         self.grid_width_input = QSpinBox()
         self.grid_width_input.setRange(100, 2000)
-        self.grid_width_input.setValue(self.settings["design"].get("icon_width_grid", 300))
+        self.grid_width_input.setValue(self.settings["design"].get("art_width_grid", 300))
+        self.grid_width_input.valueChanged.connect(self.save_art_width_grid)
         layout.addWidget(grid_width_label, 4, 0)
         layout.addWidget(self.grid_width_input, 4, 1)
 
@@ -358,7 +360,6 @@ class SettingsDialog(QDialog):
         # SGDB API Key
         api_label = QLabel(tr("SGDB_API_KEY_LABEL"))
         self.api_input = QLineEdit()
-        self.api_input.setEchoMode(QLineEdit.EchoMode.Password)
         self.api_input.setText(self.settings["other"].get("sgdb_apikey", ""))
         layout.addWidget(api_label, 7, 0)
         layout.addWidget(self.api_input, 7, 1)
@@ -380,6 +381,16 @@ class SettingsDialog(QDialog):
             # Prevents Enter from triggering something that is not selected
             return
         super().keyPressEvent(event)
+
+    def save_art_width_classic(self):
+        self.settings["design"]["art_width_classic"] = self.classic_width_input.value()
+        save_settings(self.settings)
+        self.parent().update_art_size()
+
+    def save_art_width_grid(self):
+        self.settings["design"]["art_width_grid"] = self.grid_width_input.value()
+        save_settings(self.settings)
+        self.parent().update_art_size()
 
     def save_and_close(self):
         selected_runner = self.runner_combo.currentText()
@@ -410,18 +421,13 @@ class SettingsDialog(QDialog):
         else:
             self.settings["other"]["umu_version"] = selected_umu
 
-        # Save the icon widths
-        self.settings["design"]["icon_width_classic"] = self.classic_width_input.value()
-        self.settings["design"]["icon_width_grid"] = self.grid_width_input.value()
-
         self.settings["other"]["umu_global"] = self.umu_global_checkbox.isChecked()
 
         save_settings(self.settings)
-        QMessageBox.information(self, tr("APP_NAME"), tr("SETTINGS_SAVED_RESTART"))
         self.accept()
 
     def populate_runners_settings(self):
-        available_runners = sorted([d.name for d in zordeer_runner_dir.iterdir() if d.is_dir()], reverse=True)
+        available_runners = sorted([runner.name for runner in zordeer_runner_dir.iterdir() if runner.is_dir()], reverse=True)
 
         items = [tr("INDEFINITE")]
 
@@ -441,10 +447,7 @@ class SettingsDialog(QDialog):
 
     def populate_umu_versions(self):
         # Check if each folder has the umu-run file
-        available_umu = sorted([
-            d.name for d in zordeer_umu_dir.iterdir()
-            if d.is_dir() and (d / "umu-run").exists()
-        ], reverse=True)
+        available_umu = sorted([umu.name for umu in zordeer_umu_dir.iterdir() if umu.is_dir()], reverse=True)
 
         items = [tr("INDEFINITE")]
         items += available_umu
@@ -637,6 +640,7 @@ class RunnerTransferDialog(QDialog):
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
+            # Prevents Enter from triggering something that is not selected
             return
         super().keyPressEvent(event)
 
@@ -997,7 +1001,7 @@ class AddInvocationDialog(QDialog):
 
     def populate_runners(self):
         """Lists the available runner options and adds a warning if the runner chosen for the invocation is no longer available."""
-        available_runners = sorted([d.name for d in zordeer_runner_dir.iterdir() if d.is_dir()], reverse=True)
+        available_runners = sorted([runner.name for runner in zordeer_runner_dir.iterdir() if runner.is_dir()], reverse=True)
 
         items = [tr("PLACEHOLDER_FOR_RUNNER")]
 
@@ -1011,7 +1015,7 @@ class AddInvocationDialog(QDialog):
         if self.invocation_data:
             current_runner = self.invocation_data.get("runner", "")
             if current_runner and current_runner not in items:
-                items.append(f"{current_runner} ({tr("UNAVAILABLE")})")
+                items.append(f"{current_runner} ({tr('UNAVAILABLE')})")
 
         self.runner_input.clear()
         self.runner_input.addItems(items)
@@ -1021,7 +1025,7 @@ class AddInvocationDialog(QDialog):
             runner_to_select = self.invocation_data.get("runner", "")
             index = self.runner_input.findText(runner_to_select)
             if index == -1 and runner_to_select:
-                index = self.runner_input.findText(f"{runner_to_select} ({tr("UNAVAILABLE")})")
+                index = self.runner_input.findText(f"{runner_to_select} ({tr('UNAVAILABLE')})")
             if index != -1:
                 self.runner_input.setCurrentIndex(index)
 
@@ -1779,7 +1783,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         super().keyPressEvent(event)
 
     def populate_runners(self):
-        runners = [d.name for d in zordeer_runner_dir.iterdir() if d.is_dir()]
+        runners = [runner.name for runner in zordeer_runner_dir.iterdir() if runner.is_dir()]
 
         self.runner_combo.clear()
 
@@ -2544,7 +2548,7 @@ class MultipleEditInvocationDialog(QDialog):
         self.runner_filter.blockSignals(False)
 
     def populate_runners(self):
-        runners = [d.name for d in zordeer_runner_dir.iterdir() if d.is_dir()]
+        runners = [runner.name for runner in zordeer_runner_dir.iterdir() if runner.is_dir()]
 
         self.runner_combo.clear()
 
@@ -4100,31 +4104,29 @@ class Zordeer(QMainWindow):
 
         layout_mode = settings["design"].get("layout_mode", "classic")
 
-        icon_width_classic = settings["design"].get("icon_width_classic", 420)
-        icon_width_grid = settings["design"].get("icon_width_grid", 300)
+        art_width_classic = settings["design"].get("art_width_classic", 420)
+        art_width_grid = settings["design"].get("art_width_grid", 300)
 
-        if layout_mode in ("list"):
+        if layout_mode == "list":
             self.invocation_list_widget.setViewMode(QListWidget.ViewMode.ListMode)
             self.invocation_list_widget.setMovement(QListWidget.Movement.Static)
             self.invocation_list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
-        elif layout_mode in ("grid"):
+        elif layout_mode == "grid":
             self.invocation_list_widget.setViewMode(QListWidget.ViewMode.IconMode)
             self.invocation_list_widget.setFlow(QListView.Flow.LeftToRight)
             self.invocation_list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
-            icon_width = icon_width_grid
-            icon_height = int(icon_width * (620 / 1920))
-            grid_width = icon_width + 5
-            grid_height = icon_height + 30
-            self.invocation_list_widget.setIconSize(QSize(icon_width, icon_height))
+            art_height = int(art_width_grid * (620 / 1920))
+            grid_width = art_width_grid + 5
+            grid_height = art_height + 30
+            self.invocation_list_widget.setIconSize(QSize(art_width_grid, art_height))
             self.invocation_list_widget.setGridSize(QSize(grid_width, grid_height))
             self.invocation_list_widget.setMovement(QListWidget.Movement.Static)
-        elif layout_mode in ("classic"):
+        elif layout_mode == "classic":
             self.invocation_list_widget.setViewMode(QListWidget.ViewMode.ListMode)
             self.invocation_list_widget.setMovement(QListWidget.Movement.Static)
             self.invocation_list_widget.setResizeMode(QListWidget.ResizeMode.Adjust)
-            icon_width = icon_width_classic
-            icon_height = int(icon_width * (620 / 1920))
-            self.invocation_list_widget.setIconSize(QSize(icon_width, icon_height))
+            art_height = int(art_width_classic * (620 / 1920))
+            self.invocation_list_widget.setIconSize(QSize(art_width_classic, art_height))
 
         self.main_layout.addWidget(self.invocation_list_widget)
 
@@ -4201,6 +4203,20 @@ class Zordeer(QMainWindow):
         self.transfer_successful = False
 
         self.inhibit_cookie = None
+
+    def update_art_size(self):
+        settings = load_settings()
+
+        width = settings["design"].get("art_width_classic", 420)
+        height = int(width * (620 / 1920))
+
+        if settings["design"].get("layout_mode") == "grid":
+            width = settings["design"].get("art_width_grid", 246)
+            height = int(width * (620 / 1920))
+            self.invocation_list_widget.setGridSize(QSize(width + 5, height + 30))
+
+        self.invocation_list_widget.setIconSize(QSize(width, height))
+        self.load_invocations()
 
     def show_global_context_menu(self, pos):
         global_pos = self.central_widget.mapToGlobal(pos)
@@ -4907,7 +4923,7 @@ class Zordeer(QMainWindow):
         if icon is None:
             icon = self.windowIcon()
 
-        if layout_mode not in ["list"] and icon is not None:
+        if layout_mode != "list" and icon is not None:
             item.setIcon(icon)
 
         self.invocation_list_widget.addItem(item)
