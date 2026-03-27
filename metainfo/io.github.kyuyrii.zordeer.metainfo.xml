@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>io.github.kyuyrii.zordeer</id>
+  <url type="homepage">https://github.com/Kyuyrii/Zordeer</url>
+  <developer_name>Kyuyrii</developer_name>
+  <name>Zordeer</name>
+  <summary>A Qt launcher for Wine/Proton</summary>
+
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <content_rating type="oars-1.1"/>
+  <description>
+    <p>
+      A Qt launcher for games that run via Wine/Proton, with support for the UMU launcher.
+    </p>
+  </description>
+  <releases>
+    <release version="3.1" date="2026-03-27" />
+  </releases>
+  <launchable type="desktop-id">io.github.kyuyrii.zordeer.desktop</launchable>
+  <screenshots>
+    <screenshot type="default">
+      <image>https://raw.githubusercontent.com/Kyuyrii/Zordeer/565b34f7652c9039bf356420b5f1e2eb4075df60/metainfo/zordeer_qt_style_breeze.png</image>
+    </screenshot>
+  </screenshots>
+
+</component>
