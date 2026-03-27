@@ -34,7 +34,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.0"
+__version__ = "3.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -4322,30 +4322,22 @@ class Zordeer(QMainWindow):
             self.inhibit_cookie = None
         self.setWindowTitle(tr("APP_NAME"))
 
-        # Try to kill by the real executable
-        if hasattr(self, "last_executable") and self.last_executable:
-            exe_name = Path(self.last_executable).name.lower()
-            found = False
-            for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
-                try:
-                    cmdline = " ".join(proc.info['cmdline'] or []).lower()
-                    if exe_name in cmdline:
-                        print(tr("STOP_KILL_PROCESS", pid=proc.pid, exe=exe_name))
-                        try:
-                            proc.kill()
-                            print(tr("STOP_PROCESS_SUCCESS", pid=proc.pid))
-                        except Exception as e:
-                            print(tr("STOP_KILL_ERROR", pid=proc.pid, error=str(e)))
-                        found = True
-                except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-                    print(tr("STOP_ACCESS_ERROR", error=str(e)))
-                    continue
-            if found:
-                print(tr("STOP_INVOCATION_SUCCESS"))
-            else:
-                print(tr("STOP_NO_PROCESS_FOUND"))
-        else:
-            print(tr("STOP_NO_INVOCATION_ACTIVE"))
+        # Kill all .exe processes and wineserver
+        for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
+            try:
+                name = proc.info['name'].lower() if proc.info['name'] else ""
+                cmdline = " ".join(proc.info['cmdline'] or []).lower()
+                
+                if name == 'wineserver' or name.endswith('.exe') or '.exe' in cmdline:
+                    print(tr("STOP_KILL_PROCESS", pid=proc.pid, exe=proc.info['name']))
+                    try:
+                        proc.kill()
+                        print(tr("STOP_PROCESS_SUCCESS", pid=proc.pid))
+                    except Exception as e:
+                        print(tr("STOP_KILL_ERROR", pid=proc.pid, error=str(e)))
+            except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
+                print(tr("STOP_ACCESS_ERROR", error=str(e)))
+                continue
 
         # Clear internal references
         if hasattr(self, "invocation_process"):
@@ -4625,6 +4617,7 @@ class Zordeer(QMainWindow):
                 # Look for the .exe inside the ISO
                 exe_files = []
                 for _ in range(20):
+                    QApplication.processEvents()
                     exe_files = list(mount_point.glob("setup.exe")) or list(mount_point.rglob("*.exe"))
                     if exe_files:
                         break
@@ -4822,8 +4815,8 @@ class Zordeer(QMainWindow):
                 debug_vars.append(f"WINEPREFIX='{env['WINEPREFIX']}'")
                 if 'PROTONPATH' in env:
                     debug_vars.append(f"PROTONPATH='{env['PROTONPATH']}'")
-                if 'XDG_DATA_HOME' in env:
-                    debug_vars.append(f"XDG_DATA_HOME='{env['XDG_DATA_HOME']}'")
+                if 'UMU_FOLDERS_PATH' in env:
+                    debug_vars.append(f"UMU_FOLDERS_PATH='{env['UMU_FOLDERS_PATH']}'")
             else:
                 debug_vars.append(f"WINEPREFIX='{env['WINEPREFIX']}'")
                 # Only show Steam variables if they exist and runner is not Wine
@@ -4842,10 +4835,16 @@ class Zordeer(QMainWindow):
             debug_command = " ".join(debug_vars + command_without_env)
             print(tr("RUNNING_COMMAND", command=debug_command))
 
+            # Define working directory
+            if "proton" in runner_name.lower() and str(exec_path_full).startswith("/run/user/"):
+                cwd_path = exec_path_full.parent.parent
+            else:
+                cwd_path = exec_path_full.parent
+
             self.invocation_process = subprocess.Popen(
                 command,
                 env=env,
-                cwd=str(exec_path_full.parent),
+                cwd=str(cwd_path),
                 stdout=sys.stdout,
                 stderr=sys.stderr
             )
@@ -4861,7 +4860,9 @@ class Zordeer(QMainWindow):
             self.setWindowTitle(tr("INVOCATION_STARTED", invocation_name=invocation_name))
 
             # Give Proton some time to spawn child processes
-            time.sleep(3)
+            for _ in range(30):
+                QApplication.processEvents()
+                time.sleep(0.1)
 
             # Capture real process
             try:
