@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.3"
+__version__ = "3.4"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -870,7 +870,7 @@ class AddInvocationDialog(QDialog):
         self.umu_buttons_layout = QHBoxLayout()
 
         self.umu_info_button = QPushButton()
-        self.umu_info_button.setIcon(QIcon.fromTheme("help-about"))
+        self.umu_info_button.setIcon(QIcon.fromTheme("help-about-symbolic"))
         self.umu_info_button.clicked.connect(self.show_umu_info)
         self.umu_buttons_layout.addWidget(self.umu_info_button)
 
@@ -3604,7 +3604,7 @@ class ShortcutManager(QDialog):
         buttons_layout.addWidget(self.locations_btn)
 
         self.paths_info_button = QPushButton()
-        self.paths_info_button.setIcon(QIcon.fromTheme("help-about"))
+        self.paths_info_button.setIcon(QIcon.fromTheme("help-about-symbolic"))
         self.paths_info_button.clicked.connect(self.show_paths_info)
         buttons_layout.addWidget(self.paths_info_button)
 
@@ -4103,27 +4103,27 @@ class Zordeer(QMainWindow):
         # Size of icons
         self.toolbar.setIconSize(QSize(32, 32))
 
-        self.run_action = QAction(QIcon.fromTheme("media-playback-start"), tr("START_INVOCATION"), self)
+        self.run_action = QAction(QIcon.fromTheme("media-playback-start-symbolic"), tr("START_INVOCATION"), self)
         self.run_action.triggered.connect(self.start_selected_invocation)
         self.toolbar.addAction(self.run_action)
 
-        self.stop_execution_action = QAction(QIcon.fromTheme("media-playback-stop"), tr("STOP_INVOCATION"), self)
+        self.stop_execution_action = QAction(QIcon.fromTheme("media-playback-stop-symbolic"), tr("STOP_INVOCATION"), self)
         self.stop_execution_action.triggered.connect(self.stop_execution)
         self.toolbar.addAction(self.stop_execution_action)
 
-        self.start_random_invocation_action = QAction(QIcon.fromTheme("roll"), tr("START_RANDOM_INVOCATION"), self)
+        self.start_random_invocation_action = QAction(QIcon.fromTheme("media-playlist-shuffle-symbolic"), tr("START_RANDOM_INVOCATION"), self)
         self.start_random_invocation_action.triggered.connect(self.start_random_invocation)
         self.toolbar.addAction(self.start_random_invocation_action)
 
-        self.add_invocation_action = QAction(QIcon.fromTheme("list-add"), tr("CREATE_INVOCATION"), self)
+        self.add_invocation_action = QAction(QIcon.fromTheme("list-add-symbolic"), tr("CREATE_INVOCATION"), self)
         self.add_invocation_action.triggered.connect(self.add_invocation)
         self.toolbar.addAction(self.add_invocation_action)
 
-        self.edit_invocation_action = QAction(QIcon.fromTheme("document-edit"), tr("MODIFY_INVOCATION"), self)
+        self.edit_invocation_action = QAction(QIcon.fromTheme("document-edit-symbolic"), tr("MODIFY_INVOCATION"), self)
         self.edit_invocation_action.triggered.connect(self.edit_invocation)
         self.toolbar.addAction(self.edit_invocation_action)
 
-        self.search_action = QAction(QIcon.fromTheme("search"), tr("SEARCH"), self)
+        self.search_action = QAction(QIcon.fromTheme("search-symbolic"), tr("SEARCH"), self)
         self.search_action.triggered.connect(self.toggle_search_bar)
         self.toolbar.addAction(self.search_action)
 
@@ -4209,23 +4209,20 @@ class Zordeer(QMainWindow):
         tray_menu = QMenu()
 
         # Run random invocation
-        random_action = QAction(tr("START_RANDOM_INVOCATION"), tray_menu)
-        random_action.setIcon(QIcon.fromTheme("roll"))
-        random_action.triggered.connect(self.start_random_invocation)
-        tray_menu.addAction(random_action)
+        tray_menu.addAction(self.start_random_invocation_action)
 
         # Stop invocation
         tray_menu.addAction(self.stop_execution_action)
 
         # Show/Hide Window
         self.restore_action = QAction(tr("ZORDEER_TRAY_TOGGLE"), self)
-        self.restore_action.setIcon(QIcon.fromTheme("visibility"))
+        self.restore_action.setIcon(QIcon.fromTheme("view-restore-symbolic"))
         self.restore_action.triggered.connect(self.toggle_window)
         tray_menu.addAction(self.restore_action)
 
         # Quit
         quit_action = QAction(tr("CLOSE_ZORDEER"), self)
-        quit_action.setIcon(QIcon.fromTheme("dialog-close"))
+        quit_action.setIcon(QIcon.fromTheme("window-close-symbolic"))
         quit_action.triggered.connect(self.close)
         tray_menu.addAction(quit_action)
 
