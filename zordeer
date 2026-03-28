@@ -23,6 +23,7 @@ import dbus
 import tempfile
 from pathlib import Path
 from functools import partial
+from pwd import getpwuid
 
 # Translation System
 try:
@@ -34,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.1"
+__version__ = "3.2"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_DIR" in os.environ:
@@ -1505,6 +1506,36 @@ class AddInvocationDialog(QDialog):
                 return
         else:
             runner_name = selected_runner
+
+        # Create pfx symlink
+        pfx_symlink = prefix_path / "pfx"
+        try:
+            if pfx_symlink.is_symlink():
+                pfx_symlink.unlink()
+            if not pfx_symlink.is_dir():
+                pfx_symlink.symlink_to(".")
+                print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink)))
+
+                users_path = prefix_path / "drive_c" / "users"
+                users_path.mkdir(parents=True, exist_ok=True)
+                steamuser = users_path / "steamuser"
+                unixuser = getpwuid(os.getuid()).pw_name
+                wineuser = users_path / unixuser
+                if not steamuser.exists():
+                    steamuser.mkdir(parents=True)
+                if not wineuser.exists():
+                    wineuser.symlink_to("steamuser")
+                elif wineuser.is_dir() and not steamuser.exists():
+                    steamuser.symlink_to(unixuser)
+                elif not wineuser.exists() and steamuser.is_dir():
+                    wineuser.symlink_to("steamuser")
+        except Exception:
+            pass
+
+        # Create folders to prevent Wine from creating symlinks
+        target_user = prefix_path / "drive_c" / "users" / "steamuser"
+        for folder in ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos", "Templates"]:
+            (target_user / folder).mkdir(parents=True, exist_ok=True)
 
         env = os.environ.copy()
         env["WINEPREFIX"] = str(prefix_path)
@@ -4667,6 +4698,14 @@ class Zordeer(QMainWindow):
                         tr("UMU_NOT_FOUND", path=str(umu_run_path.parent)))
                     return
 
+                proton_script = zordeer_runner_dir / runner_name / "proton"
+                if not proton_script.exists():
+                    QMessageBox.critical(
+                        self,
+                        tr("APP_NAME"),
+                        tr("ERROR_RUNNER", path=str(proton_script.parent)))
+                    return
+
                 # UMU launcher command structure
                 command = [str(umu_run_path), str(exec_path_full)]
 
@@ -4726,8 +4765,28 @@ class Zordeer(QMainWindow):
                     if not pfx_symlink.is_dir():
                         pfx_symlink.symlink_to(".")
                         print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink)))
+
+                        users_path = prefix_path / "drive_c" / "users"
+                        users_path.mkdir(parents=True, exist_ok=True)
+                        steamuser = users_path / "steamuser"
+                        unixuser = getpwuid(os.getuid()).pw_name
+                        wineuser = users_path / unixuser
+                        if not steamuser.exists():
+                            steamuser.mkdir(parents=True)
+                        if not wineuser.exists():
+                            wineuser.symlink_to("steamuser")
+                        elif wineuser.is_dir() and not steamuser.exists():
+                            steamuser.symlink_to(unixuser)
+                        elif not wineuser.exists() and steamuser.is_dir():
+                            wineuser.symlink_to("steamuser")
+                                
                 except Exception as e:
                     print(tr("SYMLINK_ERROR", error=e))
+
+            # Create folders to prevent Wine from creating symlinks
+            target_user = prefix_path / "drive_c" / "users" / "steamuser"
+            for folder in ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos", "Templates"]:
+                (target_user / folder).mkdir(parents=True, exist_ok=True)
 
             # Language configuration
             language = invocation_data.get('language', '').strip()
