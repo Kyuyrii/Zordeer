@@ -2,6 +2,7 @@
 <component type="desktop-application">
   <id>io.github.kyuyrii.zordeer</id>
   <url type="homepage">https://github.com/Kyuyrii/Zordeer</url>
+  <url type="vcs-browser">https://github.com/Kyuyrii/Zordeer</url>
   <developer_name>Kyuyrii</developer_name>
   <name>Zordeer</name>
   <summary>A Qt launcher for Wine/Proton</summary>
@@ -21,6 +22,7 @@
   <screenshots>
     <screenshot type="default">
       <image>https://raw.githubusercontent.com/Kyuyrii/Zordeer/565b34f7652c9039bf356420b5f1e2eb4075df60/metainfo/zordeer_qt_style_breeze.png</image>
+      <caption>Main window of the Zordeer, using the Qt Breeze style.</caption>
     </screenshot>
   </screenshots>
 
