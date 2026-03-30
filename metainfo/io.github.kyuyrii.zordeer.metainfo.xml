@@ -16,12 +16,12 @@
     </p>
   </description>
   <releases>
-    <release version="3.4" date="2026-03-28" />
+    <release version="3.5" date="2026-03-30" />
   </releases>
   <launchable type="desktop-id">io.github.kyuyrii.zordeer.desktop</launchable>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/Kyuyrii/Zordeer/565b34f7652c9039bf356420b5f1e2eb4075df60/metainfo/zordeer_qt_style_breeze.png</image>
+      <image>https://raw.githubusercontent.com/Kyuyrii/Zordeer/77f5e8c5931b57b2657a87f6e8288c0156a77c36/metainfo/zordeer_qt_style_breeze.png</image>
       <caption>Main window of the Zordeer, using the Qt Breeze style.</caption>
     </screenshot>
   </screenshots>
