@@ -35,50 +35,32 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.4"
+__version__ = "3.5"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
-if "ZORDEER_DIR" in os.environ:
-    zordeer_dir = Path(os.environ["ZORDEER_DIR"]) / "App" / "Zordeer"
-    zordeer_home_dir = Path(os.environ["ZORDEER_DIR"])
+if "ZORDEER_HOME_DIR" in os.environ:
+    zordeer_home_dir = Path(os.environ["ZORDEER_HOME_DIR"])
 
 elif os.environ.get("SNAP"):
     home_connected = subprocess.run(["snapctl", "is-connected", "home"]).returncode == 0
 
     if home_connected:
-        zordeer_dir = Path(os.environ["SNAP_REAL_HOME"]) / "App" / "Zordeer"
         zordeer_home_dir = Path(os.environ["SNAP_REAL_HOME"])
     else:
-        zordeer_dir = Path(os.environ["SNAP_USER_COMMON"]) / "App" / "Zordeer"
         zordeer_home_dir = Path(os.environ["SNAP_USER_COMMON"])
 
-elif os.environ.get("container") == "flatpak" and os.environ.get("ZORDEER_DIR_APP_ID") == "1":
-    zordeer_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer" / "App" / "Zordeer"
-    zordeer_home_dir = Path.home() / ".var" / "app" / "io.github.kyuyrii.zordeer"
-
 else:
-    zordeer_dir = Path.home() / "App" / "Zordeer"
     zordeer_home_dir = Path.home()
 
-if os.environ.get("container") == "flatpak" and os.environ.get("XDG_BASE_DIRECTORY") == "1":
-    zordeer_art_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "art"
-    zordeer_gui_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "art" / "gui"
-    zordeer_config_dir = Path(os.environ["XDG_CONFIG_HOME"]) / "Zordeer" / "config"
-    zordeer_settings_file = Path(os.environ["XDG_CONFIG_HOME"]) / "Zordeer" / "config" / "zordeer-settings.toml"
-    zordeer_invocation_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "invocation"
-    zordeer_runner_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "runner"
-    zordeer_umu_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer" / "umu"
-    zordeer_umu_folders_path = Path(os.environ["XDG_DATA_HOME"]) / "UMU"
-
-else:
-    zordeer_art_dir = zordeer_dir / "art"
-    zordeer_gui_dir = zordeer_dir / "art" / "gui"
-    zordeer_config_dir = zordeer_dir / "config"
-    zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
-    zordeer_invocation_dir = zordeer_dir / "invocation"
-    zordeer_runner_dir = zordeer_dir / "runner"
-    zordeer_umu_dir = zordeer_dir / "umu"
-    zordeer_umu_folders_path = zordeer_home_dir / "App" / "UMU"
+zordeer_dir = zordeer_home_dir / "App" / "Zordeer"
+zordeer_art_dir = zordeer_dir / "art"
+zordeer_gui_dir = zordeer_dir / "art" / "gui"
+zordeer_config_dir = zordeer_dir / "config"
+zordeer_settings_file = zordeer_config_dir / "zordeer-settings.toml"
+zordeer_invocation_dir = zordeer_dir / "invocation"
+zordeer_runner_dir = zordeer_dir / "runner"
+zordeer_umu_dir = zordeer_dir / "umu"
+zordeer_umu_folders_path = zordeer_home_dir / "App" / "UMU"
 
 # Loads translations from TOML files.
 def load_translations():
@@ -1839,7 +1821,9 @@ class MultipleCreateInvocationsDialog(QDialog):
         self.runner_combo.addItems(items)
 
     def add_files(self):
-        files, _ = QFileDialog.getOpenFileNames(self, tr("SELECT_EXECUTABLE"), str(zordeer_home_dir), tr("EXECUTABLE_FILE_FILTER"))
+        files, _ = QFileDialog.getOpenFileNames(self, tr("SELECT_EXECUTABLE"),
+        str(zordeer_home_dir),
+        tr("EXECUTABLE_FILE_FILTER"))
         for f in files:
             self.add_file_item(f)
 
@@ -2529,7 +2513,7 @@ class MultipleEditInvocationDialog(QDialog):
             self.invocation_info_viewer.activateWindow()
             return
 
-        self.invocation_info_viewer = InvocationInfoViewerDialog(zordeer_dir, self, multiple_edit_dialog=self)
+        self.invocation_info_viewer = InvocationInfoViewerDialog(self, multiple_edit_dialog=self)
         self.invocation_info_viewer.finished.connect(partial(setattr, self, "invocation_info_viewer", None))
         self.invocation_info_viewer.show()
 
@@ -2868,7 +2852,7 @@ class MultipleEditInvocationDialog(QDialog):
             self.invocation_info_viewer.reload_current_selection()
 
 class InvocationInfoViewerDialog(QDialog):
-    def __init__(self, zordeer_dir=None, parent=None, multiple_edit_dialog=None):
+    def __init__(self, parent=None, multiple_edit_dialog=None):
         super().__init__(parent)
         self.multiple_edit_dialog = multiple_edit_dialog
         self.setWindowTitle(tr("INVOCATION_INFO_VIEWER_TITLE"))
@@ -3311,7 +3295,9 @@ class RunInPrefix(QDialog):
 
     def select_files(self):
         files, _ = QFileDialog.getOpenFileNames(
-            self, tr("SELECT_EXECUTABLE"), str(zordeer_home_dir), tr("EXECUTABLE_FILE_FILTER"))
+            self, tr("SELECT_EXECUTABLE"),
+            str(zordeer_home_dir),
+            tr("EXECUTABLE_FILE_FILTER"))
         for f in files:
             path_obj = Path(f)
             item = QTreeWidgetItem([path_obj.name])
@@ -3322,7 +3308,9 @@ class RunInPrefix(QDialog):
     def select_folder(self):
         # Select a folder and add compatible files.
         folder = QFileDialog.getExistingDirectory(
-            self, tr("SELECT_FOLDER"), str(zordeer_home_dir))
+            self,
+            tr("SELECT_FOLDER"),
+            str(zordeer_home_dir))
         
         if folder:
             folder_path = Path(folder)
@@ -3800,7 +3788,9 @@ class ShortcutManager(QDialog):
         save_settings(settings)
 
     def browse_folder(self, line_edit: QLineEdit):
-        folder = QFileDialog.getExistingDirectory(self, tr("SELECT_FOLDER"), str(zordeer_home_dir))
+        folder = QFileDialog.getExistingDirectory(self,
+        tr("SELECT_FOLDER"),
+        str(zordeer_home_dir))
         if not folder:
             return
 
@@ -4215,7 +4205,7 @@ class Zordeer(QMainWindow):
         tray_menu.addAction(self.stop_execution_action)
 
         # Show/Hide Window
-        self.restore_action = QAction(tr("ZORDEER_TRAY_TOGGLE"), self)
+        self.restore_action = QAction(tr("CHANGE_VISIBILITY"), self)
         self.restore_action.setIcon(QIcon.fromTheme("view-restore-symbolic"))
         self.restore_action.triggered.connect(self.toggle_window)
         tray_menu.addAction(self.restore_action)
@@ -4482,12 +4472,7 @@ class Zordeer(QMainWindow):
 
     def fix_invocation_paths(self):
         # Fix paths in all invocations if they don't match current zordeer_dir
-        if os.environ.get("container") == "flatpak" and os.environ.get("XDG_BASE_DIRECTORY") == "1":
-            current_base = str(Path(os.environ["XDG_DATA_HOME"]))
-            path_pattern = '/Zordeer/'
-        else:
-            current_base = str(zordeer_home_dir)
-            path_pattern = '/App/Zordeer/'
+        current_base = str(zordeer_home_dir)
 
         for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
@@ -4496,8 +4481,8 @@ class Zordeer(QMainWindow):
                     modified = False
                     
                     for field in ['exec_path', 'prefix_path', 'art_path', 'gui_path']:
-                        if field in data and path_pattern in data[field]:
-                            old_base = data[field].split(path_pattern)[0]
+                        if field in data and '/App/Zordeer/' in data[field]:
+                            old_base = data[field].split('/App/Zordeer/')[0]
                             if old_base != current_base:
                                 data[field] = data[field].replace(old_base, current_base, 1)
                                 modified = True
