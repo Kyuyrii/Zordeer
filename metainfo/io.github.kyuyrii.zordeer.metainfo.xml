@@ -16,7 +16,7 @@
     </p>
   </description>
   <releases>
-    <release version="3.5" date="2026-03-30" />
+    <release version="3.6" date="2026-03-30" />
   </releases>
   <launchable type="desktop-id">io.github.kyuyrii.zordeer.desktop</launchable>
   <screenshots>
