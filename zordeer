@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.6.1"
+__version__ = "3.7"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -52,7 +52,7 @@ elif os.environ.get("SNAP"):
 else:
     zordeer_home_dir = Path.home()
 
-if os.environ.get("container") == "flatpak" and os.environ.get("DISABLE_XDG") != "1" and "ZORDEER_HOME_DIR" not in os.environ:
+if os.environ.get("container") == "flatpak" and os.environ.get("ZORDEER_WITHOUT_XDG") != "1" and "ZORDEER_HOME_DIR" not in os.environ:
     zordeer_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer"
     zordeer_art_dir = zordeer_dir / "art"
     zordeer_gui_dir = zordeer_dir / "art" / "gui"
@@ -83,7 +83,9 @@ def load_translations():
     translation_dirs = [
         zordeer_dir / "translation",
         Path(sys.argv[0]).parent / "translation",
-        Path("/usr/share/Zordeer/translation")
+        Path("/usr/share/Zordeer/translation"),
+        Path("/app/share/Zordeer/translation")
+
     ]
 
     for translation_folder in translation_dirs:
@@ -4484,7 +4486,7 @@ class Zordeer(QMainWindow):
 
     def fix_invocation_paths(self):
             # Fix paths in all invocations if they don't match current zordeer_dir
-            if os.environ.get("container") == "flatpak" and os.environ.get("DISABLE_XDG") != "1" and "ZORDEER_HOME_DIR" not in os.environ:
+            if os.environ.get("container") == "flatpak" and os.environ.get("ZORDEER_WITHOUT_XDG") != "1" and "ZORDEER_HOME_DIR" not in os.environ:
                 current_base = str(zordeer_home_dir / ".var" / "app" / "io.github.kyuyrii.zordeer")
                 current_pattern = '/data/Zordeer/'
                 old_pattern = '/App/Zordeer/'
