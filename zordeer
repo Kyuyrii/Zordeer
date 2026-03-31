@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.7"
+__version__ = "3.8"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -4398,21 +4398,63 @@ class Zordeer(QMainWindow):
 
                 loop_device = iso_info.get("loop_device")
                 if loop_device:
-                    # Unmount
-                    result_unmount = subprocess.run(
-                        ["udisksctl", "unmount", "-b", loop_device, "--force"],
-                        capture_output=True, text=True)
-                    if result_unmount.returncode != 0:
-                        print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error=result_unmount.stderr.strip()))
-
-                    # Delete loop device
-                    result_delete = subprocess.run(
-                        ["udisksctl", "loop-delete", "-b", loop_device],
-                        capture_output=True, text=True)
-                    if result_delete.returncode != 0:
-                        print(tr("ISO_LOOP_DELETE_FAILED", device=loop_device, error=result_delete.stderr.strip()))
+                    if os.environ.get("container") == "flatpak":
+                        try:                            
+                            bus = dbus.SystemBus()
+                            
+                            # Find the loop device object by its device node
+                            udisks_obj = bus.get_object("org.freedesktop.UDisks2", "/org/freedesktop/UDisks2")
+                            obj_manager = dbus.Interface(udisks_obj, "org.freedesktop.DBus.ObjectManager")
+                            objects = obj_manager.GetManagedObjects()
+                            
+                            loop_object_path = None
+                            for path, interfaces in objects.items():
+                                if "org.freedesktop.UDisks2.Block" in interfaces:
+                                    block_props = interfaces.get("org.freedesktop.UDisks2.Block", {})
+                                    if "Device" in block_props:
+                                        device_node = str(block_props["Device"]).rstrip('\x00')
+                                        if device_node == loop_device:
+                                            loop_object_path = path
+                                            break
+                            
+                            if loop_object_path:
+                                loop_obj = bus.get_object("org.freedesktop.UDisks2", loop_object_path)
+                                
+                                # Unmount
+                                try:
+                                    filesystem = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Filesystem")
+                                    filesystem.Unmount(dbus.Dictionary({}, signature='sv'))
+                                    print(tr("ISO_UNMOUNTED", device=loop_device))
+                                except Exception as e:
+                                    print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error=str(e)))
+                                
+                                # Delete loop device
+                                try:
+                                    loop_iface = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Loop")
+                                    loop_iface.Delete(dbus.Dictionary({}, signature='sv'))
+                                except Exception as e:
+                                    print(tr("ISO_LOOP_DELETE_FAILED", device=loop_device, error=str(e)))
+                            else:
+                                print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error="Loop device not found"))
+                                
+                        except Exception as e:
+                            print(tr("ISO_UNMOUNT_EXCEPTION", error=str(e)))
                     else:
-                        print(tr("ISO_UNMOUNTED", device=loop_device))
+                        # Unmount
+                        result_unmount = subprocess.run(
+                            ["udisksctl", "unmount", "-b", loop_device, "--force"],
+                            capture_output=True, text=True)
+                        if result_unmount.returncode != 0:
+                            print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error=result_unmount.stderr.strip()))
+
+                        # Delete loop device
+                        result_delete = subprocess.run(
+                            ["udisksctl", "loop-delete", "-b", loop_device],
+                            capture_output=True, text=True)
+                        if result_delete.returncode != 0:
+                            print(tr("ISO_LOOP_DELETE_FAILED", device=loop_device, error=result_delete.stderr.strip()))
+                        else:
+                            print(tr("ISO_UNMOUNTED", device=loop_device))
 
             except Exception as e:
                 print(tr("ISO_UNMOUNT_EXCEPTION", error=str(e)))
@@ -4642,34 +4684,63 @@ class Zordeer(QMainWindow):
 
                 # If not mounted, create loop device and mount it
                 if not mount_point:
-                    # Create loop device
-                    result = subprocess.run(
-                        ["udisksctl", "loop-setup", "-f", str(iso_path)],
-                        capture_output=True, text=True)
-                    if result.returncode != 0:
-                        QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=result.stderr))
-                        return
+                    if os.environ.get("container") == "flatpak":
+                        try:                            
+                            bus = dbus.SystemBus()
+                            
+                            manager_obj = bus.get_object("org.freedesktop.UDisks2", "/org/freedesktop/UDisks2/Manager")
+                            manager = dbus.Interface(manager_obj, "org.freedesktop.UDisks2.Manager")
+                            
+                            fd = os.open(str(iso_path), os.O_RDONLY)
+                            try:
+                                options = dbus.Dictionary({}, signature='sv')
+                                loop_object_path = manager.LoopSetup(fd, options)
+                                
+                                loop_obj = bus.get_object("org.freedesktop.UDisks2", loop_object_path)
+                                
+                                block_props = dbus.Interface(loop_obj, "org.freedesktop.DBus.Properties")
+                                device_node = block_props.Get("org.freedesktop.UDisks2.Block", "Device")
+                                loop_device = str(device_node).rstrip('\x00')
+                                
+                                filesystem = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Filesystem")
+                                mount_result = filesystem.Mount(dbus.Dictionary({}, signature='sv'))
+                                mount_point = Path(str(mount_result))
+                                
+                            finally:
+                                os.close(fd)
+                            
+                        except Exception as e:
+                            QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=str(e)))
+                            return
+                    else:
+                        # Create loop device
+                        result = subprocess.run(
+                            ["udisksctl", "loop-setup", "-f", str(iso_path)],
+                            capture_output=True, text=True)
+                        if result.returncode != 0:
+                            QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=result.stderr))
+                            return
 
-                    match = re.search(r'/dev/loop\d+', result.stdout)
-                    if not match:
-                        QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_NOT_FOUND"))
-                        return
-                    loop_device = match.group(0)
+                        match = re.search(r'/dev/loop\d+', result.stdout)
+                        if not match:
+                            QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_NOT_FOUND"))
+                            return
+                        loop_device = match.group(0)
 
-                    # Mount loop device
-                    result_mount = subprocess.run(
-                        ["udisksctl", "mount", "-b", loop_device],
-                        capture_output=True, text=True)
-                    if result_mount.returncode != 0:
-                        QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_MOUNT_FAILED", error=result_mount.stderr))
-                        return
+                        # Mount loop device
+                        result_mount = subprocess.run(
+                            ["udisksctl", "mount", "-b", loop_device],
+                            capture_output=True, text=True)
+                        if result_mount.returncode != 0:
+                            QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_MOUNT_FAILED", error=result_mount.stderr))
+                            return
 
-                    # Get mount point
-                    match = re.search(r'at (/.+)', result_mount.stdout)
-                    mount_point = Path(match.group(1)) if match else None
-                    if not mount_point or not mount_point.exists():
-                        QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_MOUNT_POINT_NOT_FOUND"))
-                        return
+                        # Get mount point
+                        match = re.search(r'at (/.+)', result_mount.stdout)
+                        mount_point = Path(match.group(1)) if match else None
+                        if not mount_point or not mount_point.exists():
+                            QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_MOUNT_POINT_NOT_FOUND"))
+                            return
 
                 # Look for the .exe inside the ISO
                 exe_files = []
