@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.6"
+__version__ = "3.6.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -61,7 +61,7 @@ if os.environ.get("container") == "flatpak" and os.environ.get("DISABLE_XDG") !=
     zordeer_invocation_dir = zordeer_dir / "invocation"
     zordeer_runner_dir = zordeer_dir / "runner"
     zordeer_umu_dir = zordeer_dir / "umu"
-    zordeer_umu_folders_path = zordeer_home_dir / "App" / "UMU"
+    zordeer_umu_folders_path = Path(os.environ["XDG_DATA_HOME"]) / "UMU"
 
 else:
     zordeer_dir = zordeer_home_dir / "App" / "Zordeer"
