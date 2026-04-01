@@ -2,7 +2,7 @@ language_name = "Português Brasil"
 
 ABOUT_TEXT_HTML = """<b>Zordeer</b><br>
 Versão: {__version__}<br><br>
-Um launcher Qt para executar jogos via Wine/Proton/UMU..<br>
+Um launcher Qt para executar jogos via Wine/Proton/UMU.<br>
 Licença: <a href='https://www.gnu.org/licenses/gpl-3.0.html'>GPLv3</a><br>
 Criado por {__creator__}"""
 ABOUT_ZORDEER = "Sobre o Zordeer"
