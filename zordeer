@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.9"
+__version__ = "3.10"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -4366,13 +4366,29 @@ class Zordeer(QMainWindow):
             self.inhibit_cookie = None
         self.setWindowTitle(tr("APP_NAME"))
 
+        # Get the base executable name
+        executable_name_to_kill = None
+        if hasattr(self, "last_executable") and self.last_executable:
+            executable_name_to_kill = Path(self.last_executable).stem
+
         # Kill all .exe processes and wineserver
         for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
             try:
                 name = proc.info['name'].lower() if proc.info['name'] else ""
                 cmdline = " ".join(proc.info['cmdline'] or []).lower()
                 
+                should_kill = False
+                
                 if name == 'wineserver' or name.endswith('.exe') or '.exe' in cmdline:
+                    should_kill = True
+                
+                if executable_name_to_kill:
+                    proc_name_lower = proc.info['name'].lower() if proc.info['name'] else ""
+                    executable_lower = executable_name_to_kill.lower()
+                    if proc_name_lower == executable_lower or proc_name_lower == f"{executable_lower}.":
+                        should_kill = True
+                
+                if should_kill:
                     print(tr("STOP_KILL_PROCESS", pid=proc.pid, exe=proc.info['name']))
                     try:
                         proc.kill()
@@ -5388,62 +5404,10 @@ class Zordeer(QMainWindow):
         dialog.exec()
 
     def show_about(self):
-        dialog = QDialog(self)
-        dialog.setWindowTitle(tr("ABOUT_ZORDEER"))
-        dialog.setWindowModality(Qt.WindowModality.ApplicationModal)
-
-        layout = QVBoxLayout(dialog)
-
-        # Zordeer icon
-        icon = self.windowIcon()
-        if not icon.isNull():
-            icon_label = QLabel()
-            icon_label.setPixmap(icon.pixmap(64, 64))
-            icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            layout.addWidget(icon_label)
-
-        # About text
-        label = QLabel(tr("ABOUT_TEXT_HTML"))
-        label.setWordWrap(True)
-        label.setTextFormat(Qt.TextFormat.RichText)
-        label.setOpenExternalLinks(True)
-        label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        layout.addWidget(label)
-
-        # Update button
-        update_button = QPushButton(tr("CHECK_UPDATE_BUTTON"))
-        update_button.clicked.connect(self.check_update)
-        layout.addWidget(update_button, alignment=Qt.AlignmentFlag.AlignCenter)
-
-        dialog.exec()
-
-    def check_update(self):
-        try:
-            response = requests.get("https://api.github.com/repos/Kyuyrii/Zordeer/tags", timeout=5)
-            response.raise_for_status()
-            tags = response.json()
-            if not tags:
-                QMessageBox.warning(self, tr("APP_NAME"), tr("NO_TAGS_FOUND"))
-                return
-
-            latest_tag = tags[0]["name"].lstrip("v")
-            current_version = __version__
-
-            def version_tuple(v):
-                return tuple(int(x) for x in v.split("."))
-
-            if version_tuple(current_version) >= version_tuple(latest_tag):
-                QMessageBox.information(self, tr("APP_NAME"), tr("ALREADY_UPDATED"))
-            else:
-                reply = QMessageBox.question(
-                    self,
-                    tr("APP_NAME"),
-                    tr("NEW_VERSION_AVAILABLE", version=latest_tag),
-                    QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                if reply == QMessageBox.StandardButton.Yes:
-                    subprocess.Popen(['xdg-open', 'https://github.com/Kyuyrii/Zordeer/releases'])
-        except Exception as e:
-            QMessageBox.warning(self, tr("APP_NAME"), tr("UPDATE_ERROR", error=e))
+        QMessageBox.about(
+            self,
+            tr("ABOUT_ZORDEER"),
+            tr("ABOUT_TEXT_HTML"))
 
 class ArtworkLoader(QThread):
     finished = pyqtSignal(list)  # List of artworks [{id, url, img_data}, ...]
