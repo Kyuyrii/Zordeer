@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.8.1"
+__version__ = "3.9"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -4528,42 +4528,28 @@ class Zordeer(QMainWindow):
         self.invocation_list_widget.verticalScrollBar().setValue(scroll_pos)
 
     def fix_invocation_paths(self):
-            # Fix paths in all invocations if they don't match current zordeer_dir
-            if os.environ.get("container") == "flatpak" and os.environ.get("ZORDEER_WITHOUT_XDG") != "1" and "ZORDEER_HOME_DIR" not in os.environ:
-                current_base = str(zordeer_home_dir / ".var" / "app" / "io.github.kyuyrii.zordeer")
-                current_pattern = '/data/Zordeer/'
-                old_pattern = '/App/Zordeer/'
-            else:
-                current_base = str(zordeer_home_dir)
-                current_pattern = '/App/Zordeer/'
-                old_pattern = '/data/Zordeer/'
+        # Fix paths in all invocations if they don't match current zordeer_dir
+        current_base = str(zordeer_home_dir)
 
-            for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
-                try:
-                    with open(toml_file, 'r+', encoding='utf-8') as f:
-                        data = tomlkit.load(f)
-                        modified = False
-                        
-                        for field in ['exec_path', 'prefix_path', 'art_path', 'gui_path']:
-                            if field in data and (old_pattern in data[field] or current_pattern in data[field]):
-                                if old_pattern in data[field]:
-                                    old_base = data[field].split(old_pattern)[0]
-                                    if old_base != current_base:
-                                        suffix = data[field].split(old_pattern, 1)[1]
-                                        data[field] = current_base + current_pattern + suffix
-                                        modified = True
-                                else:
-                                    old_base = data[field].split(current_pattern)[0]
-                                    if old_base != current_base:
-                                        data[field] = data[field].replace(old_base, current_base, 1)
-                                        modified = True
-                        
-                        if modified:
-                            f.seek(0)
-                            tomlkit.dump(data, f)
-                            f.truncate()
-                except:
-                    continue
+        for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
+            try:
+                with open(toml_file, 'r+', encoding='utf-8') as f:
+                    data = tomlkit.load(f)
+                    modified = False
+
+                    for field in ['exec_path', 'prefix_path', 'art_path', 'gui_path']:
+                        if field in data and '/App/Zordeer/' in data[field]:
+                            old_base = data[field].split('/App/Zordeer/')[0]
+                            if old_base != current_base:
+                                data[field] = data[field].replace(old_base, current_base, 1)
+                                modified = True
+
+                    if modified:
+                        f.seek(0)
+                        tomlkit.dump(data, f)
+                        f.truncate()
+            except:
+                continue
 
     def add_invocation(self):
         dialog = AddInvocationDialog(self)
