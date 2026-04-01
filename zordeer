@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.8"
+__version__ = "3.8.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -256,6 +256,7 @@ def load_settings() -> dict:
 def save_settings(data: dict) -> None:
     """Saves settings in TOML."""
     zordeer_config_dir.mkdir(parents=True, exist_ok=True)
+    zordeer_settings_file.parent.mkdir(parents=True, exist_ok=True)
     with open(zordeer_settings_file, "w", encoding="utf-8") as f:
         tomlkit.dump(data, f)
 
