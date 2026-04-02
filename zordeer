@@ -35,7 +35,7 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.10"
+__version__ = "3.10.1"
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -4128,7 +4128,7 @@ class Zordeer(QMainWindow):
         self.edit_invocation_action.triggered.connect(self.edit_invocation)
         self.toolbar.addAction(self.edit_invocation_action)
 
-        self.search_action = QAction(QIcon.fromTheme("search-symbolic"), tr("SEARCH"), self)
+        self.search_action = QAction(QIcon.fromTheme("edit-find-symbolic"), tr("SEARCH"), self)
         self.search_action.triggered.connect(self.toggle_search_bar)
         self.toolbar.addAction(self.search_action)
 
