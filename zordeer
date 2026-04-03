@@ -35,7 +35,16 @@ except locale.Error:
 if not LANG:
     LANG = 'en_US'
 
-__version__ = "3.10.1"
+if os.environ.get("SNAP"):
+    __package_type__ = " [Snap]"
+elif os.environ.get("container") == "flatpak":
+    __package_type__ = " [Flatpak]"
+elif os.environ.get("APPIMAGE"):
+    __package_type__ = " [AppImage]"
+else:
+    __package_type__ = ""
+
+__version__ = "3.10.2" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
