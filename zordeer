@@ -44,7 +44,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "3.10.2" + __package_type__
+__version__ = "3.10.3" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -4106,6 +4106,10 @@ class Zordeer(QMainWindow):
         # Menu EXTRA
         self.extra_menu = self.menu_bar.addMenu(tr("EXTRA"))
 
+        self.open_zordeer_dir_action = QAction(tr("OPEN_ZORDEER_DIR"), self)
+        self.open_zordeer_dir_action.triggered.connect(partial(self.open_path, "zordeer_dir"))
+        self.extra_menu.addAction(self.open_zordeer_dir_action)
+
         self.settings_action = QAction(tr("ZORDEER_SETTINGS"), self)
         self.settings_action.triggered.connect(self.open_settings)
         self.extra_menu.addAction(self.settings_action)
@@ -5399,6 +5403,8 @@ class Zordeer(QMainWindow):
         elif chosen_path == "exe":
             exec_path = invocation_info.get("exec_path")
             path = Path(exec_path).parent if exec_path else None
+        elif chosen_path == "zordeer_dir":
+            path = zordeer_dir
 
         if path and path.exists():
             subprocess.run(["xdg-open", str(path)])
