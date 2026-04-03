@@ -2,6 +2,7 @@
 <component type="desktop-application">
   <id>io.github.kyuyrii.zordeer</id>
   <url type="homepage">https://github.com/Kyuyrii/Zordeer</url>
+  <url type="bugtracker">https://github.com/Kyuyrii/Zordeer/issues</url>
   <url type="vcs-browser">https://github.com/Kyuyrii/Zordeer</url>
   <developer_name>Kyuyrii</developer_name>
   <name>Zordeer</name>
@@ -10,6 +11,9 @@
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
   <content_rating type="oars-1.1"/>
+  <categories>
+    <category>Game</category>
+  </categories>
   <description>
     <p>
       A Qt launcher for running games via Wine/Proton/UMU.
