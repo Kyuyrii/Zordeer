@@ -44,7 +44,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "3.10.3" + __package_type__
+__version__ = "3.11" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -61,7 +61,7 @@ elif os.environ.get("SNAP"):
 else:
     zordeer_home_dir = Path.home()
 
-if os.environ.get("container") == "flatpak" and os.environ.get("ZORDEER_WITHOUT_XDG") != "1" and "ZORDEER_HOME_DIR" not in os.environ:
+if os.environ.get("container") == "flatpak" and "ZORDEER_HOME_DIR" not in os.environ:
     zordeer_dir = Path(os.environ["XDG_DATA_HOME"]) / "Zordeer"
     zordeer_art_dir = zordeer_dir / "art"
     zordeer_gui_dir = zordeer_dir / "art" / "gui"
@@ -127,7 +127,7 @@ def tr(key, **kwargs):
     if LANG in available_translations:
         translation_dict = available_translations[LANG]
         translated_string = translation_dict.get(key)
-        
+
         if translated_string:
             # Replace special variables
             translated_string = translated_string.replace("{__version__}", __version__)
@@ -770,11 +770,11 @@ class RunnerTransferDialog(QDialog):
             self.setEnabled(True)
             QMessageBox.information(self, tr("APP_NAME"), msg)
             self.progress_bar.setValue(0)
-        
+
         def handle_transfer_error(msg):
             QMessageBox.critical(self, tr("APP_NAME"), msg)
             self.setEnabled(True)
-        
+
         def print_message(msg):
             print(msg)
 
@@ -1564,7 +1564,7 @@ class AddInvocationDialog(QDialog):
                 QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
                 return
             cmd = [wine_path, "winecfg"]
-            
+
         elif "proton" in runner_name.lower():
             proton_script = zordeer_runner_dir / runner_name / "proton"
 
@@ -1574,21 +1574,21 @@ class AddInvocationDialog(QDialog):
                     tr("APP_NAME"),
                     tr("ERROR_RUNNER", path=str(proton_script.parent)))
                 return
-                
+
             cmd = [str(proton_script), "run", "winecfg"]
             env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
             env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = ""
-            
+
         else:
             wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
-            
+
             if not wine_binary.exists():
                 QMessageBox.critical(
                     self,
                     tr("APP_NAME"),
                     tr("ERROR_RUNNER", path=str(wine_binary.parent)))
                 return
-                
+
             cmd = [str(wine_binary), "winecfg"]
 
         subprocess.Popen(cmd, env=env)
@@ -3026,16 +3026,16 @@ class InvocationInfoViewerDialog(QDialog):
         def get_filename_sort_key(invocation):
             filename = invocation.get("__filename", "")
             return Path(filename).stem.lower()
-        
+
         self.invocations.sort(key=get_filename_sort_key)
 
         first_rb = None
         for inv in self.invocations:
             filename = inv.get("__filename", "")
-            
+
             # Displays the content of the name field.
             display_name = inv.get("name")
-            
+
             rb = QRadioButton(display_name)
             rb.setProperty("invocation_filename", filename)
             self.button_group.addButton(rb)
@@ -3219,17 +3219,17 @@ class RunInPrefix(QDialog):
 
         # Grid layout for buttons (2x2)
         grid_buttons = QGridLayout()
-        
+
         self.select_files_btn = QPushButton(tr("ADD_FILES"))
         self.remove_btn = QPushButton(tr("REMOVE"))
         self.select_folder_btn = QPushButton(tr("ADD_FOLDER"))
         self.clear_btn = QPushButton(tr("CLEAR_LIST"))
-        
+
         grid_buttons.addWidget(self.select_files_btn, 0, 0)
         grid_buttons.addWidget(self.remove_btn, 0, 1)
         grid_buttons.addWidget(self.select_folder_btn, 1, 0)
         grid_buttons.addWidget(self.clear_btn, 1, 1)
-        
+
         layout.addLayout(grid_buttons)
 
         # Execution mode section (radio buttons)
@@ -3335,11 +3335,11 @@ class RunInPrefix(QDialog):
             self,
             tr("SELECT_FOLDER"),
             str(zordeer_home_dir))
-        
+
         if folder:
             folder_path = Path(folder)
             supported_extensions = {'.exe', '.msi', '.iso'}
-            
+
             for file_path in folder_path.iterdir():
                 if file_path.is_file():
                     # Check if file has a supported extension
@@ -3686,7 +3686,7 @@ class ShortcutManager(QDialog):
             # For menu view, use .local/share/applications
             dot_local = Path(self.dot_local_input.text())
             folder_path = dot_local / "share" / "applications"
-        
+
         existing_desktops = set()
 
         if folder_path.exists():
@@ -3838,7 +3838,7 @@ class ShortcutManager(QDialog):
         desktop_dir = Path(self.desktop_dir_input.text().strip())
         dot_config_dir = Path(self.dot_config_input.text().strip())
         dot_local_dir = Path(self.dot_local_input.text().strip())
-        
+
         # Define menu applications directory
         applications_dir = dot_local_dir / "share" / "applications"
 
@@ -3867,16 +3867,16 @@ class ShortcutManager(QDialog):
                 tr("APP_NAME"),
                 tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_local_dir))
             return
-        
+
         applications_dir.mkdir(parents=True, exist_ok=True)
 
         old_desktop_dir = Path(self.shortcut_manager_info.get("desktop_dir", ""))
         old_dot_config_dir = Path(self.shortcut_manager_info.get("dot_config_dir", ""))
         old_dot_local_dir = Path(self.shortcut_manager_info.get("dot_local_dir", ""))
-        
+
         # Remove old desktop files from previous locations
         self.remove_all_zordeer_desktops(old_desktop_dir)
-        
+
         # Remove old menu files from previous .local/share/applications
         old_applications_dir = old_dot_local_dir / "share" / "applications"
         self.remove_all_zordeer_desktops(old_applications_dir)
@@ -3913,7 +3913,7 @@ class ShortcutManager(QDialog):
                 # Create .menu file in the configured .config directory
                 menu_file_path = dot_config_dir / "menus" / "applications-merged" / "Zordeer.menu"
                 menu_file_path.parent.mkdir(parents=True, exist_ok=True)
-                
+
                 menu_content = "\n".join([
                     "<Menu>",
                     "  <Name>Applications</Name>",
@@ -4084,24 +4084,24 @@ class Zordeer(QMainWindow):
         self.transfer_arts_menu.triggered.connect(self.open_transfer_arts)
         self.transfer_menu.addAction(self.transfer_arts_menu)
 
-        # Menu MANIPULATE
-        self.manipulate_menu = self.menu_bar.addMenu(tr("MANIPULATE"))
+        # Menu MANAGE
+        self.manage_menu = self.menu_bar.addMenu(tr("MANAGE"))
 
         self.multiple_create_action = QAction(tr("CREATE_MULTIPLE_INVOCATIONS"), self)
         self.multiple_create_action.triggered.connect(self.open_multiple_create_dialog)
-        self.manipulate_menu.addAction(self.multiple_create_action)
+        self.manage_menu.addAction(self.multiple_create_action)
 
         self.multiple_remove_invocations_action = QAction(tr("REMOVE_MULTIPLE_INVOCATIONS"), self)
         self.multiple_remove_invocations_action.triggered.connect(self.open_multiple_remove_invocations_dialog)
-        self.manipulate_menu.addAction(self.multiple_remove_invocations_action)
+        self.manage_menu.addAction(self.multiple_remove_invocations_action)
 
         self.multiple_edit_invocations_action = QAction(tr("EDIT_MULTIPLE_INVOCATIONS"), self)
         self.multiple_edit_invocations_action.triggered.connect(self.open_multiple_edit_invocations_dialog)
-        self.manipulate_menu.addAction(self.multiple_edit_invocations_action)
+        self.manage_menu.addAction(self.multiple_edit_invocations_action)
 
         self.shortcut_manager_action = QAction(tr("CREATE_SHORTCUTS"), self)
         self.shortcut_manager_action.triggered.connect(self.open_shortcut_manager_dialog)
-        self.manipulate_menu.addAction(self.shortcut_manager_action)
+        self.manage_menu.addAction(self.shortcut_manager_action)
 
         # Menu EXTRA
         self.extra_menu = self.menu_bar.addMenu(tr("EXTRA"))
@@ -4389,18 +4389,18 @@ class Zordeer(QMainWindow):
             try:
                 name = proc.info['name'].lower() if proc.info['name'] else ""
                 cmdline = " ".join(proc.info['cmdline'] or []).lower()
-                
+
                 should_kill = False
-                
+
                 if name == 'wineserver' or name.endswith('.exe') or '.exe' in cmdline:
                     should_kill = True
-                
+
                 if executable_name_to_kill:
                     proc_name_lower = proc.info['name'].lower() if proc.info['name'] else ""
                     executable_lower = executable_name_to_kill.lower()
                     if proc_name_lower == executable_lower or proc_name_lower == f"{executable_lower}.":
                         should_kill = True
-                
+
                 if should_kill:
                     print(tr("STOP_KILL_PROCESS", pid=proc.pid, exe=proc.info['name']))
                     try:
@@ -4429,14 +4429,14 @@ class Zordeer(QMainWindow):
                 loop_device = iso_info.get("loop_device")
                 if loop_device:
                     if os.environ.get("container") == "flatpak":
-                        try:                            
+                        try:
                             bus = dbus.SystemBus()
-                            
+
                             # Find the loop device object by its device node
                             udisks_obj = bus.get_object("org.freedesktop.UDisks2", "/org/freedesktop/UDisks2")
                             obj_manager = dbus.Interface(udisks_obj, "org.freedesktop.DBus.ObjectManager")
                             objects = obj_manager.GetManagedObjects()
-                            
+
                             loop_object_path = None
                             for path, interfaces in objects.items():
                                 if "org.freedesktop.UDisks2.Block" in interfaces:
@@ -4446,10 +4446,10 @@ class Zordeer(QMainWindow):
                                         if device_node == loop_device:
                                             loop_object_path = path
                                             break
-                            
+
                             if loop_object_path:
                                 loop_obj = bus.get_object("org.freedesktop.UDisks2", loop_object_path)
-                                
+
                                 # Unmount
                                 try:
                                     filesystem = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Filesystem")
@@ -4457,7 +4457,7 @@ class Zordeer(QMainWindow):
                                     print(tr("ISO_UNMOUNTED", device=loop_device))
                                 except Exception as e:
                                     print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error=str(e)))
-                                
+
                                 # Delete loop device
                                 try:
                                     loop_iface = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Loop")
@@ -4466,7 +4466,7 @@ class Zordeer(QMainWindow):
                                     print(tr("ISO_LOOP_DELETE_FAILED", device=loop_device, error=str(e)))
                             else:
                                 print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error="Loop device not found"))
-                                
+
                         except Exception as e:
                             print(tr("ISO_UNMOUNT_EXCEPTION", error=str(e)))
                     else:
@@ -4525,19 +4525,19 @@ class Zordeer(QMainWindow):
             return
 
         invocation_files = sorted(zordeer_config_dir.glob("invocation-info-*.toml"))
-        
+
         restored_selection_item = None
         for invocation_file in invocation_files:
             try:
                 with open(invocation_file, encoding="utf-8") as f:
                     invocation_data = tomlkit.load(f)
-                
+
                 item = self.add_invocation_to_list(invocation_data)
                 item.setData(Qt.ItemDataRole.UserRole, invocation_file)
 
                 if selected_invocation_file and selected_invocation_file == invocation_file:
                     restored_selection_item = item
-                    
+
             except (IOError, tomlkit.exceptions.ParseError) as e:
                 print(tr("ERROR_LOADING_FILE", file=invocation_file, error=e))
 
@@ -4701,30 +4701,30 @@ class Zordeer(QMainWindow):
                 # If not mounted, create loop device and mount it
                 if not mount_point:
                     if os.environ.get("container") == "flatpak":
-                        try:                            
+                        try:
                             bus = dbus.SystemBus()
-                            
+
                             manager_obj = bus.get_object("org.freedesktop.UDisks2", "/org/freedesktop/UDisks2/Manager")
                             manager = dbus.Interface(manager_obj, "org.freedesktop.UDisks2.Manager")
-                            
+
                             fd = os.open(str(iso_path), os.O_RDONLY)
                             try:
                                 options = dbus.Dictionary({}, signature='sv')
                                 loop_object_path = manager.LoopSetup(fd, options)
-                                
+
                                 loop_obj = bus.get_object("org.freedesktop.UDisks2", loop_object_path)
-                                
+
                                 block_props = dbus.Interface(loop_obj, "org.freedesktop.DBus.Properties")
                                 device_node = block_props.Get("org.freedesktop.UDisks2.Block", "Device")
                                 loop_device = str(device_node).rstrip('\x00')
-                                
+
                                 filesystem = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Filesystem")
                                 mount_result = filesystem.Mount(dbus.Dictionary({}, signature='sv'))
                                 mount_point = Path(str(mount_result))
-                                
+
                             finally:
                                 os.close(fd)
-                            
+
                         except Exception as e:
                             QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=str(e)))
                             return
@@ -4892,7 +4892,7 @@ class Zordeer(QMainWindow):
                             steamuser.symlink_to(unixuser)
                         elif not wineuser.exists() and steamuser.is_dir():
                             wineuser.symlink_to("steamuser")
-                                
+
                 except Exception as e:
                     print(tr("SYMLINK_ERROR", error=e))
 
@@ -5187,11 +5187,11 @@ class Zordeer(QMainWindow):
                 # Search on SteamGridDB
                 search_url = f"https://www.steamgriddb.com/api/v2/search/autocomplete/{invocation_name}"
                 headers = {"Authorization": f"Bearer {api_key}"}
-                
+
                 with requests.get(search_url, headers=headers, timeout=15) as resp:
                     resp.raise_for_status()
                     data = resp.json().get("data", [])
-                
+
                 if not data:
                     completed += 1
                     progress_dialog.setValue(completed)
@@ -5205,46 +5205,46 @@ class Zordeer(QMainWindow):
                 # Download hero using ArtworkLoader
                 if not self._cancel_auto and not progress_dialog.wasCanceled():
                     hero_loader = ArtworkLoader(api_key, game_id, "heroes")
-                    
+
                     # Create a local event loop to wait for the thread
                     loop = QEventLoop()
                     hero_results = []
-                    
+
                     def on_hero_finished(results):
                         nonlocal hero_results
                         hero_results = results
                         loop.quit()
-                    
+
                     def on_hero_error(error_msg):
                         print(error_msg)
                         loop.quit()
-                    
+
                     hero_loader.finished.connect(on_hero_finished)
                     hero_loader.error.connect(on_hero_error)
                     hero_loader.start()
-                    
+
                     # Process events while waiting
                     timer = QTimer()
                     timer.timeout.connect(lambda: QApplication.processEvents())
                     timer.start(100)
-                    
+
                     loop.exec()
                     timer.stop()
-                    
+
                     # Process hero results
                     if hero_results and len(hero_results) > 0:
                         # Sort by score if available
                         best_hero = hero_results[0]  # First item is the highest scored (due to API ordering)
-                        
+
                         if best_hero and best_hero.get("img_data"):
                             img_data = best_hero["img_data"]
                             img_url = best_hero["url"]
-                            
+
                             if img_url:
                                 ext = Path(img_url).suffix
                                 if not ext or len(ext) > 6:
                                     ext = ".png"
-                                
+
                                 # Save to cache first
                                 hero_cache_filename = heroes_tmp_dir / f"{steam_game_name}_hero_{best_hero['id']}{ext}"
                                 with hero_cache_filename.open("wb") as fh:
@@ -5254,46 +5254,46 @@ class Zordeer(QMainWindow):
                 # Download icon using ArtworkLoader
                 if not self._cancel_auto and not progress_dialog.wasCanceled():
                     icon_loader = ArtworkLoader(api_key, game_id, "icons")
-                    
+
                     # Create a local event loop to wait for the thread
                     loop = QEventLoop()
                     icon_results = []
-                    
+
                     def on_icon_finished(results):
                         nonlocal icon_results
                         icon_results = results
                         loop.quit()
-                    
+
                     def on_icon_error(error_msg):
                         print(error_msg)
                         loop.quit()
-                    
+
                     icon_loader.finished.connect(on_icon_finished)
                     icon_loader.error.connect(on_icon_error)
                     icon_loader.start()
-                    
+
                     # Process events while waiting
                     timer = QTimer()
                     timer.timeout.connect(lambda: QApplication.processEvents())
                     timer.start(100)
-                    
+
                     loop.exec()
                     timer.stop()
-                    
+
                     # Process icon results
                     if icon_results and len(icon_results) > 0:
                         # Sort by score if available
                         best_icon = icon_results[0]  # First item is the highest scored (due to API ordering)
-                        
+
                         if best_icon and best_icon.get("img_data"):
                             img_data = best_icon["img_data"]
                             img_url = best_icon["url"]
-                            
+
                             if img_url:
                                 ext = Path(img_url).suffix
                                 if not ext or len(ext) > 6:
                                     ext = ".png"
-                                
+
                                 # Save to cache first
                                 icon_cache_filename = icons_tmp_dir / f"{steam_game_name}_icon_{best_icon['id']}{ext}"
                                 with icon_cache_filename.open("wb") as fh:
@@ -5444,7 +5444,7 @@ class ArtworkLoader(QThread):
             or art.get("full")
             or art.get("url")
         )
-        
+
         img_data = None
         if img_url:
             try:
@@ -5453,7 +5453,7 @@ class ArtworkLoader(QThread):
                 img_data = rt.content
             except Exception:
                 img_data = None  # If it fails, continue
-        
+
         return {
             "id": art.get("id"),
             "url": img_url,
@@ -5473,16 +5473,16 @@ class ArtworkLoader(QThread):
                 return
 
             from concurrent.futures import ThreadPoolExecutor, as_completed
-            
+
             results = [None] * len(data)
             total = len(data)
-            
+
             with ThreadPoolExecutor(max_workers=5) as executor:
                 futures = {}
                 for idx, art in enumerate(data):
                     future = executor.submit(self.download_image, art)
                     futures[future] = idx
-                
+
                 completed = 0
                 for future in as_completed(futures):
                     idx = futures[future]
@@ -5490,9 +5490,9 @@ class ArtworkLoader(QThread):
                     completed += 1
                     # Updates the progress bar
                     self.progress.emit(int(completed / total * 100))
-            
+
             self.finished.emit(results)
-            
+
         except Exception as e:
             self.error.emit(tr("ARTS_LOAD_ERROR", error=str(e)))
 
