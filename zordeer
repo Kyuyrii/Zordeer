@@ -4,17 +4,14 @@
 import sys
 import os
 import locale
-import json
 import tomlkit
 import subprocess
 import shutil
 import requests
 import tarfile
 import io
-import threading
 import time
 import psutil
-import uuid
 import re
 import shlex
 import random
@@ -44,7 +41,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "3.11" + __package_type__
+__version__ = "3.12" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -1538,9 +1535,8 @@ class AddInvocationDialog(QDialog):
                 steamuser = users_path / "steamuser"
                 unixuser = getpwuid(os.getuid()).pw_name
                 wineuser = users_path / unixuser
-                if not steamuser.exists():
+                if not wineuser.exists() and not steamuser.exists():
                     steamuser.mkdir(parents=True)
-                if not wineuser.exists():
                     wineuser.symlink_to("steamuser")
                 elif wineuser.is_dir() and not steamuser.exists():
                     steamuser.symlink_to(unixuser)
@@ -4884,9 +4880,8 @@ class Zordeer(QMainWindow):
                         steamuser = users_path / "steamuser"
                         unixuser = getpwuid(os.getuid()).pw_name
                         wineuser = users_path / unixuser
-                        if not steamuser.exists():
+                        if not wineuser.exists() and not steamuser.exists():
                             steamuser.mkdir(parents=True)
-                        if not wineuser.exists():
                             wineuser.symlink_to("steamuser")
                         elif wineuser.is_dir() and not steamuser.exists():
                             steamuser.symlink_to(unixuser)
@@ -5008,7 +5003,7 @@ class Zordeer(QMainWindow):
             print(tr("RUNNING_COMMAND", command=debug_command))
 
             # Define working directory
-            if "proton" in runner_name.lower() and str(exec_path_full).startswith("/run/user/"):
+            if "proton" in runner_name.lower() and re.search(r'/run/user/[^/]+/doc/', str(exec_path_full)):
                 cwd_path = exec_path_full.parent.parent
             else:
                 cwd_path = exec_path_full.parent
