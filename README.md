@@ -23,8 +23,6 @@
 - Where will the UMU used by Zordeer transfer `steamrt3` to?
   - Zordeer uses the `UMU_FOLDERS_PATH` environment variable to change the path that UMU will use; you will find a folder called `UMU` next to the Zordeer folder.
 - Regarding the paths like `/run/user/1000/doc/`
-  - If this is seen in the `Shortcut manager` after selecting the folders, it's not a problem; it means that Document Portal is being used.
-  - If it's an installer, use the `Run in prefix` function, adding the folder where the installer is located. If that still doesn't work, grant access to the folder where the files are or copy them to a folder that Zordeer can access.
-  - If it's a game, grant access to the folder where it's located; if it's in a prefix, grant access to the prefix itself. Or move it to a folder that Zordeer has access to.
+  - If this is seen in the `Shortcut manager` after selecting the folders, it's not a problem. But if it appears when selecting an executable or folder, this may prevent execution.
 - About the toolbar
   - It is possible to hide the toolbar and use the context menu by right-clicking on the menu bar and unchecking the checkbox that appears.
