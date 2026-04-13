@@ -36,12 +36,10 @@ if os.environ.get("SNAP"):
     __package_type__ = " [Snap]"
 elif os.environ.get("container") == "flatpak":
     __package_type__ = " [Flatpak]"
-elif os.environ.get("APPIMAGE"):
-    __package_type__ = " [AppImage]"
 else:
     __package_type__ = ""
 
-__version__ = "3.12" + __package_type__
+__version__ = "4.0" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -942,6 +940,11 @@ class AddInvocationDialog(QDialog):
 
         # Uses the selected runner; if empty, uses the default.
         runner_name = self.runner_input.currentText().strip()
+        if runner_name.endswith(f" ({tr('UNAVAILABLE')})"):
+            runner_name = runner_name.replace(f" ({tr('UNAVAILABLE')})", "")
+            proton_script = zordeer_runner_dir / runner_name / "proton"
+            QMessageBox.critical(self, tr("APP_NAME"), tr("ERROR_RUNNER", path=str(proton_script.parent)))
+            return
         if runner_name == tr("PLACEHOLDER_FOR_RUNNER"):
             runner_name = ""
 
@@ -1159,9 +1162,6 @@ class AddInvocationDialog(QDialog):
                     tr("APP_NAME"),
                     tr("INVOCATION_ALREADY_EXISTS"))
                 return
-
-            # Handle artwork
-            safe_invocation_name = invocation_data["name"].replace(" ", "_").lower()
 
             # art_path
             if invocation_data.get("art_path"):
@@ -1643,8 +1643,8 @@ class UMUGameSearchDialog(QDialog):
             return False
 
         # Verification for runner "Wine"
-        if self.runner_name.lower() == "wine":
-            QMessageBox.information(self.parent(), tr("APP_NAME"), tr("UMU_DATABASE_WINE_NOT_SUPPORTED"))
+        if "proton" not in self.runner_name.lower():
+            QMessageBox.information(self.parent(), tr("APP_NAME"), tr("UMU_DATABASE_NOT_SUPPORTED"))
             return False
 
         csv_path = zordeer_runner_dir / self.runner_name / "protonfixes" / "umu-database.csv"
@@ -4330,7 +4330,7 @@ class Zordeer(QMainWindow):
         settings["window"]["isFullScreen"] = self.isFullScreen()
         settings["window"]["start_minimized"] = not self.isVisible()
         # Checks if the title contains the string "INVOCATION_STARTED"
-        if self.windowTitle().startswith(tr("INVOCATION_STARTED", invocation_name="").split("{invocation_name}")[0].strip()):
+        if self.windowTitle() != tr("APP_NAME"):
             reply = QMessageBox.question(
                 self,
                 tr("APP_NAME"),
@@ -4424,7 +4424,7 @@ class Zordeer(QMainWindow):
 
                 loop_device = iso_info.get("loop_device")
                 if loop_device:
-                    if os.environ.get("container") == "flatpak":
+                    if os.environ.get("SNAP") or os.environ.get("container") == "flatpak":
                         try:
                             bus = dbus.SystemBus()
 
@@ -4612,7 +4612,7 @@ class Zordeer(QMainWindow):
         dialog.exec()
 
     def start_invocation(self, item_or_name):
-        if self.windowTitle().startswith(tr("INVOCATION_STARTED", invocation_name="").split("{invocation_name}")[0].strip()):
+        if self.windowTitle() != tr("APP_NAME"):
             reply = QMessageBox.question(
                 self,
                 tr("APP_NAME"),
@@ -4696,7 +4696,7 @@ class Zordeer(QMainWindow):
 
                 # If not mounted, create loop device and mount it
                 if not mount_point:
-                    if os.environ.get("container") == "flatpak":
+                    if os.environ.get("SNAP") or os.environ.get("container") == "flatpak":
                         try:
                             bus = dbus.SystemBus()
 
@@ -4764,7 +4764,7 @@ class Zordeer(QMainWindow):
                     time.sleep(0.3)
 
                 if not exe_files:
-                    QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_NO_EXE_FOUND"))
+                    QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_NO_EXE_FOUND", iso=str(iso_path)))
                     return
 
                 exec_path_full = exe_files[0]

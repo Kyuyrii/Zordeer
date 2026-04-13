@@ -20,13 +20,21 @@
     </p>
   </description>
   <releases>
-    <release version="3.12" date="2026-04-07" />
+    <release version="4.0" date="2026-04-12" />
   </releases>
   <launchable type="desktop-id">io.github.kyuyrii.zordeer.desktop</launchable>
+  <branding>
+    <color type="primary" scheme_preference="light">#8caaee</color>
+    <color type="primary" scheme_preference="dark">#232634</color>
+  </branding>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/Kyuyrii/Zordeer/5018ec7d5981184e1ae839973337a340569cea5a/metainfo/zordeer_qt_style_breeze.png</image>
-      <caption>Main window of the Zordeer, using the Qt Breeze style.</caption>
+      <image>https://raw.githubusercontent.com/Kyuyrii/Zordeer/2f4c7b3cd2958e00c584e7aff1f1696379194064/metainfo/zordeer_qt_style_breeze_icon_breeze.png</image>
+      <caption>Zordeer using the Qt style Breeze and Breeze icon theme</caption>
+    </screenshot>
+    <screenshot>
+      <image>https://raw.githubusercontent.com/Kyuyrii/Zordeer/2f4c7b3cd2958e00c584e7aff1f1696379194064/metainfo/zordeer_qt_style_kvantum_icon_oxygen.png</image>
+      <caption>Zordeer using the Qt style Kvantum and Oxygen icon theme</caption>
     </screenshot>
   </screenshots>
 

@@ -8,7 +8,7 @@
   A Qt launcher for running games via Wine/Proton/UMU 
 </p>
 
-<img width="1684" height="1030" src="metainfo/zordeer_qt_style_breeze.png" />
+<img width="1684" height="1030" src="metainfo/zordeer_qt_style_breeze_icon_breeze.png" />
 
 ## Some explanations
 - Why does the Zordeer exist?

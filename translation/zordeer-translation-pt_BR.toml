@@ -1,7 +1,7 @@
 language_name = "Português Brasil"
 
 ABOUT_TEXT_HTML = """<b>Zordeer</b><br>
-Versão: {__version__}<br><br>
+Versão: {__version__}<br>
 Um launcher Qt para executar jogos via Wine/Proton/UMU.<br>
 Licença: <a href='https://www.gnu.org/licenses/gpl-3.0.html'>GPLv3</a><br>
 Criado por {__creator__}"""
@@ -94,13 +94,13 @@ INVOCATION_NAME = "Nome"
 INVOCATION_IN_MULTIPLE_CREATE_ALREADY_EXISTS = "A invocação '{name}' já existe, use outro nome."
 INVOCATION_START_ERROR = "Ocorreu um erro ao tentar iniciar a invocação: {error}"
 INVOCATION_STARTED = "Zordeer - Invocação iniciada: {invocation_name}"
-ISO_ALREADY_MOUNTED = "ISO já está montada em {mount}"
+ISO_ALREADY_MOUNTED = "ISO já está montado em {mount}"
 ISO_LOOP_DELETE_FAILED = "Falha ao remover loop device {device}:<br>{error}"
 ISO_MOUNT_FAILED = "Falha ao montar ISO:<br>{error}"
-ISO_MOUNT_POINT_NOT_FOUND = "Falha ao determinar o diretório de montagem da ISO"
-ISO_MOUNTED_EXE_FOUND = "Executável encontrado na ISO {iso}: {exe}"
-ISO_NO_EXE_FOUND = "Nenhum .exe encontrado na ISO"
-ISO_UNMOUNTED = "ISO desmontada e loop device {device} liberado"
+ISO_MOUNT_POINT_NOT_FOUND = "Falha ao determinar o diretório de montagem do ISO"
+ISO_MOUNTED_EXE_FOUND = "Executável encontrado no ISO {iso}: {exe}"
+ISO_NO_EXE_FOUND = "Nenhum .exe encontrado no ISO:<br>{iso}"
+ISO_UNMOUNTED = "ISO desmontado e loop device liberado: {device}"
 ISO_UNMOUNT_FAILED = "Falha ao desmontar ISO no dispositivo {device}:<br>{error}"
 ISO_UNMOUNT_EXCEPTION = "Erro inesperado ao desmontar ISO:<br>{error}"
 LANGUAGE = "Idioma"
@@ -211,7 +211,7 @@ UMU_DATABASE = "Banco de Dados UMU"
 UMU_DATABASE_BUTTON = "Database"
 UMU_DATABASE_LOAD_ERROR = "Erro ao carregar banco de dados UMU: {error}"
 UMU_DATABASE_NOT_FOUND = "O banco de dados do UMU não foi encontrado em:<br>\"{path}\""
-UMU_DATABASE_WINE_NOT_SUPPORTED = "Banco de dados UMU não está disponível para Wine.<br>Use um runner Proton."
+UMU_DATABASE_NOT_SUPPORTED = "Somente runners Proton vem com a base de dados UMU."
 UMU_GLOBAL = "UMU global"
 UMU_NOT_FOUND = "UMU não encontrado em:<br>{path}"
 UMU_VERSION = "Versão do UMU"

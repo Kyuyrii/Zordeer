@@ -1,7 +1,7 @@
 language_name = "English USA"
 
 ABOUT_TEXT_HTML = """<b>Zordeer</b><br>
-Version: {__version__}<br><br>
+Version: {__version__}<br>
 A Qt launcher for running games via Wine/Proton/UMU.<br>
 License: <a href='https://www.gnu.org/licenses/gpl-3.0.html.en'>GPLv3</a><br>
 Created by {__creator__}"""
@@ -99,8 +99,8 @@ ISO_LOOP_DELETE_FAILED = "Failed to delete loop device {device}:<br>{error}"
 ISO_MOUNT_FAILED = "Failed to mount ISO:<br>{error}"
 ISO_MOUNT_POINT_NOT_FOUND = "Failed to determine ISO mount point"
 ISO_MOUNTED_EXE_FOUND = "Executable found in ISO {iso}: {exe}"
-ISO_NO_EXE_FOUND = "No .exe file found in the ISO"
-ISO_UNMOUNTED = "ISO unmounted and loop device {device} released"
+ISO_NO_EXE_FOUND = "No .exe file found in the ISO:<br>{iso}"
+ISO_UNMOUNTED = "ISO unmounted and loop device released: {device}"
 ISO_UNMOUNT_FAILED = "Failed to unmount ISO on device {device}:<br>{error}"
 ISO_UNMOUNT_EXCEPTION = "Unexpected error while unmounting ISO:<br>{error}"
 LANGUAGE = "Language"
@@ -211,7 +211,7 @@ UMU_DATABASE = "UMU Game Database"
 UMU_DATABASE_BUTTON = "Database"
 UMU_DATABASE_LOAD_ERROR = "Error loading UMU database: {error}"
 UMU_DATABASE_NOT_FOUND = "The UMU database was not found in:<br>\"{path}\""
-UMU_DATABASE_WINE_NOT_SUPPORTED = "UMU database is not available for Wine.<br>Use a Proton runner."
+UMU_DATABASE_NOT_SUPPORTED = "Only Proton runners come with the UMU database."
 UMU_GLOBAL = "UMU global"
 UMU_NOT_FOUND = "UMU not found in:<br>{path}"
 UMU_VERSION = "UMU version"
