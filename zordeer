@@ -39,7 +39,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "4.1" + __package_type__
+__version__ = "4.2" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -892,7 +892,7 @@ class AddInvocationDialog(QDialog):
         self.show_fps_checkbox = QCheckBox(tr("SHOW_FPS_OPTION"))
         self.show_fps_checkbox.setChecked(False)
         self.fps_hud_combo = QComboBox()
-        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")), ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")), ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))]
+        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")), ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))]
         self.fps_hud_combo.clear()
         for id, text in self.fps_hud_options:
             self.fps_hud_combo.addItem(text, id)  # Text is displayed, id is stored
@@ -1919,8 +1919,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         fps_hud_combo = QComboBox()
         fps_hud_options = [
             ("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")),
-            ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")),
-            ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))
+            ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))
         ]
         for id, text in fps_hud_options:
             fps_hud_combo.addItem(text, id)
@@ -2470,8 +2469,7 @@ class MultipleEditInvocationDialog(QDialog):
         self.show_fps_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         self.fps_hud_combo = QComboBox()
         self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")),
-                                ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")),
-                                ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))]
+                                ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))]
         for id, text in self.fps_hud_options:
             self.fps_hud_combo.addItem(text, id)
         self.fps_hud_combo.setEnabled(False)
@@ -3146,7 +3144,6 @@ class InvocationInfoViewerDialog(QDialog):
         value_translations = {
             "FPS_GALLIUM_HUD": tr("FPS_GALLIUM_HUD"),
             "FPS_DXVK_HUD": tr("FPS_DXVK_HUD"),
-            "FPS_MANGOHUD": tr("FPS_MANGOHUD"),
         }
 
         for key, value in inv.items():
@@ -4971,11 +4968,6 @@ class Zordeer(QMainWindow):
                     env_prefix.append("GALLIUM_HUD=fps+cpu,frametime")
                 elif fps_hud_type == "FPS_DXVK_HUD":
                     env_prefix.append("DXVK_HUD=fps,gpuload,frametimes")
-                elif fps_hud_type == "FPS_MANGOHUD":
-                    mangohud_path = shutil.which('mangohud')
-                    env_prefix.append("MANGOHUD=1")
-                    if mangohud_path:
-                        command.insert(0, mangohud_path)
 
             # OpenGL (WineD3D)
             if invocation_data.get('force_opengl', False):
