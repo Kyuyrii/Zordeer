@@ -39,7 +39,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "4.0" + __package_type__
+__version__ = "4.1" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -116,6 +116,8 @@ def load_translations():
 
 # Load translations
 available_translations, available_languages = load_translations()
+if LANG not in available_translations:
+    LANG = 'en_US'
 
 def tr(key, **kwargs):
     # Get the translated string from external translations
@@ -255,6 +257,12 @@ def load_settings() -> dict:
         data["design"]["qt_style"] = "indefinite"
         save_settings(data)
 
+    # Validate language
+    saved_lang = data["design"].get("language", "en_US")
+    if saved_lang not in available_translations:
+        data["design"]["language"] = "en_US"
+        save_settings(data)
+
     return data
 
 def save_settings(data: dict) -> None:
@@ -341,7 +349,7 @@ class SettingsDialog(QDialog):
         index = self.runner_combo.findText(saved_runner)
         if index == -1 and saved_runner and saved_runner.lower() != "indefinite":
             # Try selecting the "UNAVAILABLE" version.
-            unavailable_text = f"{saved_runner} ({tr("UNAVAILABLE")})"
+            unavailable_text = f"{saved_runner} ({tr('UNAVAILABLE')})"
             index = self.runner_combo.findText(unavailable_text)
         if index != -1:
             self.runner_combo.setCurrentIndex(index)
@@ -360,7 +368,7 @@ class SettingsDialog(QDialog):
         index = self.umu_combo.findText(saved_umu)
         if index == -1 and saved_umu and saved_umu.lower() != "indefinite":
             # Try selecting the "UNAVAILABLE" version.
-            unavailable_text = f"{saved_umu} ({tr("UNAVAILABLE")})"
+            unavailable_text = f"{saved_umu} ({tr('UNAVAILABLE')})"
             index = self.umu_combo.findText(unavailable_text)
         if index != -1:
             self.umu_combo.setCurrentIndex(index)
@@ -409,7 +417,7 @@ class SettingsDialog(QDialog):
         selected_runner = self.runner_combo.currentText()
         selected_umu = self.umu_combo.currentText()
 
-        unavailable_text = f" ({tr("UNAVAILABLE")})"
+        unavailable_text = f" ({tr('UNAVAILABLE')})"
         if unavailable_text in selected_runner:
             selected_runner = selected_runner.replace(unavailable_text, "")
 
@@ -884,7 +892,7 @@ class AddInvocationDialog(QDialog):
         self.show_fps_checkbox = QCheckBox(tr("SHOW_FPS_OPTION"))
         self.show_fps_checkbox.setChecked(False)
         self.fps_hud_combo = QComboBox()
-        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")), ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))]
+        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")), ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")), ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))]
         self.fps_hud_combo.clear()
         for id, text in self.fps_hud_options:
             self.fps_hud_combo.addItem(text, id)  # Text is displayed, id is stored
@@ -1911,7 +1919,8 @@ class MultipleCreateInvocationsDialog(QDialog):
         fps_hud_combo = QComboBox()
         fps_hud_options = [
             ("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")),
-            ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))
+            ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")),
+            ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))
         ]
         for id, text in fps_hud_options:
             fps_hud_combo.addItem(text, id)
@@ -2461,7 +2470,8 @@ class MultipleEditInvocationDialog(QDialog):
         self.show_fps_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         self.fps_hud_combo = QComboBox()
         self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")),
-                                ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))]
+                                ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")),
+                                ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))]
         for id, text in self.fps_hud_options:
             self.fps_hud_combo.addItem(text, id)
         self.fps_hud_combo.setEnabled(False)
@@ -3136,6 +3146,7 @@ class InvocationInfoViewerDialog(QDialog):
         value_translations = {
             "FPS_GALLIUM_HUD": tr("FPS_GALLIUM_HUD"),
             "FPS_DXVK_HUD": tr("FPS_DXVK_HUD"),
+            "FPS_MANGOHUD": tr("FPS_MANGOHUD"),
         }
 
         for key, value in inv.items():
@@ -4960,6 +4971,11 @@ class Zordeer(QMainWindow):
                     env_prefix.append("GALLIUM_HUD=fps+cpu,frametime")
                 elif fps_hud_type == "FPS_DXVK_HUD":
                     env_prefix.append("DXVK_HUD=fps,gpuload,frametimes")
+                elif fps_hud_type == "FPS_MANGOHUD":
+                    mangohud_path = shutil.which('mangohud')
+                    env_prefix.append("MANGOHUD=1")
+                    if mangohud_path:
+                        command.insert(0, mangohud_path)
 
             # OpenGL (WineD3D)
             if invocation_data.get('force_opengl', False):
