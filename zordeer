@@ -39,7 +39,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "4.2" + __package_type__
+__version__ = "4.3" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -863,18 +863,14 @@ class AddInvocationDialog(QDialog):
         self.main_layout.addWidget(self.language_label, 6, 0)
         self.main_layout.addWidget(self.language_input, 6, 1, 1, 2)
 
-        self.ms_language_code_checkbox = QCheckBox(tr("USE_MS_LANGUAGE_CODE"))
-        self.ms_language_code_checkbox.setChecked(False)
-        self.main_layout.addWidget(self.ms_language_code_checkbox, 7, 0, 1, 3)
-
         self.force_opengl_layout = QHBoxLayout()
         self.force_opengl_checkbox = QCheckBox(tr("FORCE_OPENGL"))
         self.force_opengl_checkbox.setChecked(False)
-        self.main_layout.addWidget(self.force_opengl_checkbox, 8, 0, 1, 3)
+        self.main_layout.addWidget(self.force_opengl_checkbox, 7, 0, 1, 3)
 
         self.umu_checkbox = QCheckBox(tr("USE_UMU_LAUNCHER"))
         self.umu_checkbox.setChecked(False)
-        self.main_layout.addWidget(self.umu_checkbox, 9, 0, 1, 3)
+        self.main_layout.addWidget(self.umu_checkbox, 8, 0, 1, 3)
 
         self.umu_buttons_layout = QHBoxLayout()
 
@@ -886,13 +882,13 @@ class AddInvocationDialog(QDialog):
         self.umu_search_button = QPushButton(tr("UMU_DATABASE_BUTTON"))
         self.umu_search_button.clicked.connect(self.open_umu_search)
         self.umu_buttons_layout.addWidget(self.umu_search_button)
-        self.main_layout.addLayout(self.umu_buttons_layout, 9, 2)
+        self.main_layout.addLayout(self.umu_buttons_layout, 8, 2)
 
         self.fps_layout = QHBoxLayout()
         self.show_fps_checkbox = QCheckBox(tr("SHOW_FPS_OPTION"))
         self.show_fps_checkbox.setChecked(False)
         self.fps_hud_combo = QComboBox()
-        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")), ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))]
+        self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")), ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")), ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))]
         self.fps_hud_combo.clear()
         for id, text in self.fps_hud_options:
             self.fps_hud_combo.addItem(text, id)  # Text is displayed, id is stored
@@ -900,17 +896,17 @@ class AddInvocationDialog(QDialog):
         self.fps_layout.addWidget(self.show_fps_checkbox)
         self.fps_layout.addWidget(self.fps_hud_combo)
         self.fps_hud_combo.setEnabled(False)
-        self.main_layout.addLayout(self.fps_layout, 10, 0, 1, 3)
+        self.main_layout.addLayout(self.fps_layout, 9, 0, 1, 3)
 
         self.env_vars_label = QLabel(tr("ENVIRONMENT_VARS"))
         self.env_vars_input = QLineEdit()
-        self.main_layout.addWidget(self.env_vars_label, 11, 0)
-        self.main_layout.addWidget(self.env_vars_input, 11, 1, 1, 2)
+        self.main_layout.addWidget(self.env_vars_label, 10, 0)
+        self.main_layout.addWidget(self.env_vars_input, 10, 1, 1, 2)
 
         self.invocation_args_label = QLabel(tr("INVOCATION_ARGS"))
         self.invocation_args_input = QLineEdit()
-        self.main_layout.addWidget(self.invocation_args_label, 12, 0)
-        self.main_layout.addWidget(self.invocation_args_input, 12, 1, 1, 2)
+        self.main_layout.addWidget(self.invocation_args_label, 11, 0)
+        self.main_layout.addWidget(self.invocation_args_input, 11, 1, 1, 2)
 
         self.buttons_layout = QHBoxLayout()
 
@@ -932,7 +928,7 @@ class AddInvocationDialog(QDialog):
         self.buttons_layout.addStretch()
         self.buttons_layout.addWidget(self.save_button)
 
-        self.main_layout.addLayout(self.buttons_layout, 13, 0, 1, 3)
+        self.main_layout.addLayout(self.buttons_layout, 12, 0, 1, 3)
 
         if self.invocation_data:
             self.load_invocation_data()
@@ -992,9 +988,6 @@ class AddInvocationDialog(QDialog):
         index_lang = self.language_input.findText(language)
         if index_lang != -1:
             self.language_input.setCurrentIndex(index_lang)
-
-        use_ms_language_code = self.invocation_data.get("use_ms_language_code", False)
-        self.ms_language_code_checkbox.setChecked(use_ms_language_code)
 
         force_opengl = self.invocation_data.get('force_opengl', False)
         self.force_opengl_checkbox.setChecked(force_opengl)
@@ -1113,7 +1106,6 @@ class AddInvocationDialog(QDialog):
         use_umu = self.umu_checkbox.isChecked()
         show_fps = self.show_fps_checkbox.isChecked()
         fps_hud_type = self.fps_hud_combo.currentData()  # Get the "id", not the text
-        use_ms_language_code = self.ms_language_code_checkbox.isChecked()
 
         prefix_text = self.prefix_path_input.text().strip()
         if not prefix_text:  # If empty, use default
@@ -1130,7 +1122,6 @@ class AddInvocationDialog(QDialog):
             "art_path": art_path,
             "gui_path": gui_path,
             "language": selected_lang,
-            "use_ms_language_code": use_ms_language_code,
             "force_opengl": force_opengl,
             "use_umu": use_umu,
             "show_fps": show_fps,
@@ -1901,10 +1892,6 @@ class MultipleCreateInvocationsDialog(QDialog):
             partial(self.select_prefix_folder, prefix_input))
 
         # Checkboxes
-        ms_lang_cb = QCheckBox(tr("USE_MS_LANGUAGE_CODE"))
-        ms_lang_cb.setChecked(False)
-        layout.addWidget(ms_lang_cb)
-
         force_opengl_cb = QCheckBox(tr("FORCE_OPENGL"))
         force_opengl_cb.setChecked(False)
         layout.addWidget(force_opengl_cb)
@@ -1919,7 +1906,8 @@ class MultipleCreateInvocationsDialog(QDialog):
         fps_hud_combo = QComboBox()
         fps_hud_options = [
             ("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")),
-            ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))
+            ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")),
+            ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))
         ]
         for id, text in fps_hud_options:
             fps_hud_combo.addItem(text, id)
@@ -1941,7 +1929,6 @@ class MultipleCreateInvocationsDialog(QDialog):
         parent_item.path = path
         parent_item.name_input = name_input
         parent_item.prefix_input = prefix_input
-        parent_item.ms_lang_cb = ms_lang_cb
         parent_item.force_opengl_cb = force_opengl_cb
         parent_item.umu_cb = umu_cb
         parent_item.show_fps_cb = show_fps_cb
@@ -2050,7 +2037,6 @@ class MultipleCreateInvocationsDialog(QDialog):
                         "art_path": "",
                         "gui_path": "",
                         "language": selected_lang,
-                        "use_ms_language_code": item.ms_lang_cb.isChecked(),
                         "force_opengl": item.force_opengl_cb.isChecked(),
                         "use_umu": item.umu_cb.isChecked(),
                         "show_fps": item.show_fps_cb.isChecked(),
@@ -2445,12 +2431,6 @@ class MultipleEditInvocationDialog(QDialog):
         row += 1
 
         # Checkboxes with tristate
-        self.ms_lang_checkbox = QCheckBox(tr("USE_MS_LANGUAGE_CODE"))
-        self.ms_lang_checkbox.setTristate(True)
-        self.ms_lang_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
-        right_layout.addWidget(self.ms_lang_checkbox, row, 0, 1, 3)
-        row += 1
-
         self.force_opengl_checkbox = QCheckBox(tr("FORCE_OPENGL"))
         self.force_opengl_checkbox.setTristate(True)
         self.force_opengl_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
@@ -2469,7 +2449,8 @@ class MultipleEditInvocationDialog(QDialog):
         self.show_fps_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         self.fps_hud_combo = QComboBox()
         self.fps_hud_options = [("FPS_GALLIUM_HUD", tr("FPS_GALLIUM_HUD")),
-                                ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD"))]
+                                ("FPS_DXVK_HUD", tr("FPS_DXVK_HUD")),
+                                ("FPS_MANGOHUD", tr("FPS_MANGOHUD"))]
         for id, text in self.fps_hud_options:
             self.fps_hud_combo.addItem(text, id)
         self.fps_hud_combo.setEnabled(False)
@@ -2719,7 +2700,6 @@ class MultipleEditInvocationDialog(QDialog):
         self.lang_combo.setCurrentIndex(0)
 
         # Checkboxes
-        self.ms_lang_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         self.force_opengl_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
         self.umu_checkbox.setCheckState(Qt.CheckState.PartiallyChecked)
 
@@ -2841,7 +2821,6 @@ class MultipleEditInvocationDialog(QDialog):
                 state = cb_widget.checkState()
                 if state != Qt.CheckState.PartiallyChecked:
                     data[key] = (state == Qt.CheckState.Checked)
-            apply_checkbox(self.ms_lang_checkbox, "use_ms_language_code")
             apply_checkbox(self.force_opengl_checkbox, "force_opengl")
             apply_checkbox(self.umu_checkbox, "use_umu")
 
@@ -3132,7 +3111,6 @@ class InvocationInfoViewerDialog(QDialog):
             "art_path": tr("INVOCATION_ART_PATH"),
             "gui_path": tr("INVOCATION_GUI_PATH"),
             "language": tr("INVOCATION_LANGUAGE"),
-            "use_ms_language_code": tr("USE_MS_LANGUAGE_CODE"),
             "force_opengl": tr("FORCE_OPENGL"),
             "use_umu": tr("USE_UMU_LAUNCHER"),
             "show_fps": tr("SHOW_FPS_OPTION"),
@@ -3144,6 +3122,7 @@ class InvocationInfoViewerDialog(QDialog):
         value_translations = {
             "FPS_GALLIUM_HUD": tr("FPS_GALLIUM_HUD"),
             "FPS_DXVK_HUD": tr("FPS_DXVK_HUD"),
+            "FPS_MANGOHUD": tr("FPS_MANGOHUD"),
         }
 
         for key, value in inv.items():
@@ -3404,7 +3383,6 @@ class RunInPrefix(QDialog):
         # Clears the fields below when CLEAN_RUN is enabled.
         if self.radio_clean.isChecked():
             mod["language"] = ""
-            mod["use_ms_language_code"] = False
             mod["force_opengl"] = False
             mod["env_vars"] = ""
             mod["invocation_args"] = ""
@@ -3413,7 +3391,7 @@ class RunInPrefix(QDialog):
 
         elif self.radio_automatic.isChecked():
             # Normal values restored, but add silent args
-            for key in ("language", "use_ms_language_code", "force_opengl", "env_vars",
+            for key in ("language", "force_opengl", "env_vars",
                         "show_fps", "fps_hud_type"):
                 if key in self._original_toml:
                     mod[key] = self._original_toml[key]
@@ -3423,7 +3401,7 @@ class RunInPrefix(QDialog):
 
         else:  # Self.radio_normal.isChecked()
             # Just restore original TOML (no modifications)
-            for key in ("language", "use_ms_language_code", "force_opengl", "env_vars",
+            for key in ("language", "force_opengl", "env_vars",
                         "show_fps", "fps_hud_type", "invocation_args"):
                 if key in self._original_toml:
                     mod[key] = self._original_toml[key]
@@ -4920,46 +4898,6 @@ class Zordeer(QMainWindow):
                 except Exception as e:
                     print(tr("LANGUAGE_SET_ERROR", error=e))
 
-            # Map to MS language code
-            locale_to_ms_code = {
-                "en_US.UTF-8": "ENU",
-                "pt_BR.UTF-8": "PTB",
-                "pt_PT.UTF-8": "PTG",
-                "es_ES.UTF-8": "ESN",
-                "es_MX.UTF-8": "ESM",
-                "fr_FR.UTF-8": "FRA",
-                "de_DE.UTF-8": "DEU",
-                "it_IT.UTF-8": "ITA",
-                "ru_RU.UTF-8": "RUS",
-                "uk_UA.UTF-8": "UKR",
-                "pl_PL.UTF-8": "PLK",
-                "cs_CZ.UTF-8": "CSY",
-                "sk_SK.UTF-8": "SKY",
-                "hu_HU.UTF-8": "HUN",
-                "ro_RO.UTF-8": "ROM",
-                "nl_NL.UTF-8": "NLD",
-                "sv_SE.UTF-8": "SVE",
-                "nb_NO.UTF-8": "NOR",
-                "da_DK.UTF-8": "DAN",
-                "fi_FI.UTF-8": "FIN",
-                "el_GR.UTF-8": "ELL",
-                "bg_BG.UTF-8": "BGR",
-                "ja_JP.UTF-8": "JPN",
-                "ko_KR.UTF-8": "KOR",
-                "zh_CN.UTF-8": "CHS",
-                "zh_TW.UTF-8": "CHT",
-                "ar_SA.UTF-8": "ARA",
-                "fa_IR.UTF-8": "FAR",
-                "tr_TR.UTF-8": "TRK",
-                "hi_IN.UTF-8": "HIN",
-                "th_TH.UTF-8": "THA",
-                "he_IL.UTF-8": "HEB",
-            }
-            if locale_code and invocation_data.get('use_ms_language_code', False):
-                ms_lang_code = locale_to_ms_code.get(locale_code)
-                if ms_lang_code:
-                    command.append(f"-language={ms_lang_code}")
-
             # FPS HUD
             show_fps = invocation_data.get('show_fps', False)
             fps_hud_type = invocation_data.get('fps_hud_type', '')
@@ -4968,6 +4906,11 @@ class Zordeer(QMainWindow):
                     env_prefix.append("GALLIUM_HUD=fps+cpu,frametime")
                 elif fps_hud_type == "FPS_DXVK_HUD":
                     env_prefix.append("DXVK_HUD=fps,gpuload,frametimes")
+                elif fps_hud_type == "FPS_MANGOHUD":
+                    env_prefix.append("MANGOHUD=1")
+                    mangohud_path = shutil.which('mangohud')
+                    if mangohud_path:
+                        command.insert(0, mangohud_path)
 
             # OpenGL (WineD3D)
             if invocation_data.get('force_opengl', False):
