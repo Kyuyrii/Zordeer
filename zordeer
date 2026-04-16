@@ -39,7 +39,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "4.3" + __package_type__
+__version__ = "5.0" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -147,7 +147,7 @@ try:
     from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo, QEventLoop
     from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QPalette, QColor, QTextCharFormat, QTextCursor
     from PyQt6.QtNetwork import QLocalServer, QLocalSocket
-    print("Using PyQt6")
+    print("PyQt6 found")
 except ImportError:
     print("PyQt6 not found")
     sys.exit(1)
@@ -348,7 +348,7 @@ class SettingsDialog(QDialog):
         saved_runner = self.settings["other"].get("default_runner", "")
         index = self.runner_combo.findText(saved_runner)
         if index == -1 and saved_runner and saved_runner.lower() != "indefinite":
-            # Try selecting the "UNAVAILABLE" version.
+            # Try selecting the 'UNAVAILABLE' version.
             unavailable_text = f"{saved_runner} ({tr('UNAVAILABLE')})"
             index = self.runner_combo.findText(unavailable_text)
         if index != -1:
@@ -367,7 +367,7 @@ class SettingsDialog(QDialog):
         saved_umu = self.settings["other"].get("umu_version", "")
         index = self.umu_combo.findText(saved_umu)
         if index == -1 and saved_umu and saved_umu.lower() != "indefinite":
-            # Try selecting the "UNAVAILABLE" version.
+            # Try selecting the 'UNAVAILABLE' version.
             unavailable_text = f"{saved_umu} ({tr('UNAVAILABLE')})"
             index = self.umu_combo.findText(unavailable_text)
         if index != -1:
@@ -461,7 +461,7 @@ class SettingsDialog(QDialog):
         # Add current runner from settings if it's not in the folder
         saved_runner = self.settings["other"].get("default_runner", "")
         if saved_runner and saved_runner not in items and saved_runner.lower() != "indefinite":
-            items.append(f"{saved_runner} ({tr("UNAVAILABLE")})")
+            items.append(f"{saved_runner} ({tr('UNAVAILABLE')})")
 
         self.runner_combo.clear()
         self.runner_combo.addItems(items)
@@ -476,7 +476,7 @@ class SettingsDialog(QDialog):
         # Add current UMU version from settings if it's not in the folder
         saved_umu = self.settings["other"].get("umu_version", "")
         if saved_umu and saved_umu not in items and saved_umu.lower() != "indefinite":
-            items.append(f"{saved_umu} ({tr("UNAVAILABLE")})")
+            items.append(f"{saved_umu} ({tr('UNAVAILABLE')})")
 
         self.umu_combo.clear()
         self.umu_combo.addItems(items)
@@ -580,7 +580,7 @@ class RunnerTransferDialog(QDialog):
         # Runner selection layout
         selection_layout = QHBoxLayout()
         self.runner_combo = QComboBox()
-        self.runner_combo.addItems(["Proton-GE", "Proton-Sarek", "Proton-EM", "Proton-CachyOS", "UMU-launcher", "UMU-Proton", "Kron4ek"])
+        self.runner_combo.addItems(["GE-Proton", "Proton-Sarek", "Proton-EM", "Proton-CachyOS", "UMU-launcher", "UMU-Proton", "DW-Proton", "Kron4ek"])
         selection_layout.addWidget(self.runner_combo)
         main_layout.addLayout(selection_layout)
 
@@ -630,24 +630,26 @@ class RunnerTransferDialog(QDialog):
 
         # Map of runner URLs
         self.runner_urls = {
-            "Proton-GE": "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases",
+            "GE-Proton": "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases",
             "Proton-Sarek": "https://api.github.com/repos/pythonlover02/Proton-Sarek/releases",
             "Proton-EM": "https://api.github.com/repos/Etaash-mathamsetty/Proton/releases",
             "Proton-CachyOS": "https://api.github.com/repos/CachyOS/proton-cachyos/releases",
             "UMU-launcher": "https://api.github.com/repos/Open-Wine-Components/umu-launcher/releases",
             "UMU-Proton": "https://api.github.com/repos/Open-Wine-Components/umu-proton/releases",
+            "DW-Proton": "https://dawn.wine/api/v1/repos/dawn-winery/dwproton/releases",
             "Kron4ek": "https://api.github.com/repos/Kron4ek/Wine-Builds/releases",
         }
 
     def open_runner_repo(self):
         selected_runner = self.runner_combo.currentText()
         urls = {
-            "Proton-GE": "https://github.com/GloriousEggroll/proton-ge-custom",
+            "GE-Proton": "https://github.com/GloriousEggroll/proton-ge-custom",
             "Proton-Sarek": "https://github.com/pythonlover02/Proton-Sarek",
             "Proton-EM": "https://github.com/Etaash-mathamsetty/Proton",
             "Proton-CachyOS": "https://github.com/CachyOS/proton-cachyos",
             "UMU-launcher": "https://github.com/Open-Wine-Components/umu-launcher",
             "UMU-Proton": "https://github.com/Open-Wine-Components/umu-proton",
+            "DW-Proton": "https://dawn.wine/dawn-winery/dwproton",
             "Kron4ek": "https://github.com/Kron4ek/Wine-Builds",
         }
         url = urls.get(selected_runner)
@@ -733,18 +735,13 @@ class RunnerTransferDialog(QDialog):
         tag_name = item_data['tag_name']
         url = item_data['url']
 
-        selected_runner = self.runner_combo.currentText()
+        file_name = Path(url).name
 
-        if selected_runner == "UMU-launcher":
+        if 'umu-launcher' in file_name.lower():
             runner_folder_name = f"umu-{tag_name}"
             base_dir = zordeer_umu_dir
         else:
-            formatted_tag = tag_name.replace('GE-Proton-', '').replace('GE-Proton', '')
-            if selected_runner == "Proton-GE":
-                runner_folder_name = f"Proton-GE-{formatted_tag}"
-            else:
-                file_name = Path(url).name
-                runner_folder_name = file_name.replace(".tar.gz", "").replace(".tar.xz", "")
+            runner_folder_name = file_name.replace(".tar.gz", "").replace(".tar.xz", "")
             base_dir = zordeer_runner_dir
 
         runner_path = base_dir / runner_folder_name
@@ -920,10 +917,6 @@ class AddInvocationDialog(QDialog):
             # Remove button
             self.buttons_layout.addWidget(self.remove_invocation_button)
             self.remove_invocation_button.clicked.connect(self.delete_invocation)
-            # Winecfg button
-            self.winecfg_button = QPushButton(tr("WINECFG_BUTTON"))
-            self.buttons_layout.addWidget(self.winecfg_button)
-            self.winecfg_button.clicked.connect(self.open_winecfg)
 
         self.buttons_layout.addStretch()
         self.buttons_layout.addWidget(self.save_button)
@@ -944,6 +937,9 @@ class AddInvocationDialog(QDialog):
 
         # Uses the selected runner; if empty, uses the default.
         runner_name = self.runner_input.currentText().strip()
+        if runner_name != tr("PLACEHOLDER_FOR_RUNNER") and "proton" not in runner_name.lower():
+            QMessageBox.information(self.parent(), tr("APP_NAME"), tr("UMU_DATABASE_NOT_SUPPORTED"))
+            return False
         if runner_name.endswith(f" ({tr('UNAVAILABLE')})"):
             runner_name = runner_name.replace(f" ({tr('UNAVAILABLE')})", "")
             proton_script = zordeer_runner_dir / runner_name / "proton"
@@ -1327,9 +1323,9 @@ class AddInvocationDialog(QDialog):
                     # User manually changed the prefix, do not rename
                     invocation_data["prefix_path"] = str(current_prefix_path)
 
-            # Prevents the text "UNAVAILABLE" from being added to the saved runner's name.
+            # Prevents the text 'UNAVAILABLE' from being added to the saved runner's name.
             runner_value = invocation_data.get("runner", "")
-            unavailable_text = f" ({tr("UNAVAILABLE")})"
+            unavailable_text = f" ({tr('UNAVAILABLE')})"
             if unavailable_text in runner_value:
                 invocation_data["runner"] = runner_value.replace(unavailable_text, "")
 
@@ -1497,97 +1493,6 @@ class AddInvocationDialog(QDialog):
         self.parent().load_invocations()
         self.accept()
 
-    def open_winecfg(self):
-        prefix_path = Path(self.prefix_path_input.text().strip())
-        if not prefix_path.exists():
-            QMessageBox.warning(self, tr("APP_NAME"), tr("INVALID_PREFIX_ERROR"))
-            return
-
-        selected_runner = self.runner_input.currentText().strip()
-
-        # Avoid problems with unavailable runners.
-        unavailable_text = f" ({tr("UNAVAILABLE")})"
-        if unavailable_text in selected_runner:
-            selected_runner = selected_runner.replace(unavailable_text, "")
-
-        # Default runner
-        if selected_runner == tr("PLACEHOLDER_FOR_RUNNER") or selected_runner == "PLACEHOLDER_FOR_RUNNER":
-            runner_name = load_settings()["other"].get("default_runner", "").strip()
-
-            if not runner_name or runner_name.lower() == "indefinite":
-                QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_RUNNER_INDEFINITE"))
-                return
-        else:
-            runner_name = selected_runner
-
-        # Create pfx symlink
-        pfx_symlink = prefix_path / "pfx"
-        try:
-            if pfx_symlink.is_symlink():
-                pfx_symlink.unlink()
-            if not pfx_symlink.is_dir():
-                pfx_symlink.symlink_to(".")
-                print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink)))
-
-                users_path = prefix_path / "drive_c" / "users"
-                users_path.mkdir(parents=True, exist_ok=True)
-                steamuser = users_path / "steamuser"
-                unixuser = getpwuid(os.getuid()).pw_name
-                wineuser = users_path / unixuser
-                if not wineuser.exists() and not steamuser.exists():
-                    steamuser.mkdir(parents=True)
-                    wineuser.symlink_to("steamuser")
-                elif wineuser.is_dir() and not steamuser.exists():
-                    steamuser.symlink_to(unixuser)
-                elif not wineuser.exists() and steamuser.is_dir():
-                    wineuser.symlink_to("steamuser")
-        except Exception:
-            pass
-
-        # Create folders to prevent Wine from creating symlinks
-        target_user = prefix_path / "drive_c" / "users" / "steamuser"
-        for folder in ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos", "Templates"]:
-            (target_user / folder).mkdir(parents=True, exist_ok=True)
-
-        env = os.environ.copy()
-        env["WINEPREFIX"] = str(prefix_path)
-
-        # Warns if the Wine runner does not exist, and runs winecfg in the selected runner.
-        if runner_name.lower() == "wine":
-            wine_path = shutil.which("wine")
-            if not wine_path:
-                QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
-                return
-            cmd = [wine_path, "winecfg"]
-
-        elif "proton" in runner_name.lower():
-            proton_script = zordeer_runner_dir / runner_name / "proton"
-
-            if not proton_script.exists():
-                QMessageBox.critical(
-                    self,
-                    tr("APP_NAME"),
-                    tr("ERROR_RUNNER", path=str(proton_script.parent)))
-                return
-
-            cmd = [str(proton_script), "run", "winecfg"]
-            env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
-            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = ""
-
-        else:
-            wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
-
-            if not wine_binary.exists():
-                QMessageBox.critical(
-                    self,
-                    tr("APP_NAME"),
-                    tr("ERROR_RUNNER", path=str(wine_binary.parent)))
-                return
-
-            cmd = [str(wine_binary), "winecfg"]
-
-        subprocess.Popen(cmd, env=env)
-
 class UMUGameSearchDialog(QDialog):
     def __init__(self, parent=None, runner_name="", current_env_vars=""):
         super().__init__(parent)
@@ -1641,7 +1546,7 @@ class UMUGameSearchDialog(QDialog):
             QMessageBox.warning(self.parent(), tr("APP_NAME"), tr("DEFAULT_RUNNER_INDEFINITE"))
             return False
 
-        # Verification for runner "Wine"
+        # Verification for runner Proton
         if "proton" not in self.runner_name.lower():
             QMessageBox.information(self.parent(), tr("APP_NAME"), tr("UMU_DATABASE_NOT_SUPPORTED"))
             return False
@@ -2923,13 +2828,6 @@ class InvocationInfoViewerDialog(QDialog):
         text_color = palette.color(QPalette.ColorRole.Text)
         accent_color = palette.color(QPalette.ColorRole.Highlight)
 
-        self.text_box.setStyleSheet(f"""
-            QTextEdit {{
-                background-color: {base_color.name()};
-                color: {text_color.name()};
-            }}
-        """)
-
         # Qsplitter and main layout
         splitter = QSplitter(Qt.Orientation.Horizontal)
         splitter.addWidget(left_widget)
@@ -3242,8 +3140,8 @@ class RunInPrefix(QDialog):
         self.run_btn = QPushButton(tr("CONFIRM_AND_RUN"))
         self.force_stop_btn = QPushButton(tr("STOP_CURRENT"))
 
-        if hasattr(self.parent(), "stop_execution"):
-            self.force_stop_btn.clicked.connect(self.parent().stop_execution)
+        if hasattr(self.parent(), "stop_invocation"):
+            self.force_stop_btn.clicked.connect(self.parent().stop_invocation)
         else:
             self.force_stop_btn.setEnabled(False)
 
@@ -3438,7 +3336,7 @@ class RunInPrefix(QDialog):
                 QTimer.singleShot(2000, self.wait_until_finished)
                 return
 
-            self.parent().stop_execution()
+            self.parent().stop_invocation()
             self.current_index += 1
             self.progress.setValue(self.current_index)
             self.run_next_exe()
@@ -3969,6 +3867,8 @@ class ShortcutManager(QDialog):
         current_zordeer += f' --start-invocation "{name}"'
 
         gui_path = self.invocations.get(name, {}).get("gui_path", "")
+        if not gui_path or not Path(gui_path).exists():
+            gui_path = "applications-games-symbolic"
 
         categories = "Zordeer;" if self.own_category_cb.isChecked() else "Game;"
 
@@ -4055,16 +3955,28 @@ class Zordeer(QMainWindow):
         self.run_in_prefix_action.triggered.connect(self.run_in_prefix_dialog)
         self.invocation_menu.addAction(self.run_in_prefix_action)
 
+        self.open_winecfg_action = QAction(tr("OPEN_WINECFG"), self)
+        self.open_winecfg_action.triggered.connect(partial(self.open_wine_tools, "winecfg"))
+        self.invocation_menu.addAction(self.open_winecfg_action)
+
+        self.open_wine_control_action = QAction(tr("OPEN_WINE_CONTROL"), self)
+        self.open_wine_control_action.triggered.connect(partial(self.open_wine_tools, "control"))
+        self.invocation_menu.addAction(self.open_wine_control_action)
+
         # Menu TRANSFER
         self.transfer_menu = self.menu_bar.addMenu(tr("TRANSFER"))
 
         self.transfer_runners_menu = QAction(tr("TRANSFER_RUNNERS"), self)
-        self.transfer_runners_menu.triggered.connect(self.show_runner_transfer_dialog)
+        self.transfer_runners_menu.triggered.connect(self.open_runner_transfer_dialog)
         self.transfer_menu.addAction(self.transfer_runners_menu)
 
         self.transfer_arts_menu = QAction(tr("TRANSFER_ARTS"), self)
-        self.transfer_arts_menu.triggered.connect(self.open_transfer_arts)
+        self.transfer_arts_menu.triggered.connect(partial(self.run_sgdb_auto_transfer, "hero"))
         self.transfer_menu.addAction(self.transfer_arts_menu)
+
+        self.transfer_icons_menu = QAction(tr("TRANSFER_ICONS"), self)
+        self.transfer_icons_menu.triggered.connect(partial(self.run_sgdb_auto_transfer, "icon"))
+        self.transfer_menu.addAction(self.transfer_icons_menu)
 
         # Menu MANAGE
         self.manage_menu = self.menu_bar.addMenu(tr("MANAGE"))
@@ -4107,9 +4019,9 @@ class Zordeer(QMainWindow):
         self.run_action.triggered.connect(self.start_selected_invocation)
         self.toolbar.addAction(self.run_action)
 
-        self.stop_execution_action = QAction(QIcon.fromTheme("media-playback-stop-symbolic"), tr("STOP_INVOCATION"), self)
-        self.stop_execution_action.triggered.connect(self.stop_execution)
-        self.toolbar.addAction(self.stop_execution_action)
+        self.stop_invocation_action = QAction(QIcon.fromTheme("media-playback-stop-symbolic"), tr("STOP_INVOCATION"), self)
+        self.stop_invocation_action.triggered.connect(self.stop_invocation)
+        self.toolbar.addAction(self.stop_invocation_action)
 
         self.start_random_invocation_action = QAction(QIcon.fromTheme("media-playlist-shuffle-symbolic"), tr("START_RANDOM_INVOCATION"), self)
         self.start_random_invocation_action.triggered.connect(self.start_random_invocation)
@@ -4193,7 +4105,7 @@ class Zordeer(QMainWindow):
         self.global_context_menu.clear()
         # Menu of toolbar
         self.global_context_menu.addAction(self.run_action)
-        self.global_context_menu.addAction(self.stop_execution_action)
+        self.global_context_menu.addAction(self.stop_invocation_action)
         self.global_context_menu.addAction(self.start_random_invocation_action)
         self.global_context_menu.addAction(self.add_invocation_action)
         self.global_context_menu.addAction(self.edit_invocation_action)
@@ -4212,7 +4124,7 @@ class Zordeer(QMainWindow):
         tray_menu.addAction(self.start_random_invocation_action)
 
         # Stop invocation
-        tray_menu.addAction(self.stop_execution_action)
+        tray_menu.addAction(self.stop_invocation_action)
 
         # Show/Hide Window
         self.restore_action = QAction(tr("CHANGE_VISIBILITY"), self)
@@ -4296,7 +4208,9 @@ class Zordeer(QMainWindow):
                 self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
         idx = random.randint(0, self.invocation_list_widget.count() - 1)
-        invocation_name = self.invocation_list_widget.item(idx).text()
+        item = self.invocation_list_widget.item(idx)
+        self.invocation_list_widget.setCurrentItem(item)
+        invocation_name = item.text()
         self.start_invocation(invocation_name)
 
     def toggle_window(self):
@@ -4323,7 +4237,7 @@ class Zordeer(QMainWindow):
                 tr("CONFIRM_CLOSE_MESSAGE"),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
             if reply == QMessageBox.StandardButton.Yes:
-                self.stop_execution()
+                self.stop_invocation()
                 save_settings(settings)
                 QApplication.quit()
             else:
@@ -4350,7 +4264,7 @@ class Zordeer(QMainWindow):
             if first_visible_item:
                 self.invocation_list_widget.setCurrentItem(first_visible_item)
 
-    def stop_execution(self):
+    def stop_invocation(self):
         if self.inhibit_cookie is not None:
             try:
                 bus = dbus.SessionBus()
@@ -4606,7 +4520,7 @@ class Zordeer(QMainWindow):
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
             if reply == QMessageBox.StandardButton.Yes:
-                self.stop_execution()
+                self.stop_invocation()
             else:
                 return
 
@@ -4630,7 +4544,6 @@ class Zordeer(QMainWindow):
                 invocation_data = tomlkit.load(f)
             print(tr("INVOCATION_INFO_LOADED", name=invocation_name))
 
-            runner_base_path = zordeer_runner_dir / invocation_data['runner']
             exec_path_full = Path(invocation_data['exec_path'])
             prefix_path = Path(invocation_data['prefix_path'])
 
@@ -4650,19 +4563,76 @@ class Zordeer(QMainWindow):
 
             if exec_path_full.suffix.lower() not in (".exe", ".msi", ".iso"):
                 if str(exec_path_full) == ".":
-                    reply = QMessageBox.question(
+                    QMessageBox.critical(
                         self,
                         tr("APP_NAME"),
-                        tr("NO_EXEC_PATH"),
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
+                        tr("NO_EXEC_PATH"))
                 else:
-                    reply = QMessageBox.question(
+                    QMessageBox.critical(
                         self,
                         tr("APP_NAME"),
-                        tr("EXEC_PATH_INVALID_CONFIRM", path=str(exec_path_full)),
-                        QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
-                if reply == QMessageBox.StandardButton.No:
+                        tr("EXEC_PATH_INVALID", path=str(exec_path_full)))
+                return
+
+            runner_name = (invocation_data.get("runner") or load_settings()["other"].get("default_runner", "")).strip()
+
+            # Handle undefined or empty runner
+            if not runner_name or runner_name.lower() == "indefinite":
+                QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_RUNNER_INDEFINITE"))
+                return
+
+            # Check if UMU launcher is enabled
+            settings = load_settings()
+            umu_global = settings["other"].get("umu_global", False)
+            use_umu = invocation_data.get('use_umu', False) or umu_global
+            umu_version = settings["other"].get("umu_version", "").strip()
+
+            if use_umu and "proton" in runner_name.lower():
+                # Validate UMU version
+                if not umu_version or umu_version.lower() == "indefinite":
+                    QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_UMU_INDEFINITE"))
                     return
+
+                # Get UMU path
+                umu_run_path = zordeer_umu_dir / umu_version / "umu-run"
+                if not umu_run_path.exists():
+                    QMessageBox.critical(
+                        self,
+                        tr("APP_NAME"),
+                        tr("UMU_NOT_FOUND", path=str(umu_run_path.parent)))
+                    return
+
+                proton_script = zordeer_runner_dir / runner_name / "proton"
+                if not proton_script.exists():
+                    QMessageBox.critical(
+                        self,
+                        tr("APP_NAME"),
+                        tr("ERROR_RUNNER", path=str(proton_script.parent)))
+                    return
+
+            else:
+                # Check if it's just "wine", that is, the Wine from $PATH.
+                if runner_name.lower() == "wine":
+                    wine_path = shutil.which("wine")
+                    if not wine_path:
+                        QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
+                        return
+                elif "proton" in runner_name.lower():
+                    proton_script = zordeer_runner_dir / runner_name / "proton"
+                    if not proton_script.exists():
+                        QMessageBox.critical(
+                            self,
+                            tr("APP_NAME"),
+                            tr("ERROR_RUNNER", path=str(proton_script.parent)))
+                        return
+                else:
+                    wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
+                    if not wine_binary.exists():
+                        QMessageBox.critical(
+                            self,
+                            tr("APP_NAME"),
+                            tr("ERROR_RUNNER", path=str(wine_binary.parent)))
+                        return
 
             # exec_path_full is the original path of the TOML (can be .iso)
             iso_path = exec_path_full
@@ -4708,7 +4678,7 @@ class Zordeer(QMainWindow):
                                 os.close(fd)
 
                         except Exception as e:
-                            QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=str(e)))
+                            QMessageBox.critical(self, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=str(e)))
                             return
                     else:
                         # Create loop device
@@ -4716,12 +4686,12 @@ class Zordeer(QMainWindow):
                             ["udisksctl", "loop-setup", "-f", str(iso_path)],
                             capture_output=True, text=True)
                         if result.returncode != 0:
-                            QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=result.stderr))
+                            QMessageBox.critical(self, tr("APP_NAME"), tr("LOOP_DEVICE_CREATION_FAILED", error=result.stderr))
                             return
 
                         match = re.search(r'/dev/loop\d+', result.stdout)
                         if not match:
-                            QMessageBox.critical(None, tr("APP_NAME"), tr("LOOP_DEVICE_NOT_FOUND"))
+                            QMessageBox.critical(self, tr("APP_NAME"), tr("LOOP_DEVICE_NOT_FOUND"))
                             return
                         loop_device = match.group(0)
 
@@ -4730,14 +4700,14 @@ class Zordeer(QMainWindow):
                             ["udisksctl", "mount", "-b", loop_device],
                             capture_output=True, text=True)
                         if result_mount.returncode != 0:
-                            QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_MOUNT_FAILED", error=result_mount.stderr))
+                            QMessageBox.critical(self, tr("APP_NAME"), tr("ISO_MOUNT_FAILED", error=result_mount.stderr))
                             return
 
                         # Get mount point
                         match = re.search(r'at (/.+)', result_mount.stdout)
                         mount_point = Path(match.group(1)) if match else None
                         if not mount_point or not mount_point.exists():
-                            QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_MOUNT_POINT_NOT_FOUND"))
+                            QMessageBox.critical(self, tr("APP_NAME"), tr("ISO_MOUNT_POINT_NOT_FOUND"))
                             return
 
                 # Look for the .exe inside the ISO
@@ -4750,7 +4720,7 @@ class Zordeer(QMainWindow):
                     time.sleep(0.3)
 
                 if not exe_files:
-                    QMessageBox.critical(None, tr("APP_NAME"), tr("ISO_NO_EXE_FOUND", iso=str(iso_path)))
+                    QMessageBox.critical(self, tr("APP_NAME"), tr("ISO_NO_EXE_FOUND", iso=str(iso_path)))
                     return
 
                 exec_path_full = exe_files[0]
@@ -4765,76 +4735,20 @@ class Zordeer(QMainWindow):
                         "mount_point": str(mount_point)
                     }, f)
 
-            runner_name = (invocation_data.get("runner") or load_settings()["other"].get("default_runner", "")).strip()
-
-            # Handle undefined or empty runner
-            if not runner_name or runner_name.lower() == "indefinite":
-                QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_RUNNER_INDEFINITE"))
-                return
-
-            # Check if UMU launcher is enabled
-            settings = load_settings()
-            umu_global = settings["other"].get("umu_global", False)
-            use_umu = invocation_data.get('use_umu', False) or umu_global
-            umu_version = settings["other"].get("umu_version", "").strip()
-
+            # Build command
             if use_umu and "proton" in runner_name.lower():
-                # Validate UMU version
-                if not umu_version or umu_version.lower() == "indefinite":
-                    QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_UMU_INDEFINITE"))
-                    return
-
-                # Get UMU path
-                umu_run_path = zordeer_umu_dir / umu_version / "umu-run"
-                if not umu_run_path.exists():
-                    QMessageBox.critical(
-                        self,
-                        tr("APP_NAME"),
-                        tr("UMU_NOT_FOUND", path=str(umu_run_path.parent)))
-                    return
-
-                proton_script = zordeer_runner_dir / runner_name / "proton"
-                if not proton_script.exists():
-                    QMessageBox.critical(
-                        self,
-                        tr("APP_NAME"),
-                        tr("ERROR_RUNNER", path=str(proton_script.parent)))
-                    return
-
-                # UMU launcher command structure
                 command = [str(umu_run_path), str(exec_path_full)]
-
+            elif runner_name.lower() == "wine":
+                command = [wine_path, str(exec_path_full)]
+            elif "proton" in runner_name.lower():
+                command = [str(proton_script), "run", str(exec_path_full)]
             else:
-                # Check if it's just "wine", that is, the Wine from $PATH.
-                if runner_name.lower() == "wine":
-                    wine_path = shutil.which("wine")
-                    if not wine_path:
-                        QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
-                        return
-                    command = [wine_path, str(exec_path_full)]
-                elif "proton" in runner_name.lower():
-                    proton_script = zordeer_runner_dir / runner_name / "proton"
-                    if not proton_script.exists():
-                        QMessageBox.critical(
-                            self,
-                            tr("APP_NAME"),
-                            tr("ERROR_RUNNER", path=str(proton_script.parent)))
-                        return
-                    command = [str(proton_script), "run", str(exec_path_full)]
-                else:
-                    wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
-                    if not wine_binary.exists():
-                        QMessageBox.critical(
-                            self,
-                            tr("APP_NAME"),
-                            tr("ERROR_RUNNER", path=str(wine_binary.parent)))
-                        return
-                    command = [str(wine_binary), str(exec_path_full)]
+                command = [str(wine_binary), str(exec_path_full)]
 
             # Invocation arguments
             invocation_args_str = invocation_data.get('invocation_args', '').strip()
             if invocation_args_str:
-                command.extend(invocation_args_str.split())
+                command.extend(shlex.split(invocation_args_str))
 
             # Environment variables
             env = os.environ.copy()
@@ -4944,7 +4858,7 @@ class Zordeer(QMainWindow):
                     if 'STEAM_COMPAT_CLIENT_INSTALL_PATH' in env:
                         debug_vars.append(f"STEAM_COMPAT_CLIENT_INSTALL_PATH='{env['STEAM_COMPAT_CLIENT_INSTALL_PATH']}'")
 
-            # Remove "env" from the beginning of command since we're showing env vars separately
+            # Remove the "env" to avoid confusion about which is the actual command.
             if command[0] == "env":
                 command_without_env = command[1:]
             else:
@@ -4970,7 +4884,7 @@ class Zordeer(QMainWindow):
                 bus = dbus.SessionBus()
                 portal = bus.get_object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
                 iface = dbus.Interface(portal, "org.freedesktop.portal.Inhibit")
-                self.inhibit_cookie = iface.Inhibit("", 8, {"reason": "Zordeer invocation"})
+                self.inhibit_cookie = iface.Inhibit("", 8, {"reason": invocation_name})
             except:
                 self.inhibit_cookie = None
             self.last_wineprefix = env.get("WINEPREFIX")
@@ -5040,7 +4954,7 @@ class Zordeer(QMainWindow):
                     icon.addPixmap(pixmap, QIcon.Mode.Disabled, QIcon.State.Off)
 
         if icon is None:
-            icon = self.windowIcon()
+            icon = QIcon.fromTheme("applications-games-symbolic")
 
         if layout_mode != "list" and icon is not None:
             item.setIcon(icon)
@@ -5048,14 +4962,11 @@ class Zordeer(QMainWindow):
         self.invocation_list_widget.addItem(item)
         return item
 
-    def show_runner_transfer_dialog(self):
+    def open_runner_transfer_dialog(self):
         dialog = RunnerTransferDialog(self)
         dialog.exec()
 
-    def open_transfer_arts(self):
-        self.run_sgdb_auto_transfer()
-
-    def run_sgdb_auto_transfer(self):
+    def run_sgdb_auto_transfer(self, image_type):
         settings = load_settings()
         api_key = settings["other"].get("sgdb_apikey", "").strip()
         if not api_key:
@@ -5066,7 +4977,7 @@ class Zordeer(QMainWindow):
             QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
             return
 
-        # Invocations list
+        # Invocations list. Also includes cases where paths are filled in but the files do not exist
         invocations = []
         for toml_file in zordeer_config_dir.glob("invocation-info-*.toml"):
             try:
@@ -5075,10 +4986,17 @@ class Zordeer(QMainWindow):
                 invocation_name = invocation.get("name") or invocation.get("display_name") or invocation.get("id")
                 art_path = invocation.get("art_path", "")
                 gui_path = invocation.get("gui_path", "")
-                # Also includes cases where paths are filled in but the files do not exist
                 art_missing = not art_path or not Path(art_path).exists()
                 gui_missing = not gui_path or not Path(gui_path).exists()
-                if invocation_name and (art_missing or gui_missing):
+
+                if image_type == "hero":
+                    missing = art_missing
+                elif image_type == "icon":
+                    missing = gui_missing
+                elif image_type == "both":
+                    missing = (art_missing or gui_missing)
+
+                if invocation_name and missing:
                     invocations.append((invocation_name, toml_file))
             except Exception:
                 continue
@@ -5087,10 +5005,15 @@ class Zordeer(QMainWindow):
             QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_NO_MISSING_ARTS"))
             return
 
+        if image_type == "hero":
+            question_text = tr("AUTO_TRANSFER_ARTS_EXPLAIN")
+        elif image_type == "icon":
+            question_text = tr("AUTO_TRANSFER_ICONS_EXPLAIN")
+
         confirm = QMessageBox.question(
             self,
             tr("APP_NAME"),
-            tr("AUTO_TRANSFER_EXPLAIN"),
+            question_text,
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
         if confirm != QMessageBox.StandardButton.Yes:
             return
@@ -5149,7 +5072,7 @@ class Zordeer(QMainWindow):
                 steam_game_name = game.get("name") or str(game_id)
 
                 # Download hero using ArtworkLoader
-                if not self._cancel_auto and not progress_dialog.wasCanceled():
+                if image_type in ("hero", "both") and not self._cancel_auto and not progress_dialog.wasCanceled():
                     hero_loader = ArtworkLoader(api_key, game_id, "heroes")
 
                     # Create a local event loop to wait for the thread
@@ -5180,7 +5103,7 @@ class Zordeer(QMainWindow):
                     # Process hero results
                     if hero_results and len(hero_results) > 0:
                         # Sort by score if available
-                        best_hero = hero_results[0]  # First item is the highest scored (due to API ordering)
+                        best_hero = hero_results[0] # First item is the highest scored (due to API ordering)
 
                         if best_hero and best_hero.get("img_data"):
                             img_data = best_hero["img_data"]
@@ -5198,7 +5121,7 @@ class Zordeer(QMainWindow):
                                 hero_cache_path = hero_cache_filename
 
                 # Download icon using ArtworkLoader
-                if not self._cancel_auto and not progress_dialog.wasCanceled():
+                if image_type in ("icon", "both") and not self._cancel_auto and not progress_dialog.wasCanceled():
                     icon_loader = ArtworkLoader(api_key, game_id, "icons")
 
                     # Create a local event loop to wait for the thread
@@ -5229,7 +5152,7 @@ class Zordeer(QMainWindow):
                     # Process icon results
                     if icon_results and len(icon_results) > 0:
                         # Sort by score if available
-                        best_icon = icon_results[0]  # First item is the highest scored (due to API ordering)
+                        best_icon = icon_results[0] # First item is the highest scored (due to API ordering)
 
                         if best_icon and best_icon.get("img_data"):
                             img_data = best_icon["img_data"]
@@ -5269,11 +5192,11 @@ class Zordeer(QMainWindow):
                 except Exception:
                     invocation_toml = {}
 
-                if hero_cache_path and hero_cache_path.exists():
+                if image_type in ("hero", "both") and hero_cache_path and hero_cache_path.exists():
                     try:
-                        dest = zordeer_art_dir / f"{normalized}{hero_cache_path.suffix}"
-                        shutil.copy2(hero_cache_path, dest)
-                        invocation_toml["art_path"] = str(dest)
+                        dest_art = zordeer_art_dir / f"{normalized}{hero_cache_path.suffix}"
+                        shutil.copy2(hero_cache_path, dest_art)
+                        invocation_toml["art_path"] = str(dest_art)
                         copied_hero = True
 
                         # Delete the file from the cache folder when finished
@@ -5281,7 +5204,7 @@ class Zordeer(QMainWindow):
                     except Exception:
                         copied_hero = False
 
-                if icon_cache_path and icon_cache_path.exists():
+                if image_type in ("icon", "both") and icon_cache_path and icon_cache_path.exists():
                     try:
                         dest_icon = zordeer_gui_dir / f"{normalized}{icon_cache_path.suffix}"
                         shutil.copy2(icon_cache_path, dest_icon)
@@ -5359,6 +5282,93 @@ class Zordeer(QMainWindow):
                 self,
                 tr("APP_NAME"),
                 tr("OPEN_PATH_ERROR", path=str(path) if path else ""))
+
+    def open_wine_tools(self, tool_name):
+        invocation_name = self.get_selected_invocation()
+        if not invocation_name:
+            QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
+            return
+
+        safe_invocation_name = invocation_name.replace(" ", "_").lower()
+        invocation_file_path = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
+
+        with invocation_file_path.open('r', encoding='utf-8') as f:
+            invocation_data = tomlkit.load(f)
+
+        prefix_path = Path(invocation_data.get('prefix_path', ''))
+        if not prefix_path.exists():
+            QMessageBox.warning(self, tr("APP_NAME"), tr("PREFIX_PATH_NOT_FOUND", path=str(prefix_path)))
+            return
+
+        runner_name = invocation_data.get('runner', '').strip()
+        if not runner_name or runner_name.lower() == "indefinite":
+            settings = load_settings()
+            runner_name = settings["other"].get("default_runner", "").strip()
+            if not runner_name or runner_name.lower() == "indefinite":
+                QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_RUNNER_INDEFINITE"))
+                return
+
+        # Create pfx symlink
+        pfx_symlink = prefix_path / "pfx"
+        try:
+            if pfx_symlink.is_symlink():
+                pfx_symlink.unlink()
+            if not pfx_symlink.is_dir():
+                pfx_symlink.symlink_to(".")
+                print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink)))
+
+                users_path = prefix_path / "drive_c" / "users"
+                users_path.mkdir(parents=True, exist_ok=True)
+                steamuser = users_path / "steamuser"
+                unixuser = getpwuid(os.getuid()).pw_name
+                wineuser = users_path / unixuser
+                if not wineuser.exists() and not steamuser.exists():
+                    steamuser.mkdir(parents=True)
+                    wineuser.symlink_to("steamuser")
+                elif wineuser.is_dir() and not steamuser.exists():
+                    steamuser.symlink_to(unixuser)
+                elif not wineuser.exists() and steamuser.is_dir():
+                    wineuser.symlink_to("steamuser")
+        except Exception:
+            pass
+
+        # Create folders to prevent Wine from creating symlinks
+        target_user = prefix_path / "drive_c" / "users" / "steamuser"
+        for folder in ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos", "Templates"]:
+            (target_user / folder).mkdir(parents=True, exist_ok=True)
+
+        env = os.environ.copy()
+        env["WINEPREFIX"] = str(prefix_path)
+
+        # Checking if the runner exists
+        if runner_name.lower() == "wine":
+            wine_path = shutil.which("wine")
+            if not wine_path:
+                QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
+                return
+            cmd = [wine_path, tool_name]
+        elif "proton" in runner_name.lower():
+            proton_script = zordeer_runner_dir / runner_name / "proton"
+            if not proton_script.exists():
+                QMessageBox.critical(
+                    self,
+                    tr("APP_NAME"),
+                    tr("ERROR_RUNNER", path=str(proton_script.parent)))
+                return
+            cmd = [str(proton_script), "run", tool_name]
+            env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
+            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = ""
+        else:
+            wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
+            if not wine_binary.exists():
+                QMessageBox.critical(
+                    self,
+                    tr("APP_NAME"),
+                    tr("ERROR_RUNNER", path=str(wine_binary.parent)))
+                return
+            cmd = [str(wine_binary), tool_name]
+
+        subprocess.Popen(cmd, env=env)
 
     def open_settings(self):
         dialog = SettingsDialog(self)
