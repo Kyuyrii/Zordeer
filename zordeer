@@ -39,7 +39,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "5.0" + __package_type__
+__version__ = "5.1" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -195,7 +195,7 @@ def create_default_settings() -> dict:
             "language": LANG if LANG else "en_US",
             "layout_mode": "classic",
             "art_width_classic": 420,
-            "art_width_grid": 246,
+            "art_width_grid": 298,
             "search_bar_visible": False,
             "toolbar_visible": True,
         },
@@ -3943,9 +3943,9 @@ class Zordeer(QMainWindow):
         # Menu INVOCATION
         self.invocation_menu = self.menu_bar.addMenu(tr("INVOCATION"))
 
-        self.open_exe_path_action = QAction(tr("OPEN_EXEC_PATH"), self)
-        self.open_exe_path_action.triggered.connect(partial(self.open_path, "exe"))
-        self.invocation_menu.addAction(self.open_exe_path_action)
+        self.open_exec_path_action = QAction(tr("OPEN_EXEC_PATH"), self)
+        self.open_exec_path_action.triggered.connect(partial(self.open_path, "exec"))
+        self.invocation_menu.addAction(self.open_exec_path_action)
 
         self.open_prefix_path_action = QAction(tr("OPEN_PREFIX_PATH"), self)
         self.open_prefix_path_action.triggered.connect(partial(self.open_path, "prefix"))
@@ -5255,6 +5255,12 @@ class Zordeer(QMainWindow):
             print(tr("TEMP_FILES_REMOVED", count=removed))
 
     def open_path(self, chosen_path):
+        if chosen_path == "zordeer_dir":
+            path = zordeer_dir
+            if path and path.exists():
+                subprocess.run(["xdg-open", str(path)])
+            return
+
         invocation_name = self.get_selected_invocation()
         if not invocation_name:
             QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
@@ -5267,13 +5273,14 @@ class Zordeer(QMainWindow):
             invocation_info = tomlkit.load(f)
 
         path = None
-        if chosen_path == "prefix":
-            path = Path(invocation_info.get("prefix_path", ""))
-        elif chosen_path == "exe":
+        if chosen_path == "exec":
             exec_path = invocation_info.get("exec_path")
+            if exec_path == "":
+                QMessageBox.critical(self, tr("APP_NAME"), tr("NO_EXEC_PATH"))
+                return
             path = Path(exec_path).parent if exec_path else None
-        elif chosen_path == "zordeer_dir":
-            path = zordeer_dir
+        elif chosen_path == "prefix":
+            path = Path(invocation_info.get("prefix_path", ""))
 
         if path and path.exists():
             subprocess.run(["xdg-open", str(path)])
