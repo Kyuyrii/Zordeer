@@ -8,6 +8,15 @@
   A Qt launcher for running games via Wine/Proton/UMU 
 </p>
 
+<h1 align="center">
+<a href="https://snapcraft.io/zordeer">
+    <img alt="Get it from the Snap Store" src=https://snapcraft.io/en/dark/install.svg />
+  </a>
+<a href='https://flathub.org/apps/io.github.kyuyrii.zordeer'>
+    <img width='168' alt='Get it on Flathub' src='https://flathub.org/api/badge?locale=en'/>
+  </a>
+</h1>
+
 <img width="1684" height="1030" src="metainfo/zordeer_qt_style_breeze_icon_breeze.png" />
 
 ## Some explanations
