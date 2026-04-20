@@ -13,6 +13,7 @@
   <content_rating type="oars-1.1"/>
   <categories>
     <category>Game</category>
+    <category>PackageManager</category>
   </categories>
   <description>
     <p>
@@ -24,7 +25,7 @@
   </releases>
   <launchable type="desktop-id">io.github.kyuyrii.zordeer.desktop</launchable>
   <branding>
-    <color type="primary" scheme_preference="light">#8caaee</color>
+    <color type="primary" scheme_preference="light">#232634</color>
     <color type="primary" scheme_preference="dark">#232634</color>
   </branding>
   <screenshots>
