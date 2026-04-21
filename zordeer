@@ -39,7 +39,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "5.1" + __package_type__
+__version__ = "5.2" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -89,7 +89,6 @@ def load_translations():
         Path(sys.argv[0]).parent / "translation",
         Path("/usr/share/Zordeer/translation"),
         Path("/app/share/Zordeer/translation")
-
     ]
 
     for translation_folder in translation_dirs:
@@ -3868,7 +3867,7 @@ class ShortcutManager(QDialog):
 
         gui_path = self.invocations.get(name, {}).get("gui_path", "")
         if not gui_path or not Path(gui_path).exists():
-            gui_path = "applications-games-symbolic"
+            gui_path = "applications-games"
 
         categories = "Zordeer;" if self.own_category_cb.isChecked() else "Game;"
 
@@ -3882,7 +3881,8 @@ class ShortcutManager(QDialog):
             "Keywords=gaming;invocation;",
             "Type=Application",
             "StartupNotify=false",
-            "Terminal=false"
+            "Terminal=false",
+            f"Comment={tr('SHORTCUT_COMMENT', name=name)}"
         ]
 
         try:
@@ -4954,7 +4954,7 @@ class Zordeer(QMainWindow):
                     icon.addPixmap(pixmap, QIcon.Mode.Disabled, QIcon.State.Off)
 
         if icon is None:
-            icon = QIcon.fromTheme("applications-games-symbolic")
+            icon = QIcon.fromTheme("applications-games")
 
         if layout_mode != "list" and icon is not None:
             item.setIcon(icon)
