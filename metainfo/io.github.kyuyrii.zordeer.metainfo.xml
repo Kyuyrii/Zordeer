@@ -21,7 +21,7 @@
     </p>
   </description>
   <releases>
-    <release version="5.2" date="2026-04-21" />
+    <release version="5.3" date="2026-04-22" />
   </releases>
   <launchable type="desktop-id">io.github.kyuyrii.zordeer.desktop</launchable>
   <branding>

@@ -39,7 +39,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "5.2" + __package_type__
+__version__ = "5.3" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -866,14 +866,10 @@ class AddInvocationDialog(QDialog):
 
         self.umu_checkbox = QCheckBox(tr("USE_UMU_LAUNCHER"))
         self.umu_checkbox.setChecked(False)
+        self.umu_checkbox.setToolTip(tr("USE_UMU_LAUNCHER_INFO"))
         self.main_layout.addWidget(self.umu_checkbox, 8, 0, 1, 3)
 
         self.umu_buttons_layout = QHBoxLayout()
-
-        self.umu_info_button = QPushButton()
-        self.umu_info_button.setIcon(QIcon.fromTheme("help-about-symbolic"))
-        self.umu_info_button.clicked.connect(self.show_umu_info)
-        self.umu_buttons_layout.addWidget(self.umu_info_button)
 
         self.umu_search_button = QPushButton(tr("UMU_DATABASE_BUTTON"))
         self.umu_search_button.clicked.connect(self.open_umu_search)
@@ -924,12 +920,6 @@ class AddInvocationDialog(QDialog):
 
         if self.invocation_data:
             self.load_invocation_data()
-
-    def show_umu_info(self):
-        QMessageBox.information(
-            self,
-            tr("APP_NAME"),
-            tr("USE_UMU_LAUNCHER_INFO"))
 
     def open_umu_search(self):
         current_env_vars = self.env_vars_input.text()
@@ -3491,15 +3481,10 @@ class ShortcutManager(QDialog):
         # Show locations, info and update button
         buttons_layout = QHBoxLayout()
         self.locations_btn = QPushButton(tr("SHORTCUTS_PATHS"))
+        self.locations_btn.setToolTip(tr("SHORTCUTS_PATHS_INFO"))
         self.locations_btn.clicked.connect(self.toggle_locations)
         buttons_layout.addWidget(self.locations_btn)
 
-        self.paths_info_button = QPushButton()
-        self.paths_info_button.setIcon(QIcon.fromTheme("help-about-symbolic"))
-        self.paths_info_button.clicked.connect(self.show_paths_info)
-        buttons_layout.addWidget(self.paths_info_button)
-
-        buttons_layout.addStretch()
         self.update_shortcuts = QPushButton(tr("UPDATE_SHORTCUTS"))
         self.update_shortcuts.clicked.connect(self.update_and_apply)
         buttons_layout.addWidget(self.update_shortcuts)
@@ -3509,12 +3494,6 @@ class ShortcutManager(QDialog):
         self.view_combo.setCurrentIndex(1)
         self.update_list_view()
         self.view_combo.setCurrentIndex(0)
-
-    def show_paths_info(self):
-        QMessageBox.information(
-            self,
-            tr("APP_NAME"),
-            tr("SHORTCUTS_PATHS_INFO"))
 
     def toggle_locations(self):
         self.locations_widget.setVisible(not self.locations_widget.isVisible())
@@ -3814,10 +3793,15 @@ class ShortcutManager(QDialog):
                 directory_file_path = dot_local_dir / "share" / "desktop-directories" / "Zordeer.directory"
                 directory_file_path.parent.mkdir(parents=True, exist_ok=True)
 
+                if os.environ.get("SNAP"):
+                    icon_path = "/snap/zordeer/current/animarium/io.github.kyuyrii.zordeer.svg"
+                else:
+                    icon_path = "io.github.kyuyrii.zordeer"
+
                 directory_content = "\n".join([
                     "[Desktop Entry]",
                     "Name=Zordeer",
-                    "Icon=io.github.kyuyrii.zordeer"
+                    f"Icon={icon_path}"
                 ])
                 directory_file_path.write_text(directory_content, encoding="utf-8")
             except Exception as e:
@@ -4015,27 +3999,46 @@ class Zordeer(QMainWindow):
         # Size of icons
         self.toolbar.setIconSize(QSize(32, 32))
 
-        self.run_action = QAction(QIcon.fromTheme("media-playback-start-symbolic"), tr("START_INVOCATION"), self)
+        if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() not in ("kde", "lxqt"):
+            start_invocation_icon = "media-playback-start"
+            stop_invocation_icon = "media-playback-stop"
+            start_random_invocation_icon = "media-playlist-shuffle"
+            add_invocation_icon = "list-add"
+            edit_invocation_icon = "document-edit"
+            search_icon = "system-search"
+            change_visibility_icon = "view-restore"
+            close_zordeer_icon = "window-close"
+        else:
+            start_invocation_icon = "media-playback-start-symbolic"
+            stop_invocation_icon = "media-playback-stop-symbolic"
+            start_random_invocation_icon = "media-playlist-shuffle-symbolic"
+            add_invocation_icon = "list-add-symbolic"
+            edit_invocation_icon = "document-edit-symbolic"
+            search_icon = "edit-find-symbolic"
+            change_visibility_icon = "view-restore-symbolic"
+            close_zordeer_icon = "window-close-symbolic"
+
+        self.run_action = QAction(QIcon.fromTheme(start_invocation_icon), tr("START_INVOCATION"), self)
         self.run_action.triggered.connect(self.start_selected_invocation)
         self.toolbar.addAction(self.run_action)
 
-        self.stop_invocation_action = QAction(QIcon.fromTheme("media-playback-stop-symbolic"), tr("STOP_INVOCATION"), self)
+        self.stop_invocation_action = QAction(QIcon.fromTheme(stop_invocation_icon), tr("STOP_INVOCATION"), self)
         self.stop_invocation_action.triggered.connect(self.stop_invocation)
         self.toolbar.addAction(self.stop_invocation_action)
 
-        self.start_random_invocation_action = QAction(QIcon.fromTheme("media-playlist-shuffle-symbolic"), tr("START_RANDOM_INVOCATION"), self)
+        self.start_random_invocation_action = QAction(QIcon.fromTheme(start_random_invocation_icon), tr("START_RANDOM_INVOCATION"), self)
         self.start_random_invocation_action.triggered.connect(self.start_random_invocation)
         self.toolbar.addAction(self.start_random_invocation_action)
 
-        self.add_invocation_action = QAction(QIcon.fromTheme("list-add-symbolic"), tr("CREATE_INVOCATION"), self)
+        self.add_invocation_action = QAction(QIcon.fromTheme(add_invocation_icon), tr("CREATE_INVOCATION"), self)
         self.add_invocation_action.triggered.connect(self.add_invocation)
         self.toolbar.addAction(self.add_invocation_action)
 
-        self.edit_invocation_action = QAction(QIcon.fromTheme("document-edit-symbolic"), tr("MODIFY_INVOCATION"), self)
+        self.edit_invocation_action = QAction(QIcon.fromTheme(edit_invocation_icon), tr("MODIFY_INVOCATION"), self)
         self.edit_invocation_action.triggered.connect(self.edit_invocation)
         self.toolbar.addAction(self.edit_invocation_action)
 
-        self.search_action = QAction(QIcon.fromTheme("edit-find-symbolic"), tr("SEARCH"), self)
+        self.search_action = QAction(QIcon.fromTheme(search_icon), tr("SEARCH"), self)
         self.search_action.triggered.connect(self.toggle_search_bar)
         self.toolbar.addAction(self.search_action)
 
@@ -4127,16 +4130,16 @@ class Zordeer(QMainWindow):
         tray_menu.addAction(self.stop_invocation_action)
 
         # Show/Hide Window
-        self.restore_action = QAction(tr("CHANGE_VISIBILITY"), self)
-        self.restore_action.setIcon(QIcon.fromTheme("view-restore-symbolic"))
-        self.restore_action.triggered.connect(self.toggle_window)
-        tray_menu.addAction(self.restore_action)
+        self.change_visibility = QAction(tr("CHANGE_VISIBILITY"), self)
+        self.change_visibility.setIcon(QIcon.fromTheme(change_visibility_icon))
+        self.change_visibility.triggered.connect(self.toggle_window)
+        tray_menu.addAction(self.change_visibility)
 
         # Quit
-        quit_action = QAction(tr("CLOSE_ZORDEER"), self)
-        quit_action.setIcon(QIcon.fromTheme("window-close-symbolic"))
-        quit_action.triggered.connect(self.close)
-        tray_menu.addAction(quit_action)
+        close_zordeer = QAction(tr("CLOSE_ZORDEER"), self)
+        close_zordeer.setIcon(QIcon.fromTheme(close_zordeer_icon))
+        close_zordeer.triggered.connect(self.close)
+        tray_menu.addAction(close_zordeer)
 
         self.tray_icon.setContextMenu(tray_menu)
         self.tray_icon.show()
