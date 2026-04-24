@@ -29,7 +29,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "6.0" + __package_type__
+__version__ = "6.1" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -4260,6 +4260,14 @@ class Zordeer(QMainWindow):
         if hasattr(self, "last_executable") and self.last_executable:
             executable_name_to_kill = Path(self.last_executable).stem
 
+        if self.invocation_process is not None:
+            if self.invocation_process.state() != QProcess.ProcessState.NotRunning:
+                self.invocation_process.terminate()
+                if not self.invocation_process.waitForFinished(3000):
+                    self.invocation_process.kill()
+                    self.invocation_process.waitForFinished(1000)
+            self.invocation_process = None
+
         # Kill all .exe processes and wineserver
         for proc in psutil.process_iter(['pid', 'name', 'cmdline']):
             try:
@@ -4289,8 +4297,6 @@ class Zordeer(QMainWindow):
                 continue
 
         # Clear internal references
-        if hasattr(self, "invocation_process"):
-            self.invocation_process = None
         if hasattr(self, "last_executable"):
             self.last_executable = None
 

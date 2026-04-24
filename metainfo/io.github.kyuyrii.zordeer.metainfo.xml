@@ -21,7 +21,7 @@
     </p>
   </description>
   <releases>
-    <release version="6.0" date="2026-04-24">
+    <release version="6.1" date="2026-04-24">
       <description>
         <ul>
           <li>The UMU launcher is now used by default in Proton runners.</li>
