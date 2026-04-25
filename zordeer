@@ -29,7 +29,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "6.1" + __package_type__
+__version__ = "6.2" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -4908,7 +4908,7 @@ class Zordeer(QMainWindow):
     def _on_output(self):
         data = self.invocation_process.readAllStandardOutput().data()
         if data:
-            txt = data.decode()
+            txt = data.decode('utf-8', errors='replace')
             sys.stdout.write(txt)
             if 'INFO: Downloading' in txt:
                 self.setWindowTitle(tr("UMU_TRANSFERRING_RUNTIME"))
@@ -4917,7 +4917,7 @@ class Zordeer(QMainWindow):
 
         data = self.invocation_process.readAllStandardError().data()
         if data:
-            txt = data.decode()
+            txt = data.decode('utf-8', errors='replace')
             sys.stderr.write(txt)
             if 'INFO: Downloading' in txt:
                 self.setWindowTitle(tr("UMU_TRANSFERRING_RUNTIME"))

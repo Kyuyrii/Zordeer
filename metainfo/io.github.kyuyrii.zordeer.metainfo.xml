@@ -21,10 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="6.1" date="2026-04-24">
+    <release version="6.2" date="2026-04-24">
       <description>
         <ul>
-          <li>The UMU launcher is now used by default in Proton runners.</li>
+          <li>Trying to prevent Zordeer from crashing when using a UMU protonfix.</li>
         </ul>
       </description>
     </release>
