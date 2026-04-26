@@ -24,16 +24,12 @@ from pwd import getpwuid
 
 if os.environ.get("SNAP"):
     __package_type__ = " [Snap]"
-    if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() not in ("kde", "lxqt"):
-        os.environ["QT_QPA_PLATFORMTHEME"] = "KDE"
 elif os.environ.get("container") == "flatpak":
     __package_type__ = " [Flatpak]"
-    if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() != "kde":
-        os.environ["QT_QPA_PLATFORMTHEME"] = "KDE"
 else:
     __package_type__ = ""
 
-__version__ = "6.3" + __package_type__
+__version__ = "6.4" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -71,6 +67,27 @@ else:
     zordeer_runner_dir = zordeer_dir / "runner"
     zordeer_umu_dir = zordeer_dir / "umu"
     zordeer_umu_folders_path = zordeer_home_dir / "App" / "UMU"
+
+if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() not in ("kde", "lxqt"):
+    start_invocation_icon = "media-playback-start"
+    stop_invocation_icon = "media-playback-stop"
+    start_random_invocation_icon = "media-playlist-shuffle"
+    add_invocation_icon = "list-add"
+    edit_invocation_icon = "document-edit"
+    search_icon = "system-search"
+    change_visibility_icon = "view-restore"
+    close_zordeer_icon = "window-close"
+    help_about_icon = "help-about"
+else:
+    start_invocation_icon = "media-playback-start-symbolic"
+    stop_invocation_icon = "media-playback-stop-symbolic"
+    start_random_invocation_icon = "media-playlist-shuffle-symbolic"
+    add_invocation_icon = "list-add-symbolic"
+    edit_invocation_icon = "document-edit-symbolic"
+    search_icon = "edit-find-symbolic"
+    change_visibility_icon = "view-restore-symbolic"
+    close_zordeer_icon = "window-close-symbolic"
+    help_about_icon = "help-about-symbolic"
 
 # Translation System
 try:
@@ -3453,7 +3470,7 @@ class ShortcutManager(QDialog):
         buttons_layout.addWidget(self.locations_btn)
 
         self.paths_info_button = QPushButton()
-        self.paths_info_button.setIcon(QIcon.fromTheme("help-about-symbolic"))
+        self.paths_info_button.setIcon(QIcon.fromTheme(help_about_icon))
         self.paths_info_button.clicked.connect(self.show_paths_info)
         buttons_layout.addWidget(self.paths_info_button)
 
@@ -3980,27 +3997,27 @@ class Zordeer(QMainWindow):
         # Size of icons
         self.toolbar.setIconSize(QSize(32, 32))
 
-        self.run_action = QAction(QIcon.fromTheme("media-playback-start-symbolic"), tr("START_INVOCATION"), self)
+        self.run_action = QAction(QIcon.fromTheme(start_invocation_icon), tr("START_INVOCATION"), self)
         self.run_action.triggered.connect(self.start_selected_invocation)
         self.toolbar.addAction(self.run_action)
 
-        self.stop_invocation_action = QAction(QIcon.fromTheme("media-playback-stop-symbolic"), tr("STOP_INVOCATION"), self)
+        self.stop_invocation_action = QAction(QIcon.fromTheme(stop_invocation_icon), tr("STOP_INVOCATION"), self)
         self.stop_invocation_action.triggered.connect(self.stop_invocation)
         self.toolbar.addAction(self.stop_invocation_action)
 
-        self.start_random_invocation_action = QAction(QIcon.fromTheme("media-playlist-shuffle-symbolic"), tr("START_RANDOM_INVOCATION"), self)
+        self.start_random_invocation_action = QAction(QIcon.fromTheme(start_random_invocation_icon), tr("START_RANDOM_INVOCATION"), self)
         self.start_random_invocation_action.triggered.connect(self.start_random_invocation)
         self.toolbar.addAction(self.start_random_invocation_action)
 
-        self.add_invocation_action = QAction(QIcon.fromTheme("list-add-symbolic"), tr("CREATE_INVOCATION"), self)
+        self.add_invocation_action = QAction(QIcon.fromTheme(add_invocation_icon), tr("CREATE_INVOCATION"), self)
         self.add_invocation_action.triggered.connect(self.add_invocation)
         self.toolbar.addAction(self.add_invocation_action)
 
-        self.edit_invocation_action = QAction(QIcon.fromTheme("document-edit-symbolic"), tr("MODIFY_INVOCATION"), self)
+        self.edit_invocation_action = QAction(QIcon.fromTheme(edit_invocation_icon), tr("MODIFY_INVOCATION"), self)
         self.edit_invocation_action.triggered.connect(self.edit_invocation)
         self.toolbar.addAction(self.edit_invocation_action)
 
-        self.search_action = QAction(QIcon.fromTheme("edit-find-symbolic"), tr("SEARCH"), self)
+        self.search_action = QAction(QIcon.fromTheme(search_icon), tr("SEARCH"), self)
         self.search_action.triggered.connect(self.toggle_search_bar)
         self.toolbar.addAction(self.search_action)
 
@@ -4093,13 +4110,13 @@ class Zordeer(QMainWindow):
 
         # Show/Hide Window
         self.change_visibility = QAction(tr("CHANGE_VISIBILITY"), self)
-        self.change_visibility.setIcon(QIcon.fromTheme("view-restore-symbolic"))
+        self.change_visibility.setIcon(QIcon.fromTheme(change_visibility_icon))
         self.change_visibility.triggered.connect(self.toggle_window)
         tray_menu.addAction(self.change_visibility)
 
         # Quit
         close_zordeer = QAction(tr("CLOSE_ZORDEER"), self)
-        close_zordeer.setIcon(QIcon.fromTheme("window-close-symbolic"))
+        close_zordeer.setIcon(QIcon.fromTheme(close_zordeer_icon))
         close_zordeer.triggered.connect(self.close)
         tray_menu.addAction(close_zordeer)
 

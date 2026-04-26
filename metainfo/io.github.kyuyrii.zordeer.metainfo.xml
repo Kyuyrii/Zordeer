@@ -21,10 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="6.3" date="2026-04-25">
+    <release version="6.4" date="2026-04-26">
       <description>
         <ul>
-          <li>The KDE platform theme will be enforced in both Snap and Flatpak versions. The exception is LXQt in Snapd.</li>
+          <li>Reverting to using non-symbolic icons when running outside of KDE and LXQt.</li>
         </ul>
       </description>
     </release>
