@@ -21,10 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="6.2" date="2026-04-24">
+    <release version="6.3" date="2026-04-25">
       <description>
         <ul>
-          <li>Trying to prevent Zordeer from crashing when using a UMU protonfix.</li>
+          <li>The KDE platform theme will be enforced in both Snap and Flatpak versions. The exception is LXQt in Snapd.</li>
         </ul>
       </description>
     </release>
