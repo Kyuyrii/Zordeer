@@ -21,10 +21,11 @@
     </p>
   </description>
   <releases>
-    <release version="6.4" date="2026-04-26">
+    <release version="6.5" date="2026-04-28">
       <description>
         <ul>
-          <li>Reverting to using non-symbolic icons when running outside of KDE and LXQt.</li>
+          <li>The warning that all invocations have either art or an icon defined has been changed; it was mentioning both art and icon at the same time.</li>
+          <li>Added startup options --start-random-invocation and --stop-invocation.</li>
         </ul>
       </description>
     </release>

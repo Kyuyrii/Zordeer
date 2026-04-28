@@ -29,7 +29,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "6.4" + __package_type__
+__version__ = "6.5" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -2486,9 +2486,7 @@ class MultipleEditInvocationDialog(QDialog):
             self,
             tr("SELECT_EXECUTABLE"),
             str(zordeer_invocation_dir),
-            tr("EXECUTABLE_FILE_FILTER")
-        )
-
+            tr("EXECUTABLE_FILE_FILTER"))
         if file_path:
             self.exec_input.setText(file_path)
 
@@ -2496,8 +2494,7 @@ class MultipleEditInvocationDialog(QDialog):
         dir_path = QFileDialog.getExistingDirectory(
             self,
             tr("SELECT_PREFIX_TITLE"),
-            str(zordeer_invocation_dir)
-        )
+            str(zordeer_invocation_dir))
         if dir_path:
             self.prefix_input.setText(dir_path)
 
@@ -5017,7 +5014,10 @@ class Zordeer(QMainWindow):
                 continue
 
         if not invocations:
-            QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_NO_MISSING_ARTS"))
+            if image_type == "hero":
+                QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_NO_MISSING_ARTS"))
+            elif image_type == "icon":
+                QMessageBox.information(self, tr("APP_NAME"), tr("AUTO_TRANSFER_NO_MISSING_ICONS"))
             return
 
         if image_type == "hero":
@@ -5506,7 +5506,7 @@ if __name__ == "__main__":
             return True
         return False
 
-    # Try sending --start-invocation command to existing instance
+    # Try sending commands to existing instance
     if "--start-invocation" in sys.argv:
         try:
             idx = sys.argv.index("--start-invocation") + 1
@@ -5515,6 +5515,12 @@ if __name__ == "__main__":
                 sys.exit(0)
         except IndexError:
             pass
+    elif "--start-random-invocation" in sys.argv:
+        if send_to_running_instance("--start-random-invocation"):
+            sys.exit(0)
+    elif "--stop-invocation" in sys.argv:
+        if send_to_running_instance("--stop-invocation"):
+            sys.exit(0)
 
     # Server for single instance
     def handle_new_connection():
@@ -5534,6 +5540,10 @@ if __name__ == "__main__":
         if data.startswith("--start-invocation "):
             invocation_name = data[len("--start-invocation "):].strip('"')
             QTimer.singleShot(200, partial(window.start_invocation, invocation_name))
+        elif data == "--start-random-invocation":
+            QTimer.singleShot(200, window.start_random_invocation)
+        elif data == "--stop-invocation":
+            QTimer.singleShot(200, window.stop_invocation)
 
         socket.disconnectFromServer()
 
@@ -5560,6 +5570,10 @@ if __name__ == "__main__":
                 send_to_running_instance(f'--start-invocation "{invocation_name}"')
             except IndexError:
                 pass
+        elif "--start-random-invocation" in sys.argv:
+            send_to_running_instance("--start-random-invocation")
+        elif "--stop-invocation" in sys.argv:
+            send_to_running_instance("--stop-invocation")
         sys.exit(0)
 
     window = Zordeer()
@@ -5576,5 +5590,9 @@ if __name__ == "__main__":
             QTimer.singleShot(500, partial(window.start_invocation, invocation_name))
         except IndexError:
             pass
+    elif "--start-random-invocation" in sys.argv:
+        QTimer.singleShot(500, window.start_random_invocation)
+    elif "--stop-invocation" in sys.argv:
+        QTimer.singleShot(500, window.stop_invocation)
 
     sys.exit(app.exec())
