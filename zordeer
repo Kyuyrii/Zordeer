@@ -29,7 +29,7 @@ elif os.environ.get("container") == "flatpak":
 else:
     __package_type__ = ""
 
-__version__ = "6.5" + __package_type__
+__version__ = "6.6" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -108,9 +108,14 @@ def load_translations():
     translation_dirs = [
         zordeer_dir / "translation",
         Path(sys.argv[0]).parent / "translation",
-        Path("/usr/share/Zordeer/translation"),
-        Path("/app/share/Zordeer/translation")
     ]
+
+    if "XDG_DATA_DIRS" in os.environ:
+        for path in os.environ["XDG_DATA_DIRS"].split(":"):
+            translation_dirs.append(Path(path) / "Zordeer" / "translation")
+    else:
+        translation_dirs.append(Path("/usr/share/Zordeer/translation"))
+        translation_dirs.append(Path("/usr/local/share/Zordeer/translation"))
 
     for translation_folder in translation_dirs:
         if translation_folder.exists():
@@ -3787,7 +3792,7 @@ class ShortcutManager(QDialog):
                 directory_file_path.parent.mkdir(parents=True, exist_ok=True)
 
                 if os.environ.get("SNAP"):
-                    icon_path = "/snap/zordeer/current/animarium/io.github.kyuyrii.zordeer.svg"
+                    icon_path = self.parent().zordeer_icon_path
                 else:
                     icon_path = "io.github.kyuyrii.zordeer"
 
@@ -3889,14 +3894,16 @@ class Zordeer(QMainWindow):
         self.invocation_process = None
 
         # Add the icon to the main window
+        self.zordeer_icon_path = None
         local_icons = [
-        "io.github.kyuyrii.zordeer.png", "/snap/zordeer/current/meta/gui/icon.png",
-        "io.github.kyuyrii.zordeer.svg", "/snap/zordeer/current/meta/gui/icon.svg"]
+        "/snap/zordeer/current/meta/gui/icon.png", "/snap/zordeer/current/meta/gui/icon.svg",
+        "io.github.kyuyrii.zordeer.png", "io.github.kyuyrii.zordeer.svg"]
 
         icon_set = False
         for icon_file in local_icons:
             if Path(icon_file).exists():
                 self.setWindowIcon(QIcon(icon_file))
+                self.zordeer_icon_path = icon_file
                 icon_set = True
                 break
         if not icon_set:
@@ -4568,8 +4575,8 @@ class Zordeer(QMainWindow):
                 return
 
             # Check if UMU launcher is enabled
-            settings = load_settings()
             use_umu = os.environ.get("ZORDEER_DISABLE_UMU") != "1"
+            settings = load_settings()
             umu_version = settings["other"].get("umu_version", "").strip()
 
             if use_umu and "proton" in runner_name.lower():
