@@ -21,11 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="6.6" date="2026-04-30">
+    <release version="6.7" date="2026-05-01">
       <description>
         <ul>
-          <li>Added use of XDG_DATA_DIRS to find translation files without relying solely on fixed paths.</li>
-          <li>Improved as the Snap version defines the Zordeer category icon.</li>
+          <li>Added support for using the UMU launcher from $PATH.</li>
         </ul>
       </description>
     </release>

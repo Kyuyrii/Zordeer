@@ -26,10 +26,12 @@ if os.environ.get("SNAP"):
     __package_type__ = " [Snap]"
 elif os.environ.get("container") == "flatpak":
     __package_type__ = " [Flatpak]"
+elif os.environ.get("APPIMAGE"):
+    __package_type__ = " [AppImage]"
 else:
     __package_type__ = ""
 
-__version__ = "6.6" + __package_type__
+__version__ = "6.7" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -488,6 +490,11 @@ class SettingsDialog(QDialog):
         available_umu = sorted([umu.name for umu in zordeer_umu_dir.iterdir() if umu.is_dir()], reverse=True)
 
         items = [tr("INDEFINITE")]
+
+        # Add $PATH only if umu-run command is found
+        if shutil.which("umu-run"):
+            items.append("$PATH")
+
         items += available_umu
 
         # Add current UMU version from settings if it's not in the folder
@@ -4586,13 +4593,19 @@ class Zordeer(QMainWindow):
                     return
 
                 # Get UMU path
-                umu_run_path = zordeer_umu_dir / umu_version / "umu-run"
-                if not umu_run_path.exists():
-                    QMessageBox.critical(
-                        self,
-                        tr("APP_NAME"),
-                        tr("UMU_NOT_FOUND", path=str(umu_run_path.parent)))
-                    return
+                if umu_version == "$PATH":
+                    umu_run_path = shutil.which("umu-run")
+                    if not umu_run_path:
+                        QMessageBox.critical(self, tr("APP_NAME"), tr("UMU_NOT_FOUND_IN_PATH"))
+                        return
+                else:
+                    umu_run_path = zordeer_umu_dir / umu_version / "umu-run"
+                    if not umu_run_path.exists():
+                        QMessageBox.critical(
+                            self,
+                            tr("APP_NAME"),
+                            tr("UMU_NOT_FOUND", path=str(umu_run_path.parent)))
+                        return
 
                 proton_script = zordeer_runner_dir / runner_name / "proton"
                 if not proton_script.exists():
