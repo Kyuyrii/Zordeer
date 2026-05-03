@@ -31,7 +31,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "6.7" + __package_type__
+__version__ = "6.8" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -1364,7 +1364,7 @@ class AddInvocationDialog(QDialog):
         # Confirmation dialog with checkbox
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setWindowTitle(tr("REMOVE"))
+        msg.setWindowTitle(self.windowTitle())
         msg.setText(tr("DELETE_INVOCATION_CONFIRM_MESSAGE", name=invocation_name))
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
@@ -1402,8 +1402,8 @@ class AddInvocationDialog(QDialog):
         # If the user marked for deletion and the prefix is ​​in use
         if delete_data_cb.isChecked() and prefix_in_use_by_others:
             dialog = QDialog(self)
-            dialog.setWindowTitle(tr("REMOVE"))
-            dialog.resize(400, 300)
+            dialog.setWindowTitle(self.windowTitle())
+            dialog.resize(500, 400)
             layout = QVBoxLayout(dialog)
 
             # Main message
@@ -2072,7 +2072,7 @@ class MultipleRemoveInvocationDialog(QDialog):
 
         msg = QMessageBox(self)
         msg.setIcon(QMessageBox.Icon.Warning)
-        msg.setWindowTitle(tr("MULTIPLE_INVOCATION_REMOVER"))
+        msg.setWindowTitle(self.windowTitle())
         msg.setText(tr("DELETE_INVOCATIONS_CONFIRM_MESSAGE"))
         msg.setStandardButtons(QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No)
 
@@ -2115,7 +2115,8 @@ class MultipleRemoveInvocationDialog(QDialog):
         keep_in_use = False
         if prefix_usages:
             dialog = QDialog(self)
-            dialog.setWindowTitle(tr("MULTIPLE_INVOCATION_REMOVER"))
+            dialog.setWindowTitle(self.windowTitle())
+            dialog.resize(500, 400)
             layout = QVBoxLayout(dialog)
 
             label = QLabel(tr("PREFIXES_IN_USE_MESSAGE"))
@@ -4929,7 +4930,7 @@ class Zordeer(QMainWindow):
         if data:
             txt = data.decode('utf-8', errors='replace')
             sys.stdout.write(txt)
-            if 'INFO: Downloading' in txt:
+            if 'INFO: Downloading steamrt' in txt:
                 self.setWindowTitle(tr("UMU_TRANSFERRING_RUNTIME"))
             elif 'mtree is OK' in txt:
                 self.setWindowTitle(tr("INVOCATION_STARTED", invocation_name=self.last_invocation_name))
@@ -4938,7 +4939,7 @@ class Zordeer(QMainWindow):
         if data:
             txt = data.decode('utf-8', errors='replace')
             sys.stderr.write(txt)
-            if 'INFO: Downloading' in txt:
+            if 'INFO: Downloading steamrt' in txt:
                 self.setWindowTitle(tr("UMU_TRANSFERRING_RUNTIME"))
             elif 'mtree is OK' in txt:
                 self.setWindowTitle(tr("INVOCATION_STARTED", invocation_name=self.last_invocation_name))

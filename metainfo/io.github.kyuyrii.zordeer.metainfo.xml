@@ -21,10 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="6.7" date="2026-05-01">
+    <release version="6.8" date="2026-05-03">
       <description>
         <ul>
-          <li>Added support for using the UMU launcher from $PATH.</li>
+          <li>Just a few minor adjustments.</li>
         </ul>
       </description>
     </release>
