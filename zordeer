@@ -31,7 +31,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "7.0" + __package_type__
+__version__ = "7.1" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -3607,7 +3607,7 @@ class ShortcutManager(QDialog):
             # Combine saved states with existing shortcuts
             was_checked = self.checkbox_states[self.current_view].get(invocation, False)
             exists_in_folder = invocation in existing_desktops
-            cb.setChecked(was_checked or exists_in_folder)
+            cb.setChecked(self.checkbox_states[self.current_view].get(invocation, invocation in existing_desktops))
             new_checkboxes[invocation] = cb
         self.checkbox_widgets[self.current_view] = new_checkboxes
 

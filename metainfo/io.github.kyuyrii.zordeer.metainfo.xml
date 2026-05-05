@@ -21,10 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="7.0" date="2026-05-05">
+    <release version="7.1" date="2026-05-05">
       <description>
         <ul>
-          <li>Some buttons now use icons instead of text, to save space.</li>
+          <li>Correcting a problem with the shortcut manager, previously created shortcuts were being re-selected, going against the user's choice to unselect them.</li>
         </ul>
       </description>
     </release>
