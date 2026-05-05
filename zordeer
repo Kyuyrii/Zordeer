@@ -31,7 +31,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "6.8" + __package_type__
+__version__ = "6.9" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -242,6 +242,7 @@ def create_default_settings() -> dict:
             "default_runner": "indefinite",
             "umu_version": "indefinite",
             "sgdb_apikey": "",
+            "umu_runtime_update": True,
         }
     }
 
@@ -411,10 +412,15 @@ class SettingsDialog(QDialog):
         layout.addWidget(api_label, 7, 0)
         layout.addWidget(self.api_input, 7, 1)
 
+        # Umu runtime update
+        self.umu_runtime_update_checkbox = QCheckBox(tr("UMU_RUNTIME_UPDATE"))
+        self.umu_runtime_update_checkbox.setChecked(self.settings["other"].get("umu_runtime_update", True))
+        layout.addWidget(self.umu_runtime_update_checkbox, 8, 0, 1, 2)
+
         # Save button
         save_btn = QPushButton(tr("SAVE_BUTTON"))
         save_btn.clicked.connect(self.save_and_close)
-        layout.addWidget(save_btn, 8, 1, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(save_btn, 9, 1, alignment=Qt.AlignmentFlag.AlignRight)
 
         self.setLayout(layout)
 
@@ -462,6 +468,8 @@ class SettingsDialog(QDialog):
             self.settings["other"]["umu_version"] = "indefinite"
         else:
             self.settings["other"]["umu_version"] = selected_umu
+
+        self.settings["other"]["umu_runtime_update"] = self.umu_runtime_update_checkbox.isChecked()
 
         save_settings(self.settings)
         self.accept()
@@ -747,7 +755,7 @@ class RunnerTransferDialog(QDialog):
             self.update_transfer_button_state()
 
         except requests.exceptions.RequestException as e:
-            QMessageBox.critical(self, tr("APP_NAME"), tr("TRANSFER_ERROR") + f"\n{e}")
+            QMessageBox.critical(self, tr("APP_NAME"), tr("TRANSFER_ERROR", error=str(e)))
 
     def update_transfer_button_state(self):
         self.transfer_button.setEnabled(self.button_group.checkedButton() is not None)
@@ -4145,8 +4153,6 @@ class Zordeer(QMainWindow):
         else:
             self.show()
 
-        self.transfer_successful = False
-
         self.inhibit_cookie = None
 
     def update_art_size(self):
@@ -4585,6 +4591,7 @@ class Zordeer(QMainWindow):
             # Check if UMU launcher is enabled
             use_umu = os.environ.get("ZORDEER_DISABLE_UMU") != "1"
             settings = load_settings()
+            umu_runtime_update = settings["other"].get("umu_runtime_update", True)
             umu_version = settings["other"].get("umu_version", "").strip()
 
             if use_umu and "proton" in runner_name.lower():
@@ -4764,6 +4771,8 @@ class Zordeer(QMainWindow):
                 # Changes the folder used by UMU
                 env['UMU_FOLDERS_PATH'] = str(zordeer_umu_folders_path)
                 env['PROTONPATH'] = str(zordeer_runner_dir / runner_name)
+                if umu_runtime_update is False:
+                    env['UMU_RUNTIME_UPDATE'] = "0"
             else:
                 # Set Steam environment variables only for Proton
                 if "proton" in runner_name.lower():
@@ -4854,6 +4863,8 @@ class Zordeer(QMainWindow):
                     debug_vars.append(f"PROTONPATH='{env['PROTONPATH']}'")
                 if 'UMU_FOLDERS_PATH' in env:
                     debug_vars.append(f"UMU_FOLDERS_PATH='{env['UMU_FOLDERS_PATH']}'")
+                if 'UMU_RUNTIME_UPDATE' in env:
+                    debug_vars.append(f"UMU_RUNTIME_UPDATE={env['UMU_RUNTIME_UPDATE']}")
             else:
                 debug_vars.append(f"WINEPREFIX='{env['WINEPREFIX']}'")
                 # Only show Steam variables if they exist and runner is not Wine
