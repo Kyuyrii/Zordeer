@@ -31,7 +31,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "6.9" + __package_type__
+__version__ = "7.0" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -71,25 +71,29 @@ else:
     zordeer_umu_folders_path = zordeer_home_dir / "App" / "UMU"
 
 if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() not in ("kde", "lxqt"):
-    start_invocation_icon = "media-playback-start"
-    stop_invocation_icon = "media-playback-stop"
-    start_random_invocation_icon = "media-playlist-shuffle"
     add_invocation_icon = "list-add"
-    edit_invocation_icon = "document-edit"
-    search_icon = "system-search"
     change_visibility_icon = "view-restore"
     close_zordeer_icon = "window-close"
+    document_open_folder_icon = "folder-open"
+    document_open_icon = "document-open"
+    edit_invocation_icon = "document-edit"
     help_about_icon = "help-about"
+    search_icon = "system-search"
+    start_invocation_icon = "media-playback-start"
+    start_random_invocation_icon = "media-playlist-shuffle"
+    stop_invocation_icon = "media-playback-stop"
 else:
-    start_invocation_icon = "media-playback-start-symbolic"
-    stop_invocation_icon = "media-playback-stop-symbolic"
-    start_random_invocation_icon = "media-playlist-shuffle-symbolic"
     add_invocation_icon = "list-add-symbolic"
-    edit_invocation_icon = "document-edit-symbolic"
-    search_icon = "edit-find-symbolic"
     change_visibility_icon = "view-restore-symbolic"
     close_zordeer_icon = "window-close-symbolic"
+    document_open_folder_icon = "folder-open"
+    document_open_icon = "document-open"
+    edit_invocation_icon = "document-edit-symbolic"
     help_about_icon = "help-about-symbolic"
+    search_icon = "edit-find-symbolic"
+    start_invocation_icon = "media-playback-start-symbolic"
+    start_random_invocation_icon = "media-playlist-shuffle-symbolic"
+    stop_invocation_icon = "media-playback-stop-symbolic"
 
 # Translation System
 try:
@@ -172,7 +176,7 @@ try:
     QLabel, QLineEdit, QHBoxLayout, QFileDialog, QComboBox, QCheckBox, QListWidgetItem, QStyleFactory, QProgressBar, QButtonGroup,
     QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit, QProgressDialog)
     from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo, QEventLoop, QProcess, QProcessEnvironment
-    from PyQt6.QtGui import QAction, QIcon, QPixmap, QPainter, QPalette, QColor, QTextCharFormat, QTextCursor
+    from PyQt6.QtGui import QAction, QIcon, QPixmap, QPalette, QColor, QTextCharFormat, QTextCursor
     from PyQt6.QtNetwork import QLocalServer, QLocalSocket
     print("PyQt6 found")
 except ImportError:
@@ -849,7 +853,9 @@ class AddInvocationDialog(QDialog):
 
         self.exec_path_label = QLabel(tr("EXECUTABLE_PATH"))
         self.exec_path_input = QLineEdit()
-        self.exec_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.exec_button = QPushButton()
+        self.exec_button.setIcon(QIcon.fromTheme(document_open_icon))
+        self.exec_button.setToolTip(tr("BROWSE_BUTTON"))
         self.exec_button.clicked.connect(self.select_executable)
 
         self.main_layout.addWidget(self.exec_path_label, 2, 0)
@@ -859,7 +865,9 @@ class AddInvocationDialog(QDialog):
         self.prefix_path_label = QLabel(tr("PREFIX_PATH"))
         self.prefix_path_input = QLineEdit()
         self.prefix_path_input.setPlaceholderText(tr("ANIMARIUM_PREFIX_PLACEHOLDER"))
-        self.prefix_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.prefix_button = QPushButton()
+        self.prefix_button.setIcon(QIcon.fromTheme(document_open_folder_icon))
+        self.prefix_button.setToolTip(tr("BROWSE_BUTTON"))
         self.prefix_button.clicked.connect(self.select_prefix)
 
         self.main_layout.addWidget(self.prefix_path_label, 3, 0)
@@ -869,7 +877,9 @@ class AddInvocationDialog(QDialog):
         self.invocation_art_label = QLabel(tr("INVOCATION_ART_PATH"))
         self.invocation_art_input = QLineEdit()
 
-        self.invocation_art_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.invocation_art_button = QPushButton()
+        self.invocation_art_button.setIcon(QIcon.fromTheme(document_open_icon))
+        self.invocation_art_button.setToolTip(tr("BROWSE_BUTTON"))
         self.invocation_art_button.clicked.connect(self.select_invocation_art)
 
         self.main_layout.addWidget(self.invocation_art_label, 4, 0)
@@ -879,7 +889,9 @@ class AddInvocationDialog(QDialog):
         self.invocation_gui_label = QLabel(tr("INVOCATION_GUI_PATH"))
         self.invocation_gui_input = QLineEdit()
 
-        self.invocation_gui_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.invocation_gui_button = QPushButton()
+        self.invocation_gui_button.setIcon(QIcon.fromTheme(document_open_icon))
+        self.invocation_gui_button.setToolTip(tr("BROWSE_BUTTON"))
         self.invocation_gui_button.clicked.connect(self.select_invocation_gui)
 
         self.main_layout.addWidget(self.invocation_gui_label, 5, 0)
@@ -1790,7 +1802,9 @@ class MultipleCreateInvocationsDialog(QDialog):
         prefix_layout = QHBoxLayout()
         prefix_label = QLabel(tr("PREFIX_PATH"))
         prefix_input = QLineEdit(str(zordeer_invocation_dir / Path(path).stem.replace(" ", "_").lower()))
-        prefix_button = QPushButton(tr("BROWSE_BUTTON"))
+        prefix_button = QPushButton()
+        prefix_button.setIcon(QIcon.fromTheme(document_open_folder_icon))
+        prefix_button.setToolTip(tr("BROWSE_BUTTON"))
         prefix_layout.addWidget(prefix_label)
         prefix_layout.addWidget(prefix_input)
         prefix_layout.addWidget(prefix_button)
@@ -1847,8 +1861,7 @@ class MultipleCreateInvocationsDialog(QDialog):
         dir_path = QFileDialog.getExistingDirectory(
             self,
             tr("SELECT_PREFIX_TITLE"),
-            str(zordeer_invocation_dir)
-        )
+            str(zordeer_invocation_dir))
         if dir_path:
             line_edit.setText(dir_path)
 
@@ -2217,7 +2230,7 @@ class MultipleEditInvocationDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowTitle(tr("MULTIPLE_INVOCATION_EDITOR"))
-        self.resize(580, 480)
+        self.resize(700, 480)
 
         # Main layout
         splitter = QSplitter(Qt.Orientation.Horizontal, self)
@@ -2269,7 +2282,7 @@ class MultipleEditInvocationDialog(QDialog):
         splitter.addWidget(left_widget)
         splitter.addWidget(right_widget)
 
-        splitter.setSizes([100, 380])
+        splitter.setSizes([60, 420])
 
         main_layout = QVBoxLayout(self)
         main_layout.addWidget(splitter)
@@ -2289,7 +2302,9 @@ class MultipleEditInvocationDialog(QDialog):
         # Executable path
         self.exec_label = QLabel(tr("EXECUTABLE_PATH"))
         self.exec_input = QLineEdit(tr("DO_NOT_CHANGE"))
-        self.exec_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.exec_button = QPushButton()
+        self.exec_button.setIcon(QIcon.fromTheme(document_open_icon))
+        self.exec_button.setToolTip(tr("BROWSE_BUTTON"))
         self.exec_button.clicked.connect(self.select_executable)
         right_layout.addWidget(self.exec_label, row, 0)
         right_layout.addWidget(self.exec_input, row, 1)
@@ -2300,7 +2315,9 @@ class MultipleEditInvocationDialog(QDialog):
         self.prefix_label = QLabel(tr("PREFIX_PATH"))
         self.prefix_input = QLineEdit(tr("DO_NOT_CHANGE"))
         self.prefix_input.setPlaceholderText(tr("ANIMARIUM_PREFIX_PLACEHOLDER"))
-        self.prefix_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.prefix_button = QPushButton()
+        self.prefix_button.setIcon(QIcon.fromTheme(document_open_folder_icon))
+        self.prefix_button.setToolTip(tr("BROWSE_BUTTON"))
         self.prefix_button.clicked.connect(self.select_prefix)
         right_layout.addWidget(self.prefix_label, row, 0)
         right_layout.addWidget(self.prefix_input, row, 1)
@@ -2310,7 +2327,9 @@ class MultipleEditInvocationDialog(QDialog):
         # Art path
         self.art_label = QLabel(tr("INVOCATION_ART_PATH"))
         self.art_input = QLineEdit(tr("DO_NOT_CHANGE"))
-        self.art_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.art_button = QPushButton()
+        self.art_button.setIcon(QIcon.fromTheme(document_open_icon))
+        self.art_button.setToolTip(tr("BROWSE_BUTTON"))
         self.art_button.clicked.connect(self.select_invocation_art)
         right_layout.addWidget(self.art_label, row, 0)
         right_layout.addWidget(self.art_input, row, 1)
@@ -2320,7 +2339,9 @@ class MultipleEditInvocationDialog(QDialog):
         # Gui path
         self.gui_label = QLabel(tr("INVOCATION_GUI_PATH"))
         self.gui_input = QLineEdit(tr("DO_NOT_CHANGE"))
-        self.gui_button = QPushButton(tr("BROWSE_BUTTON"))
+        self.gui_button = QPushButton()
+        self.gui_button.setIcon(QIcon.fromTheme(document_open_icon))
+        self.gui_button.setToolTip(tr("BROWSE_BUTTON"))
         self.gui_button.clicked.connect(self.select_invocation_gui)
         right_layout.addWidget(self.gui_label, row, 0)
         right_layout.addWidget(self.gui_input, row, 1)
@@ -2396,6 +2417,7 @@ class MultipleEditInvocationDialog(QDialog):
         buttons_layout.addWidget(self.save_button)
 
         right_layout.addLayout(buttons_layout, row, 0, 1, 3)
+        right_layout.setContentsMargins(6, 6, 0, 6)
 
         # Loads invocations
         self.invocation_checkboxes = {}

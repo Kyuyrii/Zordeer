@@ -21,10 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="6.9" date="2026-05-04">
+    <release version="7.0" date="2026-05-05">
       <description>
         <ul>
-          <li>Added option to disable UMU checking for runtime updates.</li>
+          <li>Some buttons now use icons instead of text, to save space.</li>
         </ul>
       </description>
     </release>
