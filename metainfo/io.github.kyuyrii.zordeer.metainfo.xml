@@ -21,10 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="7.1" date="2026-05-05">
+    <release version="7.2" date="2026-05-06">
       <description>
         <ul>
-          <li>Correcting a problem with the shortcut manager, previously created shortcuts were being re-selected, going against the user's choice to unselect them.</li>
+          <li>Runner transfer now uses `tempfile` to use less RAM.</li>
         </ul>
       </description>
     </release>

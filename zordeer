@@ -31,7 +31,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "7.1" + __package_type__
+__version__ = "7.2" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -535,6 +535,7 @@ class TransferWorker(QThread):
         self.cancelled = True
 
     def run(self):
+        temp_file_path = None
         try:
             self.message.emit(tr("TRANSFERRING_RUNNER", name=Path(self.url).name))
             response = requests.get(self.url, stream=True, timeout=30)
@@ -543,18 +544,17 @@ class TransferWorker(QThread):
             total_size = int(response.headers.get('content-length', 0))
             bytes_transferred = 0
 
-            temp_file = io.BytesIO()
-            for chunk in response.iter_content(chunk_size=8192):
-                if self.cancelled and not self.finished_transfer:
-                    self.message.emit(tr("TRANSFER_CANCELED"))
-                    return
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.tar') as temp_file:
+                temp_file_path = temp_file.name
+                for chunk in response.iter_content(chunk_size=8192):
+                    if self.cancelled and not self.finished_transfer:
+                        self.message.emit(tr("TRANSFER_CANCELED"))
+                        return
 
-                temp_file.write(chunk)
-                bytes_transferred += len(chunk)
-                if total_size > 0:
-                    self.progress.emit(min(int(bytes_transferred / total_size * 100), 100))
-
-            temp_file.seek(0)
+                    temp_file.write(chunk)
+                    bytes_transferred += len(chunk)
+                    if total_size > 0:
+                        self.progress.emit(min(int(bytes_transferred / total_size * 100), 100))
 
             self.message.emit(tr("EXTRACTING", name=Path(self.url).name))
 
@@ -564,7 +564,7 @@ class TransferWorker(QThread):
             initial_files = set(base_dir.iterdir())
 
             # Open the tar
-            with tarfile.open(fileobj=temp_file, mode="r:*") as tf:
+            with tarfile.open(temp_file_path, mode="r:*") as tf:
                 members = list(tf.getmembers())
 
                 # Automatically detect the root folder containing the files
@@ -584,6 +584,8 @@ class TransferWorker(QThread):
                 # Python 3.14+: safer extraction
                 tf.extractall(path=base_dir, members=selected_members, filter="data")
 
+            os.unlink(temp_file_path)
+
             final_files = set(base_dir.iterdir())
             new_entries = list(final_files - initial_files)
 
@@ -602,6 +604,8 @@ class TransferWorker(QThread):
             self.finished.emit(tr("TRANSFER_AND_INSTALL_SUCCESS", name=Path(self.url).name))
 
         except Exception as e:
+            if temp_file_path and os.path.exists(temp_file_path):
+                os.unlink(temp_file_path)
             self.error.emit(tr("TRANSFER_FAILED", error=str(e)))
 
 class RunnerTransferDialog(QDialog):
