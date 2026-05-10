@@ -31,7 +31,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "7.2" + __package_type__
+__version__ = "7.3" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -174,7 +174,7 @@ def tr(key, **kwargs):
 try:
     from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QListWidget, QPushButton, QMessageBox, QToolBar, QDialog, QGridLayout,
     QLabel, QLineEdit, QHBoxLayout, QFileDialog, QComboBox, QCheckBox, QListWidgetItem, QStyleFactory, QProgressBar, QButtonGroup,
-    QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit, QProgressDialog)
+    QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit, QProgressDialog, QTabWidget)
     from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo, QEventLoop, QProcess, QProcessEnvironment
     from PyQt6.QtGui import QAction, QIcon, QPixmap, QPalette, QColor, QTextCharFormat, QTextCursor
     from PyQt6.QtNetwork import QLocalServer, QLocalSocket
@@ -1623,7 +1623,7 @@ class UMUGameSearchDialog(QDialog):
 
     def keyPressEvent(self, event):
         if event.key() in (Qt.Key.Key_Return, Qt.Key.Key_Enter):
-            self.add_selected()
+            # Prevents Enter from triggering something that is not selected
             return
         super().keyPressEvent(event)
 
@@ -3417,10 +3417,9 @@ class ShortcutManager(QDialog):
         self.invocations = self.load_invocations()
         self.shortcut_manager_info = self.load_shortcut_manager_info()
 
-        # Current view: "desktop" or "menu"
-        self.current_view = "desktop"
-        self.checkbox_states = {"desktop": {}, "menu": {}}
+        # Checkbox widgets for each tab
         self.checkbox_widgets = {"desktop": {}, "menu": {}}
+        self.scroll_layouts = {"desktop": None, "menu": None}
 
         # UI
         main_layout = QVBoxLayout(self)
@@ -3428,25 +3427,22 @@ class ShortcutManager(QDialog):
         # Search bar
         self.search_bar = QLineEdit()
         self.search_bar.setPlaceholderText(tr("SEARCH"))
-        self.search_bar.textChanged.connect(self.update_list_view)
+        self.search_bar.textChanged.connect(self.on_search_changed)
         main_layout.addWidget(self.search_bar)
 
-        # ComboBox to switch view
-        self.view_combo = QComboBox()
-        self.view_combo.addItems([tr("SHORTCUTS_OF_DESKTOP"), tr("SHORTCUTS_OF_MENU")])
-        self.view_combo.currentIndexChanged.connect(self.update_list_view)
-        main_layout.addWidget(self.view_combo)
+        # Tab widget instead of combobox
+        self.tab_widget = QTabWidget()
+        self.desktop_tab = QWidget()
+        self.menu_tab = QWidget()
 
-        # Scroll area for checkboxes
-        self.scroll_area = QScrollArea()
-        self.scroll_area.setWidgetResizable(True)
-        self.scroll_content = QWidget()
-        self.scroll_layout = QVBoxLayout(self.scroll_content)
-        self.scroll_layout.setContentsMargins(6, 6, 6, 6)
-        self.scroll_layout.setSpacing(4)
-        self.scroll_content.setLayout(self.scroll_layout)
-        self.scroll_area.setWidget(self.scroll_content)
-        main_layout.addWidget(self.scroll_area)
+        self.tab_widget.addTab(self.desktop_tab, tr("SHORTCUTS_OF_DESKTOP"))
+        self.tab_widget.addTab(self.menu_tab, tr("SHORTCUTS_OF_MENU"))
+
+        # Setup each tab's content
+        self.setup_tab(self.desktop_tab, "desktop")
+        self.setup_tab(self.menu_tab, "menu")
+
+        main_layout.addWidget(self.tab_widget)
 
         # Select / Deselect All buttons
         select_layout = QHBoxLayout()
@@ -3524,10 +3520,100 @@ class ShortcutManager(QDialog):
         buttons_layout.addWidget(self.update_shortcuts)
         main_layout.addLayout(buttons_layout)
 
-        self.update_list_view()
-        self.view_combo.setCurrentIndex(1)
-        self.update_list_view()
-        self.view_combo.setCurrentIndex(0)
+        # Build checkboxes
+        self.build_tab_checkboxes("desktop")
+        self.build_tab_checkboxes("menu")
+
+        # Initial search filter
+        self.on_search_changed("")
+
+    def setup_tab(self, tab: QWidget, view_name: str):
+        layout = QVBoxLayout(tab)
+        layout.setContentsMargins(0, 0, 0, 0)
+
+        # Scroll area for this tab
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_content = QWidget()
+        scroll_layout = QVBoxLayout(scroll_content)
+        scroll_layout.setContentsMargins(6, 6, 6, 6)
+        scroll_layout.setSpacing(4)
+        scroll_content.setLayout(scroll_layout)
+        scroll_area.setWidget(scroll_content)
+        layout.addWidget(scroll_area)
+
+        # Store scroll layout for later filtering
+        self.scroll_layouts[view_name] = scroll_layout
+
+    def build_tab_checkboxes(self, view_name: str):
+        # Clear existing widgets
+        layout = self.scroll_layouts[view_name]
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().deleteLater()
+
+        self.checkbox_widgets[view_name].clear()
+
+        # Get folder path for this view
+        if view_name == "desktop":
+            folder_path = Path(self.desktop_dir_input.text())
+        else:
+            dot_local = Path(self.dot_local_input.text())
+            folder_path = dot_local / "share" / "applications"
+
+        # Find existing .desktop files on disk
+        existing_desktops = set()
+        if folder_path.exists():
+            safe_to_display = {data["safe_invocation_name"]: name
+                               for name, data in self.invocations.items()
+                               if "safe_invocation_name" in data}
+
+            for f in folder_path.glob("invocation-*.desktop"):
+                if self.is_zordeer_desktop(f):
+                    safe_name = f.stem.replace("invocation-", "")
+                    if safe_name in safe_to_display:
+                        existing_desktops.add(safe_to_display[safe_name])
+
+        # Create checkboxes
+        for invocation in sorted(self.invocations.keys()):
+            cb = QCheckBox(invocation)
+            cb.setChecked(invocation in existing_desktops)
+            self.checkbox_widgets[view_name][invocation] = cb
+
+    def apply_search_to_tab(self, view_name: str, search_text: str):
+        layout = self.scroll_layouts[view_name]
+
+        # Clear layout
+        while layout.count():
+            item = layout.takeAt(0)
+            if item.widget():
+                item.widget().setParent(None)
+
+        # Add matching checkboxes
+        text_lower = search_text.lower()
+        for name, cb in self.checkbox_widgets[view_name].items():
+            if text_lower in name.lower():
+                layout.addWidget(cb)
+                cb.show()
+            else:
+                cb.hide()
+
+        layout.addStretch()
+
+    def on_search_changed(self, text: str):
+        self.apply_search_to_tab("desktop", text)
+        self.apply_search_to_tab("menu", text)
+
+    def select_all_checkboxes(self):
+        current_view = "desktop" if self.tab_widget.currentIndex() == 0 else "menu"
+        for cb in self.checkbox_widgets[current_view].values():
+            cb.setChecked(True)
+
+    def deselect_all_checkboxes(self):
+        current_view = "desktop" if self.tab_widget.currentIndex() == 0 else "menu"
+        for cb in self.checkbox_widgets[current_view].values():
+            cb.setChecked(False)
 
     def show_paths_info(self):
         QMessageBox.information(
@@ -3557,76 +3643,6 @@ class ShortcutManager(QDialog):
         except Exception:
             return False
 
-    # Checkbox Helpers
-    def select_all_checkboxes(self):
-        for cb in self.checkbox_widgets[self.current_view].values():
-            if cb.isVisible():
-                cb.setChecked(True)
-
-    def deselect_all_checkboxes(self):
-        for cb in self.checkbox_widgets[self.current_view].values():
-            if cb.isVisible():
-                cb.setChecked(False)
-
-    # List view update
-    def update_list_view(self):
-        # Save current states
-        for name, cb in self.checkbox_widgets[self.current_view].items():
-            self.checkbox_states[self.current_view][name] = cb.isChecked()
-
-        # Define current view
-        self.current_view = "desktop" if self.view_combo.currentIndex() == 0 else "menu"
-
-        # Get the appropriate folder path based on current view
-        if self.current_view == "desktop":
-            folder_path = Path(self.desktop_dir_input.text())
-        else:
-            # For menu view, use .local/share/applications
-            dot_local = Path(self.dot_local_input.text())
-            folder_path = dot_local / "share" / "applications"
-
-        existing_desktops = set()
-
-        if folder_path.exists():
-            safe_to_display = {data["safe_invocation_name"]: name
-                            for name, data in self.invocations.items()
-                            if "safe_invocation_name" in data}
-
-            for f in folder_path.glob("invocation-*.desktop"):
-                if self.is_zordeer_desktop(f):
-                    safe_name = f.stem.replace("invocation-", "")
-                    if safe_name in safe_to_display:
-                        existing_desktops.add(safe_to_display[safe_name])
-
-        # Clean up the old layout.
-        while self.scroll_layout.count():
-            item = self.scroll_layout.takeAt(0)
-            if item.widget():
-                item.widget().setParent(None)
-
-        # Create/recreate checkboxes for this view.
-        new_checkboxes = {}
-        for invocation in sorted(self.invocations.keys()):
-            cb = QCheckBox(invocation)
-            # Combine saved states with existing shortcuts
-            was_checked = self.checkbox_states[self.current_view].get(invocation, False)
-            exists_in_folder = invocation in existing_desktops
-            cb.setChecked(self.checkbox_states[self.current_view].get(invocation, invocation in existing_desktops))
-            new_checkboxes[invocation] = cb
-        self.checkbox_widgets[self.current_view] = new_checkboxes
-
-        # Add only widgets filtered by the search.
-        text = self.search_bar.text().lower()
-        for name, cb in self.checkbox_widgets[self.current_view].items():
-            if text in name.lower():
-                self.scroll_layout.addWidget(cb)
-                cb.show()
-            else:
-                cb.hide()
-
-        self.scroll_layout.addStretch()
-
-    # Loading and saving
     def load_invocations(self) -> dict:
         invocations = {}
         if not zordeer_config_dir.exists():
@@ -3719,7 +3735,13 @@ class ShortcutManager(QDialog):
         new_folder = Path(folder)
         line_edit.setText(str(new_folder))
 
-        self.update_list_view()
+        # Rebuild only the corresponding tab
+        if line_edit == self.desktop_dir_input:
+            self.build_tab_checkboxes("desktop")
+        elif line_edit == self.dot_local_input:
+            self.build_tab_checkboxes("menu")
+
+        self.on_search_changed(self.search_bar.text())
 
     def remove_all_zordeer_desktops(self, folder: Path):
         if not folder.exists():
@@ -3865,7 +3887,11 @@ class ShortcutManager(QDialog):
         os.system(f'chmod +x "{desktop_dir}/"invocation-*.desktop 2>/dev/null')
         os.system(f'chmod +x "{applications_dir}/"invocation-*.desktop 2>/dev/null')
 
-        self.update_list_view()
+        # Rebuild checkboxes to reflect new state on disk
+        self.build_tab_checkboxes("desktop")
+        self.build_tab_checkboxes("menu")
+        self.on_search_changed(self.search_bar.text())
+
         self.accept()
 
     def create_desktop_file(self, name: str, checked: bool, folder: Path):

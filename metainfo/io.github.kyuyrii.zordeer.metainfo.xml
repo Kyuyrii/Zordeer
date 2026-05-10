@@ -21,10 +21,10 @@
     </p>
   </description>
   <releases>
-    <release version="7.2" date="2026-05-06">
+    <release version="7.3" date="2026-05-10">
       <description>
         <ul>
-          <li>Runner transfer now uses `tempfile` to use less RAM.</li>
+          <li>The shortcut manager now uses tabs instead of combo boxes, in an attempt to ensure that the user's choices are respected.</li>
         </ul>
       </description>
     </release>
