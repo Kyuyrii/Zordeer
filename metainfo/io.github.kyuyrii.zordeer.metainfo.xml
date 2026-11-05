@@ -4,9 +4,16 @@
   <url type="homepage">https://github.com/Kyuyrii/Zordeer</url>
   <url type="bugtracker">https://github.com/Kyuyrii/Zordeer/issues</url>
   <url type="vcs-browser">https://github.com/Kyuyrii/Zordeer</url>
-  <developer_name>Kyuyrii</developer_name>
+  <developer id="io.github.kyuyrii">
+    <name>Kyuyrii</name>
+  </developer>
   <name>Zordeer</name>
   <summary>A simple Qt game launcher</summary>
+
+  <recommends>
+    <control>keyboard</control>
+    <control>pointing</control>
+  </recommends>
 
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
@@ -17,14 +24,18 @@
   </categories>
   <description>
     <p>
-      A Qt launcher for running games via Wine/Proton/UMU
+      A Qt launcher for games that run via Wine/Proton/UMU. Designed to work both inside and outside the Snapd and Flatpak sandboxes.
     </p>
   </description>
   <releases>
-    <release version="7.3" date="2026-05-10">
+    <release version="8.0" date="2026-11-05">
       <description>
         <ul>
           <li>The shortcut manager now uses tabs instead of combo boxes, in an attempt to ensure that the user's choices are respected.</li>
+          <li>Replaced python-dbus with QtDBus</li>
+          <li>Proton-Sarek was removed; DXVK-Sarek is now available in Proton-CachyOS</li>
+          <li>Proton-EM was removed</li>
+          <li>Terminal messages are now all in English and start with [Zordeer]:</li>
         </ul>
       </description>
     </release>
@@ -36,8 +47,13 @@
   </branding>
   <screenshots>
     <screenshot type="default">
-      <image>https://raw.githubusercontent.com/Kyuyrii/Zordeer/2f4c7b3cd2958e00c584e7aff1f1696379194064/metainfo/zordeer_qt_style_breeze_icon_breeze.png</image>
-      <caption>Zordeer using the Qt style Breeze and Breeze icon theme</caption>
+      <image width="1684" height="1030">https://raw.githubusercontent.com/Kyuyrii/Zordeer/5c8e56b14ebeefc11ee095783fcd56460fbbe880/metainfo/zordeer_kde_neon.png</image>
+      <caption>Zordeer on KDE Neon</caption>
+    </screenshot>
+
+    <screenshot>
+      <image width="1568" height="900">https://raw.githubusercontent.com/Kyuyrii/Zordeer/5c8e56b14ebeefc11ee095783fcd56460fbbe880/metainfo/zordeer_lubuntu.png</image>
+      <caption>Zordeer on Lubuntu</caption>
     </screenshot>
   </screenshots>
 

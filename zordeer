@@ -16,7 +16,6 @@ import re
 import shlex
 import random
 import csv
-import dbus
 import tempfile
 from pathlib import Path
 from functools import partial
@@ -31,7 +30,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "7.3" + __package_type__
+__version__ = "8.0" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -138,10 +137,10 @@ def load_translations():
                     lang_name = lang_data.get("language_name", lang_code)
                     toml_languages[lang_name] = lang_code
 
-                    print(f"Loaded translation: {lang_name} ({lang_code})")
+                    print(f"[Zordeer]: Loaded translation: {lang_name} ({lang_code})")
 
                 except Exception as e:
-                    print(f"Error loading translation {toml_file}: {e}")
+                    print(f"[Zordeer]: Error loading translation {toml_file}: {e}")
 
     return toml_translations, toml_languages
 
@@ -175,12 +174,13 @@ try:
     from PyQt6.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QListWidget, QPushButton, QMessageBox, QToolBar, QDialog, QGridLayout,
     QLabel, QLineEdit, QHBoxLayout, QFileDialog, QComboBox, QCheckBox, QListWidgetItem, QStyleFactory, QProgressBar, QButtonGroup,
     QSplitter, QScrollArea, QRadioButton, QAbstractItemView, QTreeWidget, QTreeWidgetItem, QSystemTrayIcon, QMenu, QListView, QSpinBox, QTextEdit, QProgressDialog, QTabWidget)
-    from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo, QEventLoop, QProcess, QProcessEnvironment
+    from PyQt6.QtCore import Qt, QThread, pyqtSignal, QSize, QTimer, QEvent, QTranslator, QLibraryInfo, QEventLoop, QProcess, QProcessEnvironment, QVariant
     from PyQt6.QtGui import QAction, QIcon, QPixmap, QPalette, QColor, QTextCharFormat, QTextCursor
     from PyQt6.QtNetwork import QLocalServer, QLocalSocket
-    print("PyQt6 found")
+    from PyQt6.QtDBus import QDBusConnection, QDBusInterface, QDBusArgument, QDBusMessage, QDBusUnixFileDescriptor
+    print("[Zordeer]: PyQt6 found")
 except ImportError:
-    print("PyQt6 not found")
+    print("[Zordeer]: PyQt6 not found")
     sys.exit(1)
 
 INVOCATION_LOCALE_OPTIONS = [
@@ -620,7 +620,7 @@ class RunnerTransferDialog(QDialog):
         # Runner selection layout
         selection_layout = QHBoxLayout()
         self.runner_combo = QComboBox()
-        self.runner_combo.addItems(["GE-Proton", "Proton-Sarek", "Proton-EM", "Proton-CachyOS", "UMU-launcher", "UMU-Proton", "DW-Proton", "Kron4ek"])
+        self.runner_combo.addItems(["GE-Proton", "Proton-CachyOS", "UMU-launcher", "UMU-Proton", "DW-Proton", "Kron4ek"])
         selection_layout.addWidget(self.runner_combo)
         main_layout.addLayout(selection_layout)
 
@@ -671,8 +671,6 @@ class RunnerTransferDialog(QDialog):
         # Map of runner URLs
         self.runner_urls = {
             "GE-Proton": "https://api.github.com/repos/GloriousEggroll/proton-ge-custom/releases",
-            "Proton-Sarek": "https://api.github.com/repos/pythonlover02/Proton-Sarek/releases",
-            "Proton-EM": "https://api.github.com/repos/Etaash-mathamsetty/Proton/releases",
             "Proton-CachyOS": "https://api.github.com/repos/CachyOS/proton-cachyos/releases",
             "UMU-launcher": "https://api.github.com/repos/Open-Wine-Components/umu-launcher/releases",
             "UMU-Proton": "https://api.github.com/repos/Open-Wine-Components/umu-proton/releases",
@@ -684,8 +682,6 @@ class RunnerTransferDialog(QDialog):
         selected_runner = self.runner_combo.currentText()
         urls = {
             "GE-Proton": "https://github.com/GloriousEggroll/proton-ge-custom",
-            "Proton-Sarek": "https://github.com/pythonlover02/Proton-Sarek",
-            "Proton-EM": "https://github.com/Etaash-mathamsetty/Proton",
             "Proton-CachyOS": "https://github.com/CachyOS/proton-cachyos",
             "UMU-launcher": "https://github.com/Open-Wine-Components/umu-launcher",
             "UMU-Proton": "https://github.com/Open-Wine-Components/umu-proton",
@@ -816,7 +812,7 @@ class RunnerTransferDialog(QDialog):
             self.setEnabled(True)
 
         def print_message(msg):
-            print(msg)
+            print(f"[Zordeer]: {msg}")
 
         self.worker = TransferWorker(url, runner_folder_name, base_dir)
         self.worker.progress.connect(self.progress_bar.setValue)
@@ -1359,7 +1355,7 @@ class AddInvocationDialog(QDialog):
                 with open(invocation_file_path, 'w', encoding="utf-8") as tf:
                     tomlkit.dump(invocation_data, tf)
             except Exception as e:
-                print(e)
+                print(f"[Zordeer]: {e}")
                 QMessageBox.critical(
                     self,
                     tr("APP_NAME"),
@@ -3102,8 +3098,8 @@ class RunInPrefix(QDialog):
             if fname.name.endswith("_ztffrip.toml"):
                 try:
                     fname.unlink()
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[Zordeer]: Failed to remove temporary file {fname}: {e}")
 
         # Main layout
         layout = QVBoxLayout(self)
@@ -3274,10 +3270,10 @@ class RunInPrefix(QDialog):
                 temp_path = Path(self.temp_toml_path)
                 if temp_path.exists():
                     temp_path.unlink()
-                    print(tr("DEBUG_TEMP_FILE_REMOVED", path=str(temp_path)))
-            except Exception:
-                pass
-            print(tr("RUN_IN_PREFIX_DONE"))
+                    print(f"[Zordeer]: Temporary file removed: {temp_path}")
+            except Exception as e:
+                print(f"[Zordeer]: Failed to remove temporary file: {e}")
+            print(f"[Zordeer]: Run in prefix completed.")
             self.set_execution_locked(False)
             return
 
@@ -3334,12 +3330,7 @@ class RunInPrefix(QDialog):
             QMessageBox.critical(self, tr("APP_NAME"), tr("FAILED_UPDATE_TOML", error=e))
             return
 
-        print(tr(
-            "RUNNING_IN_PREFIX",
-            name=self.invocation_name,
-            exe=exe_path,
-            silent=self.radio_automatic.isChecked()
-        ))
+        print(f"[Zordeer]: Running in prefix ({self.invocation_name}): {exe_path}  silent={self.radio_automatic.isChecked()}")
 
         # Run the temporary "invocation" (start_invocation resolves the path by safe name)
         self.parent().start_invocation(temp_safe_name)
@@ -3362,7 +3353,7 @@ class RunInPrefix(QDialog):
 
         # Clean run and normal run
         if not self._has_printed_waiting_message:
-            print(tr("RUN_IN_PREFIX_WAITING"))
+            print(f"[Zordeer]: Waiting for the user to stop the current execution")
             self._has_printed_waiting_message = True
 
         started_prefix = tr("INVOCATION_STARTED", invocation_name="").split("{invocation_name}")[0].strip()
@@ -3378,8 +3369,8 @@ class RunInPrefix(QDialog):
             temp_path = Path(self.temp_toml_path)
             if temp_path.exists():
                 temp_path.unlink()
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[Zordeer]: Failed to remove temporary file: {e}")
 
     def set_execution_locked(self, locked: bool):
         self.run_btn.setEnabled(not locked)
@@ -3402,9 +3393,9 @@ class RunInPrefix(QDialog):
             temp_path = Path(self.temp_toml_path)
             if temp_path.exists():
                 temp_path.unlink()
-                print(tr("DEBUG_TEMP_FILE_REMOVED", path=str(temp_path)))
-        except Exception:
-            pass
+                print(f"[Zordeer]: Temporary file removed: {temp_path}")
+        except Exception as e:
+            print(f"[Zordeer]: Failed to remove temporary file: {e}")
         event.accept()
 
 class ShortcutManager(QDialog):
@@ -3752,7 +3743,7 @@ class ShortcutManager(QDialog):
                 if self.is_zordeer_desktop(f):
                     f.unlink()
             except Exception as e:
-                print(tr("ERROR_REMOVING_FILE", file=f, error=e))
+                print(f"[Zordeer]: Error removing {f}: {e}")
 
     def update_and_apply(self):
         desktop_dir = Path(self.desktop_dir_input.text().strip())
@@ -3815,7 +3806,7 @@ class ShortcutManager(QDialog):
                 try:
                     old_menu_file.unlink()
                 except Exception as e:
-                    print(tr("ERROR_REMOVING_FILE", file=str(old_menu_file), error=e))
+                    print(f"[Zordeer]: Error removing {old_menu_file}: {e}")
 
             # Remove directory file from .local
             old_directory_file = old_dot_local_dir / "share" / "desktop-directories" / "Zordeer.directory"
@@ -3823,7 +3814,7 @@ class ShortcutManager(QDialog):
                 try:
                     old_directory_file.unlink()
                 except Exception as e:
-                    print(tr("ERROR_REMOVING_FILE", file=str(old_directory_file), error=e))
+                    print(f"[Zordeer]: Error removing {old_directory_file}: {e}")
 
         self.save_shortcut_manager_info()
 
@@ -3848,7 +3839,7 @@ class ShortcutManager(QDialog):
                 ])
                 menu_file_path.write_text(menu_content, encoding="utf-8")
             except Exception as e:
-                print(tr("ERROR_CREATING_FILE", file="Zordeer.menu", error=e))
+                print(f"[Zordeer]: Error creating Zordeer.menu: {e}")
 
             try:
                 # Create .directory file in the configured .local directory
@@ -3867,7 +3858,7 @@ class ShortcutManager(QDialog):
                 ])
                 directory_file_path.write_text(directory_content, encoding="utf-8")
             except Exception as e:
-                print(tr("ERROR_CREATING_FILE", file="Zordeer.directory", error=e))
+                print(f"[Zordeer]: Error creating Zordeer.directory: {e}")
 
         # Remove existing .desktop files from new locations
         self.remove_all_zordeer_desktops(desktop_dir)
@@ -3939,7 +3930,7 @@ class ShortcutManager(QDialog):
             with open(desktop_file, "w", encoding="utf-8") as f:
                 f.write("\n".join(content_lines) + "\n")
         except Exception as e:
-            print(tr("ERROR_CREATING_FILE", file=desktop_file, error=e))
+            print(f"[Zordeer]: Error creating {desktop_file}: {e}")
 
 class Zordeer(QMainWindow):
     def __init__(self):
@@ -4318,12 +4309,18 @@ class Zordeer(QMainWindow):
 
     def stop_invocation(self):
         if self.inhibit_cookie is not None:
-            try:
-                bus = dbus.SessionBus()
-                request = bus.get_object("org.freedesktop.portal.Desktop", str(self.inhibit_cookie))
-                dbus.Interface(request, "org.freedesktop.portal.Request").Close()
-            except:
-                pass
+            cookie_str = str(self.inhibit_cookie)
+            if cookie_str.startswith("/") and cookie_str != "None":
+                try:
+                    bus = QDBusConnection.sessionBus()
+                    request = QDBusInterface("org.freedesktop.portal.Desktop",
+                                            cookie_str,
+                                            "org.freedesktop.portal.Request", bus)
+                    request.call("Close")
+                except Exception as e:
+                    print(f"[Zordeer]: Failed to close inhibit request: {e}")
+            else:
+                print(f"[Zordeer]: Invalid inhibit cookie (not a valid object path): {cookie_str}")
             self.inhibit_cookie = None
         self.setWindowTitle(tr("APP_NAME"))
 
@@ -4358,14 +4355,14 @@ class Zordeer(QMainWindow):
                         should_kill = True
 
                 if should_kill:
-                    print(tr("STOP_KILL_PROCESS", pid=proc.pid, exe=proc.info['name']))
+                    print(f"[Zordeer]: Killing process {proc.pid} ({proc.info['name']})")
                     try:
                         proc.kill()
-                        print(tr("STOP_PROCESS_SUCCESS", pid=proc.pid))
+                        print(f"[Zordeer]: Process {proc.pid} terminated successfully.")
                     except Exception as e:
-                        print(tr("STOP_KILL_ERROR", pid=proc.pid, error=str(e)))
+                        print(f"[Zordeer]: Error killing process {proc.pid}: {e}")
             except (psutil.NoSuchProcess, psutil.AccessDenied) as e:
-                print(tr("STOP_ACCESS_ERROR", error=str(e)))
+                print(f"[Zordeer]: Error accessing process: {e}")
                 continue
 
         # Clear internal references
@@ -4384,12 +4381,18 @@ class Zordeer(QMainWindow):
                 if loop_device:
                     if os.environ.get("SNAP") or os.environ.get("container") == "flatpak":
                         try:
-                            bus = dbus.SystemBus()
+                            bus = QDBusConnection.systemBus()
 
                             # Find the loop device object by its device node
-                            udisks_obj = bus.get_object("org.freedesktop.UDisks2", "/org/freedesktop/UDisks2")
-                            obj_manager = dbus.Interface(udisks_obj, "org.freedesktop.DBus.ObjectManager")
-                            objects = obj_manager.GetManagedObjects()
+                            udisks_obj = QDBusInterface("org.freedesktop.UDisks2",
+                                                        "/org/freedesktop/UDisks2",
+                                                        "org.freedesktop.DBus.ObjectManager", bus)
+                            objects_reply = udisks_obj.call("GetManagedObjects")
+
+                            if objects_reply.type() == QDBusMessage.MessageType.ErrorMessage:
+                                raise RuntimeError(objects_reply.error().message())
+
+                            objects = objects_reply.arguments()[0]
 
                             loop_object_path = None
                             for path, interfaces in objects.items():
@@ -4402,46 +4405,55 @@ class Zordeer(QMainWindow):
                                             break
 
                             if loop_object_path:
-                                loop_obj = bus.get_object("org.freedesktop.UDisks2", loop_object_path)
-
                                 # Unmount
                                 try:
-                                    filesystem = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Filesystem")
-                                    filesystem.Unmount(dbus.Dictionary({}, signature='sv'))
-                                    print(tr("ISO_UNMOUNTED", device=loop_device))
+                                    filesystem = QDBusInterface("org.freedesktop.UDisks2",
+                                                                str(loop_object_path),
+                                                                "org.freedesktop.UDisks2.Filesystem", bus)
+                                    unmount_reply = filesystem.call("Unmount", {})
+
+                                    if unmount_reply.type() == QDBusMessage.MessageType.ErrorMessage:
+                                        raise RuntimeError(unmount_reply.error().message())
+
+                                    print(f"[Zordeer]: ISO unmounted and loop device released: {loop_device}")
                                 except Exception as e:
-                                    print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error=str(e)))
+                                    print(f"[Zordeer]: Failed to unmount ISO on device {loop_device}:<br>{e}")
 
                                 # Delete loop device
                                 try:
-                                    loop_iface = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Loop")
-                                    loop_iface.Delete(dbus.Dictionary({}, signature='sv'))
+                                    loop_iface = QDBusInterface("org.freedesktop.UDisks2",
+                                                                str(loop_object_path),
+                                                                "org.freedesktop.UDisks2.Loop", bus)
+                                    delete_reply = loop_iface.call("Delete", {})
+
+                                    if delete_reply.type() == QDBusMessage.MessageType.ErrorMessage:
+                                        raise RuntimeError(delete_reply.error().message())
                                 except Exception as e:
-                                    print(tr("ISO_LOOP_DELETE_FAILED", device=loop_device, error=str(e)))
+                                    print(f"[Zordeer]: Failed to delete loop device {loop_device}:<br>{e}")
                             else:
-                                print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error="Loop device not found"))
+                                print(f"[Zordeer]: Failed to unmount ISO on device {loop_device}:<br>Loop device not found")
 
                         except Exception as e:
-                            print(tr("ISO_UNMOUNT_EXCEPTION", error=str(e)))
+                            print(f"[Zordeer]: Unexpected error while unmounting ISO:<br>{e}")
                     else:
                         # Unmount
                         result_unmount = subprocess.run(
                             ["udisksctl", "unmount", "-b", loop_device, "--force"],
                             capture_output=True, text=True)
                         if result_unmount.returncode != 0:
-                            print(tr("ISO_UNMOUNT_FAILED", device=loop_device, error=result_unmount.stderr.strip()))
+                            print(f"[Zordeer]: Failed to unmount ISO on device {loop_device}:<br>{result_unmount.stderr.strip()}")
 
                         # Delete loop device
                         result_delete = subprocess.run(
                             ["udisksctl", "loop-delete", "-b", loop_device],
                             capture_output=True, text=True)
                         if result_delete.returncode != 0:
-                            print(tr("ISO_LOOP_DELETE_FAILED", device=loop_device, error=result_delete.stderr.strip()))
+                            print(f"[Zordeer]: Failed to delete loop device {loop_device}:<br>{result_delete.stderr.strip()}")
                         else:
-                            print(tr("ISO_UNMOUNTED", device=loop_device))
+                            print(f"[Zordeer]: ISO unmounted and loop device released: {loop_device}")
 
             except Exception as e:
-                print(tr("ISO_UNMOUNT_EXCEPTION", error=str(e)))
+                print(f"[Zordeer]: Unexpected error while unmounting ISO:<br>{e}")
 
             finally:
                 # Remove info file no matter what
@@ -4493,7 +4505,7 @@ class Zordeer(QMainWindow):
                     restored_selection_item = item
 
             except (IOError, tomlkit.exceptions.ParseError) as e:
-                print(tr("ERROR_LOADING_FILE", file=invocation_file, error=e))
+                print(f"[Zordeer]: Error loading file {invocation_file}: {e}")
 
         # Restores the selection
         if restored_selection_item:
@@ -4593,7 +4605,7 @@ class Zordeer(QMainWindow):
             invocation_name = str(item_or_name)
 
         self.last_invocation_name = invocation_name
-        print(tr("STARTING_INVOCATION", name=invocation_name))
+        print(f"[Zordeer]: Starting invocation: {invocation_name}")
 
         safe_invocation_name = invocation_name.replace(" ", "_").lower()
         invocation_file_path = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
@@ -4601,7 +4613,7 @@ class Zordeer(QMainWindow):
         try:
             with invocation_file_path.open('r', encoding='utf-8') as f:
                 invocation_data = tomlkit.load(f)
-            print(tr("INVOCATION_INFO_LOADED", name=invocation_name))
+            print(f"[Zordeer]: Invocation info loaded successfully for: {invocation_name}")
 
             exec_path_full = Path(invocation_data['exec_path'])
             prefix_path = Path(invocation_data['prefix_path'])
@@ -4712,32 +4724,49 @@ class Zordeer(QMainWindow):
                     if dev.startswith("/dev/loop") and iso_path.as_posix() in subprocess.getoutput(f"losetup {dev}"):
                         mount_point = Path(mnt)
                         loop_device = dev
-                        print(tr("ISO_ALREADY_MOUNTED", mount=str(mount_point)))
+                        print(f"[Zordeer]: ISO is already mounted at {mount_point}")
                         break
 
                 # If not mounted, create loop device and mount it
                 if not mount_point:
                     if os.environ.get("SNAP") or os.environ.get("container") == "flatpak":
                         try:
-                            bus = dbus.SystemBus()
+                            bus = QDBusConnection.systemBus()
 
-                            manager_obj = bus.get_object("org.freedesktop.UDisks2", "/org/freedesktop/UDisks2/Manager")
-                            manager = dbus.Interface(manager_obj, "org.freedesktop.UDisks2.Manager")
+                            manager = QDBusInterface("org.freedesktop.UDisks2",
+                                                    "/org/freedesktop/UDisks2/Manager",
+                                                    "org.freedesktop.UDisks2.Manager", bus)
 
                             fd = os.open(str(iso_path), os.O_RDONLY)
                             try:
-                                options = dbus.Dictionary({}, signature='sv')
-                                loop_object_path = manager.LoopSetup(fd, options)
+                                fd_arg = QDBusUnixFileDescriptor(fd)
+                                loop_reply = manager.call("LoopSetup", fd_arg, {})
 
-                                loop_obj = bus.get_object("org.freedesktop.UDisks2", loop_object_path)
+                                if loop_reply.type() == QDBusMessage.MessageType.ErrorMessage:
+                                    raise RuntimeError(loop_reply.error().message())
 
-                                block_props = dbus.Interface(loop_obj, "org.freedesktop.DBus.Properties")
-                                device_node = block_props.Get("org.freedesktop.UDisks2.Block", "Device")
+                                loop_object_path = loop_reply.arguments()[0]
+
+                                block_props = QDBusInterface("org.freedesktop.UDisks2",
+                                                            str(loop_object_path),
+                                                            "org.freedesktop.DBus.Properties", bus)
+                                device_reply = block_props.call("Get", "org.freedesktop.UDisks2.Block", "Device")
+
+                                if device_reply.type() == QDBusMessage.MessageType.ErrorMessage:
+                                    raise RuntimeError(device_reply.error().message())
+
+                                device_node = device_reply.arguments()[0]
                                 loop_device = str(device_node).rstrip('\x00')
 
-                                filesystem = dbus.Interface(loop_obj, "org.freedesktop.UDisks2.Filesystem")
-                                mount_result = filesystem.Mount(dbus.Dictionary({}, signature='sv'))
-                                mount_point = Path(str(mount_result))
+                                filesystem = QDBusInterface("org.freedesktop.UDisks2",
+                                                            str(loop_object_path),
+                                                            "org.freedesktop.UDisks2.Filesystem", bus)
+                                mount_reply = filesystem.call("Mount", {})
+
+                                if mount_reply.type() == QDBusMessage.MessageType.ErrorMessage:
+                                    raise RuntimeError(mount_reply.error().message())
+
+                                mount_point = Path(str(mount_reply.arguments()[0]))
 
                             finally:
                                 os.close(fd)
@@ -4789,7 +4818,7 @@ class Zordeer(QMainWindow):
                     return
 
                 exec_path_full = exe_files[0]
-                print(tr("ISO_MOUNTED_EXE_FOUND", iso=str(iso_path), exe=str(exec_path_full)))
+                print(f"[Zordeer]: Executable found in ISO {iso_path}: {exec_path_full}")
 
                 # Save mounted ISO info
                 mounted_iso_info = zordeer_config_dir / "mounted_iso_info.toml"
@@ -4839,7 +4868,7 @@ class Zordeer(QMainWindow):
                         pfx_symlink.unlink()
                     if not pfx_symlink.is_dir():
                         pfx_symlink.symlink_to(".")
-                        print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink)))
+                        print(f"[Zordeer]: Symlink created: {pfx_symlink}")
 
                         users_path = prefix_path / "drive_c" / "users"
                         users_path.mkdir(parents=True, exist_ok=True)
@@ -4855,7 +4884,7 @@ class Zordeer(QMainWindow):
                             wineuser.symlink_to("steamuser")
 
                 except Exception as e:
-                    print(tr("SYMLINK_ERROR", error=e))
+                    print(f"[Zordeer]: Error creating symlink for Proton: {e}")
 
             # Create folders to prevent Wine from creating symlinks
             target_user = prefix_path / "drive_c" / "users" / "steamuser"
@@ -4876,7 +4905,7 @@ class Zordeer(QMainWindow):
                     env_prefix.append(f"LANG={locale_code}")
                     env_prefix.append(f"LANGUAGE={locale_code}")
                 except Exception as e:
-                    print(tr("LANGUAGE_SET_ERROR", error=e))
+                    print(f"[Zordeer]: Failed to set LC_ALL: {e}")
 
             # FPS HUD
             show_fps = invocation_data.get('show_fps', False)
@@ -4933,7 +4962,7 @@ class Zordeer(QMainWindow):
                 command_without_env = command
 
             debug_command = " ".join(debug_vars + command_without_env)
-            print(tr("RUNNING_COMMAND", command=debug_command))
+            print(f"[Zordeer]: Running command: {debug_command}")
 
             # Define working directory
             if "proton" in runner_name.lower() and re.search(r'/run/user/[^/]+/doc/', str(exec_path_full)):
@@ -4955,11 +4984,29 @@ class Zordeer(QMainWindow):
             self.invocation_process.start(command[0], command[1:])
 
             try:
-                bus = dbus.SessionBus()
-                portal = bus.get_object("org.freedesktop.portal.Desktop", "/org/freedesktop/portal/desktop")
-                iface = dbus.Interface(portal, "org.freedesktop.portal.Inhibit")
-                self.inhibit_cookie = iface.Inhibit("", 8, {"reason": invocation_name})
-            except:
+                bus = QDBusConnection.sessionBus()
+
+                message = QDBusMessage.createMethodCall(
+                    "org.freedesktop.portal.Desktop",
+                    "/org/freedesktop/portal/desktop",
+                    "org.freedesktop.portal.Inhibit",
+                    "Inhibit"
+                )
+
+                message.setArguments([
+                    "",
+                    QDBusArgument(8, 3),
+                    {"reason": QVariant(invocation_name)}
+                ])
+
+                reply = bus.call(message)
+
+                if reply.type() == QDBusMessage.MessageType.ErrorMessage:
+                    raise RuntimeError(reply.error().message())
+
+                self.inhibit_cookie = reply.arguments()[0]
+            except Exception as e:
+                print(f"[Zordeer]: Failed to inhibit idle via portal: {e}")
                 self.inhibit_cookie = None
             self.last_wineprefix = env.get("WINEPREFIX")
             self.last_executable = str(exec_path_full)
@@ -4972,17 +5019,18 @@ class Zordeer(QMainWindow):
 
             # Capture real process
             try:
-                if self.invocation_process.state() == QProcess.ProcessState.Running:
+                if self.invocation_process is not None and self.invocation_process.state() == QProcess.ProcessState.Running:
                     parent = psutil.Process(self.invocation_process.processId())
                     children = parent.children(recursive=True)
                     if children:
                         self.real_invocation_process = children[-1]
-                        print(tr("DEBUG_REAL_INVOCATION_INITIATED", pid=self.real_invocation_process.pid))
+                        print(f"[Zordeer]: Invocation initiated as PID {self.real_invocation_process.pid}")
                     else:
                         self.real_invocation_process = None
                 else:
                     self.real_invocation_process = None
-            except psutil.NoSuchProcess:
+            except psutil.NoSuchProcess as e:
+                print(f"[Zordeer]: Process not found while capturing real invocation process: {e}")
                 self.real_invocation_process = None
 
         except Exception as e:
@@ -5184,7 +5232,7 @@ class Zordeer(QMainWindow):
                         loop.quit()
 
                     def on_hero_error(error_msg):
-                        print(error_msg)
+                        print(f"[Zordeer]: Error downloading hero art: {error_msg}")
                         loop.quit()
 
                     hero_loader.finished.connect(on_hero_finished)
@@ -5233,7 +5281,7 @@ class Zordeer(QMainWindow):
                         loop.quit()
 
                     def on_icon_error(error_msg):
-                        print(error_msg)
+                        print(f"[Zordeer]: Error downloading icon: {error_msg}")
                         loop.quit()
 
                     icon_loader.finished.connect(on_icon_finished)
@@ -5272,7 +5320,7 @@ class Zordeer(QMainWindow):
                 downloads.append((invocation_name, toml_file, hero_cache_path, icon_cache_path))
 
             except Exception as e:
-                print(tr("AUTO_TRANSFER_GENERAL_ERROR", invocation_name=invocation_name, error=str(e)))
+                print(f"[Zordeer]: General error in {invocation_name}: {e}")
             finally:
                 completed += 1
                 progress_dialog.setValue(completed)
@@ -5349,9 +5397,9 @@ class Zordeer(QMainWindow):
                         file.unlink()
                         removed += 1
                     except Exception as e:
-                        print(tr("ERROR_REMOVING_FILE", file=file.name, error=e))
+                        print(f"[Zordeer]: Error removing {file.name}: {e}")
         if removed > 0:
-            print(tr("TEMP_FILES_REMOVED", count=removed))
+            print(f"[Zordeer]: Temporary files removed: {removed}")
 
     def open_path(self, chosen_path):
         if chosen_path == "zordeer_dir":
@@ -5421,7 +5469,7 @@ class Zordeer(QMainWindow):
                 pfx_symlink.unlink()
             if not pfx_symlink.is_dir():
                 pfx_symlink.symlink_to(".")
-                print(tr("SYMLINK_CREATED", symlink=str(pfx_symlink)))
+                print(f"[Zordeer]: Symlink created: {pfx_symlink}")
 
                 users_path = prefix_path / "drive_c" / "users"
                 users_path.mkdir(parents=True, exist_ok=True)
