@@ -13,6 +13,7 @@
   <recommends>
     <control>keyboard</control>
     <control>pointing</control>
+    <display_length compare="ge">768</display_length>
   </recommends>
 
   <metadata_license>CC0-1.0</metadata_license>
@@ -28,14 +29,10 @@
     </p>
   </description>
   <releases>
-    <release version="8.0" date="2026-11-05">
+    <release version="8.1" date="2026-11-07">
       <description>
         <ul>
-          <li>The shortcut manager now uses tabs instead of combo boxes, in an attempt to ensure that the user's choices are respected.</li>
-          <li>Replaced python-dbus with QtDBus</li>
-          <li>Proton-Sarek was removed; DXVK-Sarek is now available in Proton-CachyOS</li>
-          <li>Proton-EM was removed</li>
-          <li>Terminal messages are now all in English and start with [Zordeer]:</li>
+          <li>Just an icon change.</li>
         </ul>
       </description>
     </release>

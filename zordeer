@@ -30,7 +30,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "8.0" + __package_type__
+__version__ = "8.1" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -89,7 +89,7 @@ else:
     document_open_icon = "document-open"
     edit_invocation_icon = "document-edit-symbolic"
     help_about_icon = "help-about-symbolic"
-    search_icon = "edit-find-symbolic"
+    search_icon = "search-symbolic"
     start_invocation_icon = "media-playback-start-symbolic"
     start_random_invocation_icon = "media-playlist-shuffle-symbolic"
     stop_invocation_icon = "media-playback-stop-symbolic"
