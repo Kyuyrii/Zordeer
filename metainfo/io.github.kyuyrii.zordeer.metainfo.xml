@@ -4,6 +4,7 @@
   <url type="homepage">https://github.com/Kyuyrii/Zordeer</url>
   <url type="bugtracker">https://github.com/Kyuyrii/Zordeer/issues</url>
   <url type="vcs-browser">https://github.com/Kyuyrii/Zordeer</url>
+  <url type="contact">https://github.com/Kyuyrii/Zordeer/issues</url>
   <developer id="io.github.kyuyrii">
     <name>Kyuyrii</name>
   </developer>
@@ -29,10 +30,10 @@
     </p>
   </description>
   <releases>
-    <release version="8.1" date="2026-11-07">
+    <release version="8.2" date="2026-11-11">
       <description>
         <ul>
-          <li>Just an icon change.</li>
+          <li>Removed the use of /tmp to reduce RAM usage, tested on Kubuntu 26.04.</li>
         </ul>
       </description>
     </release>
