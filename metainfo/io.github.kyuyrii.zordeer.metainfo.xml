@@ -30,10 +30,10 @@
     </p>
   </description>
   <releases>
-    <release version="8.2" date="2026-11-11">
+    <release version="8.3" date="2026-11-13">
       <description>
         <ul>
-          <li>Removed the use of /tmp to reduce RAM usage, tested on Kubuntu 26.04.</li>
+          <li>Removing translations from more terminal messages</li>
         </ul>
       </description>
     </release>

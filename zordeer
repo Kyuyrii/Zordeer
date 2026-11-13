@@ -30,7 +30,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "8.2" + __package_type__
+__version__ = "8.3" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -537,7 +537,7 @@ class TransferWorker(QThread):
     def run(self):
         temp_file_path = None
         try:
-            self.message.emit(tr("TRANSFERRING_RUNNER", name=Path(self.url).name))
+            self.message.emit(f"[Zordeer]: Transferring: {Path(self.url).name}")
             response = requests.get(self.url, stream=True, timeout=30)
             response.raise_for_status()
 
@@ -551,7 +551,7 @@ class TransferWorker(QThread):
                 temp_file_path = temp_file.name
                 for chunk in response.iter_content(chunk_size=8192):
                     if self.cancelled and not self.finished_transfer:
-                        self.message.emit(tr("TRANSFER_CANCELED"))
+                        self.message.emit(f"[Zordeer]: Transfer canceled")
                         return
 
                     temp_file.write(chunk)
@@ -559,7 +559,7 @@ class TransferWorker(QThread):
                     if total_size > 0:
                         self.progress.emit(min(int(bytes_transferred / total_size * 100), 100))
 
-            self.message.emit(tr("EXTRACTING", name=Path(self.url).name))
+            self.message.emit(f"[Zordeer]: Extracting: {Path(self.url).name}")
 
             base_dir = self.runners_dir
 
@@ -593,7 +593,7 @@ class TransferWorker(QThread):
             new_entries = list(final_files - initial_files)
 
             if not new_entries:
-                self.error.emit(tr("NO_FILES_EXTRACTED"))
+                self.error.emit("[Zordeer]: No files were extracted from the runner archive.")
                 return
 
             # Move the detected folder to the runner destination path
@@ -604,12 +604,12 @@ class TransferWorker(QThread):
                 shutil.move(str(extracted_path), str(runner_destination_path))
 
             self.finished_transfer = True
-            self.finished.emit(tr("TRANSFER_AND_INSTALL_SUCCESS", name=Path(self.url).name))
+            self.finished.emit(f"[Zordeer]: '{Path(self.url).name}' was successfully transferred and extracted!")
 
         except Exception as e:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
-            self.error.emit(tr("TRANSFER_FAILED", error=str(e)))
+            self.error.emit(f"[Zordeer]: Transfer failed: {e}")
 
 class RunnerTransferDialog(QDialog):
     def __init__(self, parent=None):
@@ -5615,7 +5615,7 @@ class ArtworkLoader(QThread):
             self.finished.emit(results)
 
         except Exception as e:
-            self.error.emit(tr("ARTS_LOAD_ERROR", error=str(e)))
+            self.error.emit(f"[Zordeer]: Failed to load arts: {e}")
 
 if __name__ == "__main__":
     # Loads settings
