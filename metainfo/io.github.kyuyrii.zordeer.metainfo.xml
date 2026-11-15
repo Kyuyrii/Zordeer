@@ -30,10 +30,10 @@
     </p>
   </description>
   <releases>
-    <release version="9.0" date="2026-11-15">
+    <release version="9.1" date="2026-11-15">
       <description>
         <ul>
-          <li>Access to the UMU database has been removed.</li>
+          <li>Attempting to fix "Run in prefix" not considering the UMU runtime transfer.</li>
         </ul>
       </description>
     </release>

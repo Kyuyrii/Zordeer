@@ -29,7 +29,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "9.0" + __package_type__
+__version__ = "9.1" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -3162,7 +3162,8 @@ class RunInPrefix(QDialog):
     def wait_until_finished(self):
         # Automatic installation
         if self.radio_automatic.isChecked():
-            if self.parent().invocation_process and self.parent().invocation_process.poll() is None:
+            if (self.parent().invocation_process
+                    and self.parent().invocation_process.state() != QProcess.ProcessState.NotRunning):
                 QTimer.singleShot(2000, self.wait_until_finished)
                 return
 
@@ -3178,20 +3179,18 @@ class RunInPrefix(QDialog):
             self._has_printed_waiting_message = True
 
         started_prefix = tr("INVOCATION_STARTED", invocation_name="").split("{invocation_name}")[0].strip()
-        if self.parent().windowTitle().startswith(started_prefix):
+        umu_transfer = tr("UMU_TRANSFERRING_RUNTIME")
+
+        current_title = self.parent().windowTitle()
+        still_running = current_title.startswith(started_prefix) or current_title == umu_transfer
+
+        if still_running:
             QTimer.singleShot(2000, self.wait_until_finished)
         else:
             self.current_index += 1
             self.progress.setValue(self.current_index)
             self._has_printed_waiting_message = False
             self.run_next_exe()
-
-        try:
-            temp_path = Path(self.temp_toml_path)
-            if temp_path.exists():
-                temp_path.unlink()
-        except Exception as e:
-            print(f"[Zordeer]: Failed to remove temporary file: {e}")
 
     def set_execution_locked(self, locked: bool):
         self.run_btn.setEnabled(not locked)
