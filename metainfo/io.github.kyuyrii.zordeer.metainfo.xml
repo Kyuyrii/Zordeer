@@ -30,10 +30,10 @@
     </p>
   </description>
   <releases>
-    <release version="8.3" date="2026-11-13">
+    <release version="9.0" date="2026-11-15">
       <description>
         <ul>
-          <li>Removing translations from more terminal messages</li>
+          <li>Access to the UMU database has been removed.</li>
         </ul>
       </description>
     </release>
