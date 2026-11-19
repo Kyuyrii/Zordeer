@@ -29,7 +29,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "9.1" + __package_type__
+__version__ = "9.2" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 if "ZORDEER_HOME_DIR" in os.environ:
@@ -55,7 +55,7 @@ if os.environ.get("container") == "flatpak" and "ZORDEER_HOME_DIR" not in os.env
     zordeer_invocation_dir = zordeer_dir / "invocation"
     zordeer_runner_dir = zordeer_dir / "runner"
     zordeer_umu_dir = zordeer_dir / "umu"
-    zordeer_umu_folders_path = Path(os.environ["XDG_DATA_HOME"]) / "UMU"
+    zordeer_umu_folders_path = zordeer_dir / "runtime"
 
 else:
     zordeer_dir = zordeer_home_dir / "App" / "Zordeer"
@@ -66,7 +66,7 @@ else:
     zordeer_invocation_dir = zordeer_dir / "invocation"
     zordeer_runner_dir = zordeer_dir / "runner"
     zordeer_umu_dir = zordeer_dir / "umu"
-    zordeer_umu_folders_path = zordeer_home_dir / "App" / "UMU"
+    zordeer_umu_folders_path = zordeer_dir / "runtime"
 
 if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() not in ("kde", "lxqt"):
     add_invocation_icon = "list-add"
@@ -4670,7 +4670,7 @@ class Zordeer(QMainWindow):
 
             if use_umu and "proton" in runner_name.lower():
                 # Changes the folder used by UMU
-                env['UMU_FOLDERS_PATH'] = str(zordeer_umu_folders_path)
+                env['UMU_FOLDERS_PATH'] = env.get('UMU_FOLDERS_PATH') or str(zordeer_umu_folders_path)
                 env['PROTONPATH'] = str(zordeer_runner_dir / runner_name)
                 if umu_runtime_update is False:
                     env['UMU_RUNTIME_UPDATE'] = "0"

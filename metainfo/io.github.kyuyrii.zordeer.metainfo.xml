@@ -30,10 +30,11 @@
     </p>
   </description>
   <releases>
-    <release version="9.1" date="2026-11-15">
+    <release version="9.2" date="2026-11-19">
       <description>
         <ul>
-          <li>Attempting to fix "Run in prefix" not considering the UMU runtime transfer.</li>
+          <li>The default folder for UMU_FOLDERS_PATH is now Zordeer/runtime.</li>
+          <li>If UMU_FOLDERS_PATH is already set, it will not force the use of the Zordeer/runtime folder.</li>
         </ul>
       </description>
     </release>
