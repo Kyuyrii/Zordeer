@@ -29,7 +29,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "9.3" + __package_type__
+__version__ = "10.0" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 APP_ID = "io.github.kyuyrii.zordeer"
@@ -239,9 +239,7 @@ def create_default_settings() -> dict:
         },
         "shortcut": {
             "desktop_dir": "",
-            "dot_config_dir": "",
-            "dot_local_dir": "",
-            "own_category": True,
+            "applications_dir": "",
         },
         "other": {
             "default_runner": "indefinite",
@@ -276,6 +274,12 @@ def load_settings() -> dict:
     for section in defaults:
         for key, value in defaults[section].items():
             data[section].setdefault(key, value)
+
+    # Migrate legacy dot_local_dir -> applications_dir
+    shortcut = data.get("shortcut", {})
+    if "dot_local_dir" in shortcut:
+        shortcut["applications_dir"] = f"{shortcut['dot_local_dir']}/share/applications"
+        del shortcut["dot_local_dir"]
 
     # Remove outdated keys inside sections
     for section in defaults:
@@ -3267,12 +3271,6 @@ class ShortcutManager(QDialog):
         select_layout.addWidget(self.deselect_all_btn)
         main_layout.addLayout(select_layout)
 
-        # Own category checkbox
-        self.own_category_cb = QCheckBox(tr("OWN_CATEGORY"))
-        own_category_checked = self.shortcut_manager_info.get("own_category", True)
-        self.own_category_cb.setChecked(own_category_checked)
-        main_layout.addWidget(self.own_category_cb)
-
         # Folder selection
         grid = QGridLayout()
 
@@ -3287,27 +3285,16 @@ class ShortcutManager(QDialog):
         desktop_buttons.addWidget(desktop_browse)
         grid.addLayout(desktop_buttons, 2, 0, 1, 3)
 
-        # .config section
-        grid.addWidget(QLabel(tr("DOT_CONFIG_FOLDER")), 3, 0)
-        self.dot_config_input = QLineEdit(self.shortcut_manager_info.get("dot_config_dir", ""))
-        grid.addWidget(self.dot_config_input, 4, 0, 1, 3)
+        # Applications section
+        grid.addWidget(QLabel(tr("APPLICATIONS_FOLDER")), 3, 0)
+        self.applications_dir_input = QLineEdit(self.shortcut_manager_info.get("applications_dir", ""))
+        grid.addWidget(self.applications_dir_input, 4, 0, 1, 3)
 
-        config_buttons = QHBoxLayout()
-        config_browse = QPushButton(tr("BROWSE_BUTTON"))
-        config_browse.clicked.connect(partial(self.browse_folder, self.dot_config_input))
-        config_buttons.addWidget(config_browse)
-        grid.addLayout(config_buttons, 5, 0, 1, 3)
-
-        # .local section
-        grid.addWidget(QLabel(tr("DOT_LOCAL_FOLDER")), 6, 0)
-        self.dot_local_input = QLineEdit(self.shortcut_manager_info.get("dot_local_dir", ""))
-        grid.addWidget(self.dot_local_input, 7, 0, 1, 3)
-
-        local_buttons = QHBoxLayout()
-        local_browse = QPushButton(tr("BROWSE_BUTTON"))
-        local_browse.clicked.connect(partial(self.browse_folder, self.dot_local_input))
-        local_buttons.addWidget(local_browse)
-        grid.addLayout(local_buttons, 8, 0, 1, 3)
+        applications_buttons = QHBoxLayout()
+        applications_browse = QPushButton(tr("BROWSE_BUTTON"))
+        applications_browse.clicked.connect(partial(self.browse_folder, self.applications_dir_input))
+        applications_buttons.addWidget(applications_browse)
+        grid.addLayout(applications_buttons, 5, 0, 1, 3)
 
         grid.setContentsMargins(0, 0, 0, 0)
 
@@ -3372,15 +3359,14 @@ class ShortcutManager(QDialog):
         if view_name == "desktop":
             folder_path = Path(self.desktop_dir_input.text())
         else:
-            dot_local = Path(self.dot_local_input.text())
-            folder_path = dot_local / "share" / "applications"
+            folder_path = Path(self.applications_dir_input.text())
 
         # Find existing .desktop files on disk
         existing_desktops = set()
         if folder_path.exists():
             safe_to_display = {data["safe_invocation_name"]: name
-                            for name, data in self.invocations.items()
-                            if "safe_invocation_name" in data}
+                               for name, data in self.invocations.items()
+                               if "safe_invocation_name" in data}
 
             for f in folder_path.glob("*.desktop"):
                 if self.is_zordeer_desktop(f):
@@ -3491,28 +3477,20 @@ class ShortcutManager(QDialog):
 
         # Get values from config or empty strings
         desktop_dir = shortcut_section.get("desktop_dir", "")
-        dot_config_dir = shortcut_section.get("dot_config_dir", "")
-        dot_local_dir = shortcut_section.get("dot_local_dir", "")
-        own_category = shortcut_section.get("own_category", False)
+        applications_dir = shortcut_section.get("applications_dir", "")
 
         # If desktop_dir is empty in config, calculate default
         if not desktop_dir:
             desktop_dir = self.get_default_desktop_dir()
 
-        # If dot_config_dir is empty in config, use default
-        if not dot_config_dir:
-            dot_config_dir = str(zordeer_home_dir / ".config")
-
-        # If dot_local_dir is empty in config, use default
-        if not dot_local_dir:
-            dot_local_dir = str(zordeer_home_dir / ".local")
+        # If applications_dir is empty in config, use default
+        if not applications_dir:
+            applications_dir = str(zordeer_home_dir / ".local" / "share" / "applications")
 
         # Processed settings for shortcut manager
         info = {
             "desktop_dir": str(desktop_dir),
-            "dot_config_dir": str(dot_config_dir),
-            "dot_local_dir": str(dot_local_dir),
-            "own_category": own_category,
+            "applications_dir": str(applications_dir),
         }
 
         return info
@@ -3540,9 +3518,10 @@ class ShortcutManager(QDialog):
         settings = load_settings()
         settings.setdefault("shortcut", {})
         settings["shortcut"]["desktop_dir"] = self.shortcut_manager_info.get("desktop_dir", "")
-        settings["shortcut"]["dot_config_dir"] = self.shortcut_manager_info.get("dot_config_dir", "")
-        settings["shortcut"]["dot_local_dir"] = self.shortcut_manager_info.get("dot_local_dir", "")
-        settings["shortcut"]["own_category"] = self.own_category_cb.isChecked()
+        settings["shortcut"]["applications_dir"] = self.shortcut_manager_info.get("applications_dir", "")
+        # Drop obsolete keys from older configs
+        settings["shortcut"].pop("dot_config_dir", None)
+        settings["shortcut"].pop("dot_local_dir", None)
         save_settings(settings)
 
     def browse_folder(self, line_edit: QLineEdit):
@@ -3558,7 +3537,7 @@ class ShortcutManager(QDialog):
         # Rebuild only the corresponding tab
         if line_edit == self.desktop_dir_input:
             self.build_tab_checkboxes("desktop")
-        elif line_edit == self.dot_local_input:
+        elif line_edit == self.applications_dir_input:
             self.build_tab_checkboxes("menu")
 
         self.on_search_changed(self.search_bar.text())
@@ -3577,11 +3556,7 @@ class ShortcutManager(QDialog):
 
     def update_and_apply(self):
         desktop_dir = Path(self.desktop_dir_input.text().strip())
-        dot_config_dir = Path(self.dot_config_input.text().strip())
-        dot_local_dir = Path(self.dot_local_input.text().strip())
-
-        # Define menu applications directory
-        applications_dir = dot_local_dir / "share" / "applications"
+        applications_dir = Path(self.applications_dir_input.text().strip())
 
         # Create desktop directory if it doesn't exist
         try:
@@ -3593,102 +3568,26 @@ class ShortcutManager(QDialog):
                 tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=desktop_dir))
             return
 
-        # Check if .config directory exists
-        if not dot_config_dir.exists():
+        # Check if applications directory exists
+        if not applications_dir.exists():
             QMessageBox.warning(
                 self,
                 tr("APP_NAME"),
-                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_config_dir))
+                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=applications_dir))
             return
-
-        # Check if .local directory exists
-        if not dot_local_dir.exists():
-            QMessageBox.warning(
-                self,
-                tr("APP_NAME"),
-                tr("ERROR_CREATING_SHORTCUTS_LOCATION", path=dot_local_dir))
-            return
-
-        applications_dir.mkdir(parents=True, exist_ok=True)
 
         old_desktop_dir = Path(self.shortcut_manager_info.get("desktop_dir", ""))
-        old_dot_config_dir = Path(self.shortcut_manager_info.get("dot_config_dir", ""))
-        old_dot_local_dir = Path(self.shortcut_manager_info.get("dot_local_dir", ""))
+        old_applications_dir = Path(self.shortcut_manager_info.get("applications_dir", ""))
 
         # Remove old desktop files from previous locations
         self.remove_all_zordeer_desktops(old_desktop_dir)
-
-        # Remove old menu files from previous .local/share/applications
-        old_applications_dir = old_dot_local_dir / "share" / "applications"
         self.remove_all_zordeer_desktops(old_applications_dir)
 
         # Update info with new paths
         self.shortcut_manager_info["desktop_dir"] = str(desktop_dir)
-        self.shortcut_manager_info["dot_config_dir"] = str(dot_config_dir)
-        self.shortcut_manager_info["dot_local_dir"] = str(dot_local_dir)
-        self.shortcut_manager_info["own_category"] = self.own_category_cb.isChecked()
-
-        # Remove category files if checkbox is unchecked
-        if not self.own_category_cb.isChecked():
-            # Remove menu file from .config
-            old_menu_file = old_dot_config_dir / "menus" / "applications-merged" / "Zordeer.menu"
-            if old_menu_file.exists():
-                try:
-                    old_menu_file.unlink()
-                except Exception as e:
-                    print(f"[Zordeer]: Error removing {old_menu_file}: {e}")
-
-            # Remove directory file from .local
-            old_directory_file = old_dot_local_dir / "share" / "desktop-directories" / "Zordeer.directory"
-            if old_directory_file.exists():
-                try:
-                    old_directory_file.unlink()
-                except Exception as e:
-                    print(f"[Zordeer]: Error removing {old_directory_file}: {e}")
+        self.shortcut_manager_info["applications_dir"] = str(applications_dir)
 
         self.save_shortcut_manager_info()
-
-        # Create category files if checkbox is checked
-        if self.own_category_cb.isChecked():
-            try:
-                # Create .menu file in the configured .config directory
-                menu_file_path = dot_config_dir / "menus" / "applications-merged" / "Zordeer.menu"
-                menu_file_path.parent.mkdir(parents=True, exist_ok=True)
-
-                menu_content = "\n".join([
-                    "<Menu>",
-                    "  <Name>Applications</Name>",
-                    "  <Menu>",
-                    "    <Name>Zordeer</Name>",
-                    "    <Directory>Zordeer.directory</Directory>",
-                    "    <Include>",
-                    "      <Category>Zordeer</Category>",
-                    "    </Include>",
-                    "  </Menu>",
-                    "</Menu>"
-                ])
-                menu_file_path.write_text(menu_content, encoding="utf-8")
-            except Exception as e:
-                print(f"[Zordeer]: Error creating Zordeer.menu: {e}")
-
-            try:
-                # Create .directory file in the configured .local directory
-                directory_file_path = dot_local_dir / "share" / "desktop-directories" / "Zordeer.directory"
-                directory_file_path.parent.mkdir(parents=True, exist_ok=True)
-
-                if os.environ.get("SNAP"):
-                    icon_path = self.parent().zordeer_icon_path
-                else:
-                    icon_path = APP_ID
-
-                directory_content = "\n".join([
-                    "[Desktop Entry]",
-                    "Name=Zordeer",
-                    f"Icon={icon_path}"
-                ])
-                directory_file_path.write_text(directory_content, encoding="utf-8")
-            except Exception as e:
-                print(f"[Zordeer]: Error creating Zordeer.directory: {e}")
 
         # Remove existing .desktop files from new locations
         self.remove_all_zordeer_desktops(desktop_dir)
@@ -3740,15 +3639,13 @@ class ShortcutManager(QDialog):
         if not gui_path or not Path(gui_path).exists():
             gui_path = "applications-games"
 
-        categories = "Zordeer;" if self.own_category_cb.isChecked() else "Game;"
-
         content_lines = [
             "[Desktop Entry]",
             f"Name={name}",
             f"Exec={current_zordeer}",
             f"Icon={gui_path}",
             f"StartupWMClass={os.path.basename(exec_path)}",
-            f"Categories={categories}",
+            "Categories=Game;",
             "Keywords=gaming;invocation;",
             "Type=Application",
             "StartupNotify=false",

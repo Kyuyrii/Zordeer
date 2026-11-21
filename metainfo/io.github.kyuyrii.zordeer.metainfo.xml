@@ -30,11 +30,10 @@
     </p>
   </description>
   <releases>
-    <release version="9.3" date="2026-11-21">
+    <release version="10.0" date="2026-11-21">
       <description>
         <ul>
-          <li>Fixed the use of the Zordeer path in the .desktop files.</li>
-          <li>The beginning of .desktop filenames has been changed to use the APP_ID.</li>
+          <li>Removal of the creation of the Zordeer category.</li>
         </ul>
       </description>
     </release>
