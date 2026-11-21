@@ -48,8 +48,6 @@
 - Why does the shortcut manager require the user to select folders?
   - This was a decision made early in development because I did not know how to handle the Snapd and Flatpak sandboxes, since they modify XDG_CONFIG_HOME and XDG_DATA_HOME.
   - When I tested this idea in Snapd, I realized that, instead of giving a permission error, the Document Portal granted access to the folders and generated paths that Zordeer could write to, giving Zordeer permission to add and remove `.desktop` files at will.
-- Why does Zordeer create its own category in the app menu?
-  - To avoid cluttering the games category, all the shortcuts created by Zordeer are kept in the same place.
 - Can Zordeer be run via CLI?
   - The Zordeer CLI options are limited to three functions: start a specific invocation, start a random invocation, or stop the current invocation.
   - Examples:
