@@ -30,11 +30,11 @@
     </p>
   </description>
   <releases>
-    <release version="9.2" date="2026-11-19">
+    <release version="9.3" date="2026-11-21">
       <description>
         <ul>
-          <li>The default folder for UMU_FOLDERS_PATH is now Zordeer/runtime.</li>
-          <li>If UMU_FOLDERS_PATH is already set, it will not force the use of the Zordeer/runtime folder.</li>
+          <li>Fixed the use of the Zordeer path in the .desktop files.</li>
+          <li>The beginning of .desktop filenames has been changed to use the APP_ID.</li>
         </ul>
       </description>
     </release>
