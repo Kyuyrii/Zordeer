@@ -29,7 +29,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "10.0" + __package_type__
+__version__ = "10.1" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 APP_ID = "io.github.kyuyrii.zordeer"
@@ -70,7 +70,7 @@ else:
     zordeer_umu_dir = zordeer_dir / "umu"
     zordeer_umu_folders_path = zordeer_dir / "runtime"
 
-if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() not in ("kde", "lxqt"):
+if os.environ.get("XDG_CURRENT_DESKTOP", "").lower() not in ("kde"):
     add_invocation_icon = "list-add"
     change_visibility_icon = "view-restore"
     close_zordeer_icon = "window-close"
@@ -220,7 +220,7 @@ INVOCATION_LOCALE_OPTIONS = [
 ]
 
 def create_default_settings() -> dict:
-    """Provides default settings for first-time creation."""
+    # Provides default settings for first-time creation.
     return {
         "design": {
             "qt_style": "indefinite",
@@ -250,7 +250,7 @@ def create_default_settings() -> dict:
     }
 
 def load_settings() -> dict:
-    """Loads settings, uses indefinite if saved style is unavailable."""
+    # Loads settings, uses indefinite if saved style is unavailable.
     defaults = create_default_settings()
 
     try:
@@ -302,7 +302,7 @@ def load_settings() -> dict:
     return data
 
 def save_settings(data: dict) -> None:
-    """Saves settings in TOML."""
+    # Saves settings in TOML.
     zordeer_config_dir.mkdir(parents=True, exist_ok=True)
     zordeer_settings_file.parent.mkdir(parents=True, exist_ok=True)
     with open(zordeer_settings_file, "w", encoding="utf-8") as f:
@@ -542,7 +542,7 @@ class TransferWorker(QThread):
     def run(self):
         temp_file_path = None
         try:
-            self.message.emit(f"[Zordeer]: Transferring: {Path(self.url).name}")
+            self.message.emit(f"Transferring: {Path(self.url).name}")
             response = requests.get(self.url, stream=True, timeout=30)
             response.raise_for_status()
 
@@ -556,7 +556,7 @@ class TransferWorker(QThread):
                 temp_file_path = temp_file.name
                 for chunk in response.iter_content(chunk_size=8192):
                     if self.cancelled and not self.finished_transfer:
-                        self.message.emit(f"[Zordeer]: Transfer canceled")
+                        self.message.emit(f"Transfer canceled")
                         return
 
                     temp_file.write(chunk)
@@ -564,7 +564,7 @@ class TransferWorker(QThread):
                     if total_size > 0:
                         self.progress.emit(min(int(bytes_transferred / total_size * 100), 100))
 
-            self.message.emit(f"[Zordeer]: Extracting: {Path(self.url).name}")
+            self.message.emit(f"Extracting: {Path(self.url).name}")
 
             base_dir = self.runners_dir
 
@@ -598,7 +598,7 @@ class TransferWorker(QThread):
             new_entries = list(final_files - initial_files)
 
             if not new_entries:
-                self.error.emit("[Zordeer]: No files were extracted from the runner archive.")
+                self.error.emit(tr("NO_FILES_EXTRACTED"))
                 return
 
             # Move the detected folder to the runner destination path
@@ -609,12 +609,12 @@ class TransferWorker(QThread):
                 shutil.move(str(extracted_path), str(runner_destination_path))
 
             self.finished_transfer = True
-            self.finished.emit(f"[Zordeer]: '{Path(self.url).name}' was successfully transferred and extracted!")
+            self.finished.emit(tr("TRANSFER_AND_INSTALL_SUCCESS", name=Path(self.url).name))
 
         except Exception as e:
             if temp_file_path and os.path.exists(temp_file_path):
                 os.unlink(temp_file_path)
-            self.error.emit(f"[Zordeer]: Transfer failed: {e}")
+            self.error.emit(tr("TRANSFER_FAILED", error=str(e)))
 
 class RunnerTransferDialog(QDialog):
     def __init__(self, parent=None):
@@ -977,7 +977,7 @@ class AddInvocationDialog(QDialog):
         self.fps_hud_combo.setEnabled(self.show_fps_checkbox.isChecked())
 
     def load_invocation_data(self):
-        """Populates the form with invocation data for editing."""
+        # Populates the form with invocation data for editing.
         self.name_input.setText(self.invocation_data.get('name', ''))
         self.exec_path_input.setText(self.invocation_data.get('exec_path', ''))
         self.prefix_path_input.setText(self.invocation_data.get('prefix_path', ''))
@@ -1020,14 +1020,14 @@ class AddInvocationDialog(QDialog):
             self.fps_hud_combo.setCurrentIndex(index_hud)
 
     def update_prefix_path(self, name):
-        """Generates a default prefix path based on the invocation name."""
+        # Generates a default prefix path based on the invocation name.
         invocation_prefix = name.replace(" ", "_").lower()
         if invocation_prefix:
             default_path = zordeer_invocation_dir / invocation_prefix
             self.prefix_path_input.setText(str(default_path))
 
     def populate_runners(self):
-        """Lists the available runner options and adds a warning if the runner chosen for the invocation is no longer available."""
+        # Lists the available runner options and adds a warning if the runner chosen for the invocation is no longer available.
         available_runners = sorted([runner.name for runner in zordeer_runner_dir.iterdir() if runner.is_dir()], reverse=True)
 
         items = [tr("PLACEHOLDER_FOR_RUNNER")]
@@ -1099,7 +1099,7 @@ class AddInvocationDialog(QDialog):
             self.invocation_gui_input.setText(file_path)
 
     def get_form_data(self):
-        """Gets data from the form fields."""
+        # Gets data from the form fields.
         selected_runner = self.runner_input.currentText()
         if selected_runner == tr("PLACEHOLDER_FOR_RUNNER"):
             selected_runner = ""
@@ -1137,7 +1137,7 @@ class AddInvocationDialog(QDialog):
         }
 
     def save_and_accept(self):
-        """Validates fields, saves data to file, and updates paths if the name changes."""
+        # Validates fields, saves data to file, and updates paths if the name changes.
         invocation_data = self.get_form_data()
 
         old_safe_name = ""
@@ -1367,7 +1367,7 @@ class AddInvocationDialog(QDialog):
             QMessageBox.warning(self, tr("CREATE_INVOCATION"), tr("MANDATORY_FIELD_ERROR"))
 
     def delete_invocation(self):
-        """Removes the invocation and optionally its data/prefix."""
+        # Removes the invocation and optionally its data/prefix.
         invocation_name = self.name_input.text().strip()
 
         # Confirmation dialog with checkbox
@@ -1875,7 +1875,7 @@ class MultipleRemoveInvocationDialog(QDialog):
         super().keyPressEvent(event)
 
     def load_invocations(self):
-        """Loads all existing invocations in alphabetical order."""
+        # Loads all existing invocations in alphabetical order.
         self.invocation_checkboxes.clear()
 
         # Clean layout
@@ -1907,7 +1907,7 @@ class MultipleRemoveInvocationDialog(QDialog):
         self.scroll_layout.addStretch()
 
     def update_invocation_list(self, text):
-        """Filters invocations by the text entered in the search."""
+        # Filters invocations by the text entered in the search.
         text = text.lower()
         for name, checkbox in self.invocation_checkboxes.items():
             checkbox.setVisible(text in name.lower())
@@ -2302,7 +2302,7 @@ class MultipleEditInvocationDialog(QDialog):
         return super().eventFilter(obj, event)
 
     def update_runner_filter(self):
-        """Updates the available runners in the filter based on the invocation-info files."""
+        # Updates the available runners in the filter based on the invocation-info files.
         runners = set()
         for cb in self.invocation_checkboxes.values():
             try:
@@ -4190,7 +4190,7 @@ class Zordeer(QMainWindow):
                 mounted_iso_info.unlink(missing_ok=True)
 
     def setup_directories(self):
-        """Creates the Zordeer directory structure"""
+        # Creates the Zordeer directory structure
         subdirs = [
             zordeer_art_dir,
             zordeer_gui_dir,
@@ -4204,7 +4204,7 @@ class Zordeer(QMainWindow):
             subdir.mkdir(parents=True, exist_ok=True)
 
     def load_invocations(self):
-        """Loads invocation data from TOML files and populates the list, preserving the selection by TOML file."""
+        # Loads invocation data from TOML files and populates the list, preserving the selection by TOML file.
 
         # Save scroll position
         scroll_pos = self.invocation_list_widget.verticalScrollBar().value()

@@ -30,10 +30,12 @@
     </p>
   </description>
   <releases>
-    <release version="10.0" date="2026-11-21">
+    <release version="10.1" date="2026-11-25">
       <description>
         <ul>
-          <li>Removal of the creation of the Zordeer category.</li>
+          <li>Symbolic icons are no longer enforced in LXQt, to allow the use of the Oxygen icon theme.</li>
+          <li>Correcting messages that had lost their translation.</li>
+          <li>Trying to fix messages in the terminal that were duplicating [Zordeer]: </li>
         </ul>
       </description>
     </release>
@@ -50,7 +52,7 @@
     </screenshot>
 
     <screenshot>
-      <image width="1568" height="900">https://raw.githubusercontent.com/Kyuyrii/Zordeer/5c8e56b14ebeefc11ee095783fcd56460fbbe880/metainfo/zordeer_lubuntu.png</image>
+      <image width="1568" height="900">https://raw.githubusercontent.com/Kyuyrii/Zordeer/494e73669077c7573667a8873788fbfa99f0437b/metainfo/zordeer_lubuntu.png</image>
       <caption>Zordeer on Lubuntu</caption>
     </screenshot>
   </screenshots>
