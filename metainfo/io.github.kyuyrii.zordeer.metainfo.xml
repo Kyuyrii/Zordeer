@@ -30,12 +30,12 @@
     </p>
   </description>
   <releases>
-    <release version="10.1" date="2026-11-25">
+    <release version="10.2" date="2026-11-25">
       <description>
         <ul>
-          <li>Symbolic icons are no longer enforced in LXQt, to allow the use of the Oxygen icon theme.</li>
-          <li>Correcting messages that had lost their translation.</li>
-          <li>Trying to fix messages in the terminal that were duplicating [Zordeer]: </li>
+          <li>The execution function has been modified to support wine-proton.</li>
+          <li>The function to open winecfg and wine control has been removed.</li>
+          <li>Trying to fix the icons that appeared stretched in the invocation list.</li>
         </ul>
       </description>
     </release>

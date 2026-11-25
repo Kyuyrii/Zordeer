@@ -29,7 +29,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "10.1" + __package_type__
+__version__ = "10.2" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 APP_ID = "io.github.kyuyrii.zordeer"
@@ -58,7 +58,6 @@ if os.environ.get("container") == "flatpak" and "ZORDEER_HOME_DIR" not in os.env
     zordeer_runner_dir = zordeer_dir / "runner"
     zordeer_umu_dir = zordeer_dir / "umu"
     zordeer_umu_folders_path = zordeer_dir / "runtime"
-
 else:
     zordeer_dir = zordeer_home_dir / "App" / "Zordeer"
     zordeer_art_dir = zordeer_dir / "art"
@@ -3730,14 +3729,6 @@ class Zordeer(QMainWindow):
         self.run_in_prefix_action.triggered.connect(self.run_in_prefix_dialog)
         self.invocation_menu.addAction(self.run_in_prefix_action)
 
-        self.open_winecfg_action = QAction(tr("OPEN_WINECFG"), self)
-        self.open_winecfg_action.triggered.connect(partial(self.open_wine_tools, "winecfg"))
-        self.invocation_menu.addAction(self.open_winecfg_action)
-
-        self.open_wine_control_action = QAction(tr("OPEN_WINE_CONTROL"), self)
-        self.open_wine_control_action.triggered.connect(partial(self.open_wine_tools, "control"))
-        self.invocation_menu.addAction(self.open_wine_control_action)
-
         # Menu TRANSFER
         self.transfer_menu = self.menu_bar.addMenu(tr("TRANSFER"))
 
@@ -4388,7 +4379,32 @@ class Zordeer(QMainWindow):
             umu_runtime_update = settings["other"].get("umu_runtime_update", True)
             umu_version = settings["other"].get("umu_version", "").strip()
 
-            if use_umu and "proton" in runner_name.lower():
+            # Detect runner type by file existence, except "wine" from $PATH
+            runner_type = None  # "proton", "wine", or "wine_path"
+
+            if runner_name.lower() == "wine":
+                wine_path = shutil.which("wine")
+                if not wine_path:
+                    QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
+                    return
+                runner_type = "wine_path"
+            else:
+                runner_dir = zordeer_runner_dir / runner_name
+                proton_script = runner_dir / "proton"
+                wine_binary = runner_dir / "bin" / "wine"
+
+                if proton_script.exists():
+                    runner_type = "proton"
+                elif wine_binary.exists():
+                    runner_type = "wine"
+                else:
+                    QMessageBox.critical(
+                        self,
+                        tr("APP_NAME"),
+                        tr("ERROR_RUNNER", runner_name=runner_name))
+                    return
+
+            if use_umu and runner_type == "proton":
                 # Validate UMU version
                 if not umu_version or umu_version.lower() == "indefinite":
                     QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_UMU_INDEFINITE"))
@@ -4407,38 +4423,6 @@ class Zordeer(QMainWindow):
                             self,
                             tr("APP_NAME"),
                             tr("UMU_NOT_FOUND", path=str(umu_run_path.parent)))
-                        return
-
-                proton_script = zordeer_runner_dir / runner_name / "proton"
-                if not proton_script.exists():
-                    QMessageBox.critical(
-                        self,
-                        tr("APP_NAME"),
-                        tr("ERROR_RUNNER", path=str(proton_script.parent)))
-                    return
-
-            else:
-                # Check if it's just "wine", that is, the Wine from $PATH.
-                if runner_name.lower() == "wine":
-                    wine_path = shutil.which("wine")
-                    if not wine_path:
-                        QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
-                        return
-                elif "proton" in runner_name.lower():
-                    proton_script = zordeer_runner_dir / runner_name / "proton"
-                    if not proton_script.exists():
-                        QMessageBox.critical(
-                            self,
-                            tr("APP_NAME"),
-                            tr("ERROR_RUNNER", path=str(proton_script.parent)))
-                        return
-                else:
-                    wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
-                    if not wine_binary.exists():
-                        QMessageBox.critical(
-                            self,
-                            tr("APP_NAME"),
-                            tr("ERROR_RUNNER", path=str(wine_binary.parent)))
                         return
 
             # exec_path_full is the original path of the TOML (can be .iso)
@@ -4560,13 +4544,13 @@ class Zordeer(QMainWindow):
                     }, f)
 
             # Build command
-            if use_umu and "proton" in runner_name.lower():
+            if use_umu and runner_type == "proton":
                 command = [str(umu_run_path), str(exec_path_full)]
-            elif runner_name.lower() == "wine":
+            elif runner_type == "wine_path":
                 command = [wine_path, str(exec_path_full)]
-            elif "proton" in runner_name.lower():
+            elif runner_type == "proton":
                 command = [str(proton_script), "run", str(exec_path_full)]
-            else:
+            else:  # runner_type == "wine"
                 command = [str(wine_binary), str(exec_path_full)]
 
             # Invocation arguments
@@ -4578,7 +4562,7 @@ class Zordeer(QMainWindow):
             env = os.environ.copy()
             env['WINEPREFIX'] = str(prefix_path)
 
-            if use_umu and "proton" in runner_name.lower():
+            if use_umu and runner_type == "proton":
                 # Changes the folder used by UMU
                 env['UMU_FOLDERS_PATH'] = env.get('UMU_FOLDERS_PATH') or str(zordeer_umu_folders_path)
                 env['PROTONPATH'] = str(zordeer_runner_dir / runner_name)
@@ -4586,7 +4570,7 @@ class Zordeer(QMainWindow):
                     env['UMU_RUNTIME_UPDATE'] = "0"
             else:
                 # Set Steam environment variables only for Proton
-                if "proton" in runner_name.lower():
+                if runner_type == "proton":
                     env['STEAM_COMPAT_DATA_PATH'] = str(prefix_path)
                     env['STEAM_COMPAT_CLIENT_INSTALL_PATH'] = ""
 
@@ -4668,7 +4652,7 @@ class Zordeer(QMainWindow):
 
             # Simple debug version showing only UMU-related and important env vars
             debug_vars = []
-            if use_umu and "proton" in runner_name.lower():
+            if use_umu and runner_type == "proton":
                 debug_vars.append(f"WINEPREFIX='{env['WINEPREFIX']}'")
                 if 'PROTONPATH' in env:
                     debug_vars.append(f"PROTONPATH='{env['PROTONPATH']}'")
@@ -4679,7 +4663,7 @@ class Zordeer(QMainWindow):
             else:
                 debug_vars.append(f"WINEPREFIX='{env['WINEPREFIX']}'")
                 # Only show Steam variables if they exist and runner is not Wine
-                if "proton" in runner_name.lower():
+                if runner_type == "proton":
                     if 'STEAM_COMPAT_DATA_PATH' in env:
                         debug_vars.append(f"STEAM_COMPAT_DATA_PATH='{env['STEAM_COMPAT_DATA_PATH']}'")
                     if 'STEAM_COMPAT_CLIENT_INSTALL_PATH' in env:
@@ -4695,7 +4679,7 @@ class Zordeer(QMainWindow):
             print(f"[Zordeer]: Running command: {debug_command}")
 
             # Define working directory
-            if "proton" in runner_name.lower() and re.search(r'/run/user/[^/]+/doc/', str(exec_path_full)):
+            if runner_type == "proton" and re.search(r'/run/user/[^/]+/doc/', str(exec_path_full)):
                 cwd_path = exec_path_full.parent.parent
             else:
                 cwd_path = exec_path_full.parent
@@ -4829,6 +4813,12 @@ class Zordeer(QMainWindow):
 
         if icon is None:
             icon = QIcon.fromTheme("applications-games")
+            pixmap = icon.pixmap(self.invocation_list_widget.iconSize())
+            icon = QIcon()
+            icon.addPixmap(pixmap, QIcon.Mode.Normal, QIcon.State.Off)
+            icon.addPixmap(pixmap, QIcon.Mode.Selected, QIcon.State.Off)
+            icon.addPixmap(pixmap, QIcon.Mode.Active, QIcon.State.Off)
+            icon.addPixmap(pixmap, QIcon.Mode.Disabled, QIcon.State.Off)
 
         if layout_mode != "list" and icon is not None:
             item.setIcon(icon)
@@ -5169,93 +5159,6 @@ class Zordeer(QMainWindow):
                 self,
                 tr("APP_NAME"),
                 tr("OPEN_PATH_ERROR", path=str(path) if path else ""))
-
-    def open_wine_tools(self, tool_name):
-        invocation_name = self.get_selected_invocation()
-        if not invocation_name:
-            QMessageBox.information(self, tr("APP_NAME"), tr("NO_INVOCATIONS_FOUND"))
-            return
-
-        safe_invocation_name = invocation_name.replace(" ", "_").lower()
-        invocation_file_path = zordeer_config_dir / f"invocation-info-{safe_invocation_name}.toml"
-
-        with invocation_file_path.open('r', encoding='utf-8') as f:
-            invocation_data = tomlkit.load(f)
-
-        prefix_path = Path(invocation_data.get('prefix_path', ''))
-        if not prefix_path.exists():
-            QMessageBox.warning(self, tr("APP_NAME"), tr("PREFIX_PATH_NOT_FOUND", path=str(prefix_path)))
-            return
-
-        runner_name = invocation_data.get('runner', '').strip()
-        if not runner_name or runner_name.lower() == "indefinite":
-            settings = load_settings()
-            runner_name = settings["other"].get("default_runner", "").strip()
-            if not runner_name or runner_name.lower() == "indefinite":
-                QMessageBox.warning(self, tr("APP_NAME"), tr("DEFAULT_RUNNER_INDEFINITE"))
-                return
-
-        # Create pfx symlink
-        pfx_symlink = prefix_path / "pfx"
-        try:
-            if pfx_symlink.is_symlink():
-                pfx_symlink.unlink()
-            if not pfx_symlink.is_dir():
-                pfx_symlink.symlink_to(".")
-                print(f"[Zordeer]: Symlink created: {pfx_symlink}")
-
-                users_path = prefix_path / "drive_c" / "users"
-                users_path.mkdir(parents=True, exist_ok=True)
-                steamuser = users_path / "steamuser"
-                unixuser = getpwuid(os.getuid()).pw_name
-                wineuser = users_path / unixuser
-                if not wineuser.exists() and not steamuser.exists():
-                    steamuser.mkdir(parents=True)
-                    wineuser.symlink_to("steamuser")
-                elif wineuser.is_dir() and not steamuser.exists():
-                    steamuser.symlink_to(unixuser)
-                elif not wineuser.exists() and steamuser.is_dir():
-                    wineuser.symlink_to("steamuser")
-        except Exception:
-            pass
-
-        # Create folders to prevent Wine from creating symlinks
-        target_user = prefix_path / "drive_c" / "users" / "steamuser"
-        for folder in ["Desktop", "Documents", "Downloads", "Music", "Pictures", "Videos", "Templates"]:
-            (target_user / folder).mkdir(parents=True, exist_ok=True)
-
-        env = os.environ.copy()
-        env["WINEPREFIX"] = str(prefix_path)
-
-        # Checking if the runner exists
-        if runner_name.lower() == "wine":
-            wine_path = shutil.which("wine")
-            if not wine_path:
-                QMessageBox.critical(self, tr("APP_NAME"), tr("WINE_NOT_FOUND"))
-                return
-            cmd = [wine_path, tool_name]
-        elif "proton" in runner_name.lower():
-            proton_script = zordeer_runner_dir / runner_name / "proton"
-            if not proton_script.exists():
-                QMessageBox.critical(
-                    self,
-                    tr("APP_NAME"),
-                    tr("ERROR_RUNNER", path=str(proton_script.parent)))
-                return
-            cmd = [str(proton_script), "run", tool_name]
-            env["STEAM_COMPAT_DATA_PATH"] = str(prefix_path)
-            env["STEAM_COMPAT_CLIENT_INSTALL_PATH"] = ""
-        else:
-            wine_binary = zordeer_runner_dir / runner_name / "bin" / "wine"
-            if not wine_binary.exists():
-                QMessageBox.critical(
-                    self,
-                    tr("APP_NAME"),
-                    tr("ERROR_RUNNER", path=str(wine_binary.parent)))
-                return
-            cmd = [str(wine_binary), tool_name]
-
-        subprocess.Popen(cmd, env=env)
 
     def open_settings(self):
         dialog = SettingsDialog(self)
