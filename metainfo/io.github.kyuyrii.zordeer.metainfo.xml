@@ -30,12 +30,10 @@
     </p>
   </description>
   <releases>
-    <release version="10.2" date="2026-11-25">
+    <release version="11.0" date="2026-11-27">
       <description>
         <ul>
-          <li>The execution function has been modified to support wine-proton.</li>
-          <li>The function to open winecfg and wine control has been removed.</li>
-          <li>Trying to fix the icons that appeared stretched in the invocation list.</li>
+          <li>The stop invocation function now uses "wineserver -k"</li>
         </ul>
       </description>
     </release>
