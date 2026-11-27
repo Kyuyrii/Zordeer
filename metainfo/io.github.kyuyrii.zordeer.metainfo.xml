@@ -30,10 +30,10 @@
     </p>
   </description>
   <releases>
-    <release version="11.0" date="2026-11-27">
+    <release version="11.1" date="2026-11-27">
       <description>
         <ul>
-          <li>The stop invocation function now uses "wineserver -k"</li>
+          <li>Correcting the use of wineserver</li>
         </ul>
       </description>
     </release>

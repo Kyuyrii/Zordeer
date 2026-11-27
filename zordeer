@@ -29,7 +29,7 @@ elif os.environ.get("APPIMAGE"):
 else:
     __package_type__ = ""
 
-__version__ = "11.0" + __package_type__
+__version__ = "11.1" + __package_type__
 __creator__ = "<a href='https://github.com/Kyuyrii'>Kyuyrii</a>"
 
 APP_ID = "io.github.kyuyrii.zordeer"
@@ -4390,10 +4390,10 @@ class Zordeer(QMainWindow):
             wineserver_path = None
             if runner_type == "proton":
                 wineserver_path = runner_dir / "files" / "bin" / "wineserver"
+            elif runner_type == "wine":
+                wineserver_path = runner_dir / "bin" / "wineserver"
             elif runner_type == "wine_path":
-                wineserver_path = shutil.which("wineserver")
-            elif runner_type == "wine_path":
-                wineserver_path = Path(wine_path).parent / "wineserver"
+                wineserver_path = "wineserver"
 
             self.last_wineserver_path = str(wineserver_path) if wineserver_path else None
 
@@ -4539,12 +4539,12 @@ class Zordeer(QMainWindow):
             # Build command
             if use_umu and runner_type == "proton":
                 command = [str(umu_run_path), str(exec_path_full)]
-            elif runner_type == "wine_path":
-                command = [wine_path, str(exec_path_full)]
             elif runner_type == "proton":
                 command = [str(proton_script), "run", str(exec_path_full)]
-            else:  # runner_type == "wine"
+            elif runner_type == "wine":
                 command = [str(wine_binary), str(exec_path_full)]
+            elif runner_type == "wine_path":
+                command = [wine_path, str(exec_path_full)]
 
             # Invocation arguments
             invocation_args_str = invocation_data.get('invocation_args', '').strip()
